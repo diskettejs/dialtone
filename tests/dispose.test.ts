@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { open } from '../main.js'
+import { Session } from '../main.js'
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 
 describe('asyncDispose (await using)', () => {
   it('disposes a full session/publisher/subscriber stack on scope exit', async () => {
-    await using session = await open()
+    await using session = await Session.open()
     await using sub = await session.declareSubscriber('demo/dispose')
     await using pub = await session.declarePublisher('demo/dispose')
     await settle()
@@ -24,7 +24,7 @@ describe('asyncDispose (await using)', () => {
     // The `await using` inside the IIFE is disposed (awaited) before the returned
     // promise resolves, so `disposed` is an already-closed session.
     const disposed = await (async () => {
-      await using session = await open()
+      await using session = await Session.open()
       return session
     })()
 

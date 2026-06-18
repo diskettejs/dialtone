@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { Config, open } from '../index.js'
+import { Config, Session } from '../index.js'
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 
 describe('config', () => {
   it('open() with a Config instance and with a JSON5 string', async () => {
-    const fromInstance = await open(Config.default())
+    const fromInstance = await Session.open(Config.default())
     await fromInstance.close()
 
-    const fromString = await open('{ mode: "peer" }')
+    const fromString = await Session.open('{ mode: "peer" }')
     await fromString.close()
   }, 10_000)
 
@@ -33,8 +33,8 @@ describe('config', () => {
 
     // Two sessions in this process stand in for two processes: they can only find
     // each other through the explicit TCP link, since multicast discovery is off.
-    const a = await open(listener)
-    const b = await open(connector)
+    const a = await Session.open(listener)
+    const b = await Session.open(connector)
 
     const sub = await a.declareSubscriber('scan/events')
     await settle(500) // let the TCP session establish + subscription propagate

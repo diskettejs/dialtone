@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { open } from '../index.js'
+import { Session } from '../index.js'
 
 const settle = () => new Promise((r) => setTimeout(r, 200))
 
 describe('publisher', () => {
   it('declarePublisher → put → subscriber receives', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/pub')
     const pub = await session.declarePublisher('demo/pub')
     await settle()
@@ -23,7 +23,7 @@ describe('publisher', () => {
   }, 10_000)
 
   it('put options set encoding and attachment', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/pubopts')
     const pub = await session.declarePublisher('demo/pubopts')
     await settle()
@@ -41,7 +41,7 @@ describe('publisher', () => {
   }, 10_000)
 
   it('declare-time QoS is reflected on the received sample', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/qos')
     const pub = await session.declarePublisher('demo/qos', {
       priority: 'DataHigh',
@@ -63,7 +63,7 @@ describe('publisher', () => {
   }, 10_000)
 
   it('publisher.delete yields a Delete sample', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/del')
     const pub = await session.declarePublisher('demo/del')
     await settle()

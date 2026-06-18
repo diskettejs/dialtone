@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { Config, open } from '../index.js'
+import { Config, Session } from '../index.js'
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 
 describe('session put/delete options', () => {
   it('put options are reflected on the received sample', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/putopts')
     await settle()
 
@@ -30,7 +30,7 @@ describe('session put/delete options', () => {
   }, 10_000)
 
   it('delete options are reflected on the Delete sample', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/delopts')
     await settle()
 
@@ -55,7 +55,7 @@ describe('session put/delete options', () => {
 
 describe('session.info()', () => {
   it('reports this session zid and array-shaped router/peer lists', async () => {
-    const session = await open()
+    const session = await Session.open()
     const info = await session.info()
 
     expect(info.zid).toBe(session.zid)
@@ -77,8 +77,8 @@ describe('session.info()', () => {
     connectorCfg.insertJson5('scouting/multicast/enabled', 'false')
     connectorCfg.insertJson5('connect/endpoints', `["${endpoint}"]`)
 
-    const a = await open(listenerCfg)
-    const b = await open(connectorCfg)
+    const a = await Session.open(listenerCfg)
+    const b = await Session.open(connectorCfg)
     await settle(500) // let the TCP link establish
 
     const aInfo = await a.info()

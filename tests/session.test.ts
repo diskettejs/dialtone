@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { open } from '../index.js'
+import { Session } from '../index.js'
 
 describe('session pub/sub loopback', () => {
   it('put → subscriber.receive() yields a mapped Sample', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/test')
     // give the local subscription a tick to be wired up
     await new Promise((r) => setTimeout(r, 200))
@@ -22,7 +22,7 @@ describe('session pub/sub loopback', () => {
   }, 10_000)
 
   it('accepts a Uint8Array payload and exposes it as bytes', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/bytes')
     await new Promise((r) => setTimeout(r, 200))
 
@@ -37,7 +37,7 @@ describe('session pub/sub loopback', () => {
   }, 10_000)
 
   it('for await drains samples and undeclares on break', async () => {
-    const session = await open()
+    const session = await Session.open()
     const sub = await session.declareSubscriber('demo/iter')
     await new Promise((r) => setTimeout(r, 200))
 
