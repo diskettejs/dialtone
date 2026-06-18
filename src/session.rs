@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::enums::{CongestionControl, Locality, Priority};
 use crate::error::zerr;
+use crate::macros::apply_common_options;
 use crate::payload::to_zbytes;
 use crate::publisher::{Publisher, PublisherOptions};
 use crate::subscriber::Subscriber;
@@ -100,23 +101,12 @@ impl Session {
     let session = self.session.clone();
     let mut builder = session.put(key_expr, to_zbytes(payload));
     if let Some(o) = options {
+      builder = apply_common_options!(builder, o);
       if let Some(encoding) = o.encoding {
         builder = builder.encoding(encoding.as_str());
       }
-      if let Some(cc) = o.congestion_control {
-        builder = builder.congestion_control(cc.into());
-      }
-      if let Some(priority) = o.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = o.express {
-        builder = builder.express(express);
-      }
       if let Some(attachment) = o.attachment {
         builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(destination) = o.allowed_destination {
-        builder = builder.allowed_destination(destination.into());
       }
     }
     builder.await.map_err(|e| zerr("session.put", e))?;
@@ -129,20 +119,9 @@ impl Session {
     let session = self.session.clone();
     let mut builder = session.delete(key_expr);
     if let Some(o) = options {
-      if let Some(cc) = o.congestion_control {
-        builder = builder.congestion_control(cc.into());
-      }
-      if let Some(priority) = o.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = o.express {
-        builder = builder.express(express);
-      }
+      builder = apply_common_options!(builder, o);
       if let Some(attachment) = o.attachment {
         builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(destination) = o.allowed_destination {
-        builder = builder.allowed_destination(destination.into());
       }
     }
     builder.await.map_err(|e| zerr("session.delete", e))?;
@@ -160,20 +139,9 @@ impl Session {
     let session = self.session.clone();
     let mut builder = session.declare_publisher(key_expr);
     if let Some(o) = options {
-      if let Some(cc) = o.congestion_control {
-        builder = builder.congestion_control(cc.into());
-      }
-      if let Some(priority) = o.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = o.express {
-        builder = builder.express(express);
-      }
+      builder = apply_common_options!(builder, o);
       if let Some(encoding) = o.encoding {
         builder = builder.encoding(encoding.as_str());
-      }
-      if let Some(destination) = o.allowed_destination {
-        builder = builder.allowed_destination(destination.into());
       }
     }
     let publisher = builder.await.map_err(|e| zerr("declare_publisher", e))?;

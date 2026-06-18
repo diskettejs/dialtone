@@ -12,6 +12,7 @@
 mod config;
 mod enums;
 mod error;
+mod macros;
 mod payload;
 mod publisher;
 mod sample;
