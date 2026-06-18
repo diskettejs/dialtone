@@ -1,12 +1,14 @@
-//! QoS / addressing enums. NAPI `string_enum` → values are the Rust variant names
-//! verbatim (PascalCase). `From<zenoh::…>` maps inbound (samples), `From<…>` the
-//! other way maps outbound (option values set on builders).
+//! QoS and addressing enums shared across the session, publisher, and sample
+//! APIs. Each is exposed to JS as a string-literal union of its variant names.
 
 use napi_derive::napi;
 
+/// Whether a sample carries a published value or marks a deletion.
 #[napi(string_enum)]
 pub enum SampleKind {
+  /// A value was published.
   Put,
+  /// A value was deleted (tombstone).
   Delete,
 }
 
@@ -19,9 +21,12 @@ impl From<zenoh::sample::SampleKind> for SampleKind {
   }
 }
 
+/// How a message behaves when the network is congested.
 #[napi(string_enum)]
 pub enum CongestionControl {
+  /// Drop the message rather than wait.
   Drop,
+  /// Block until the message can be sent.
   Block,
 }
 
@@ -43,6 +48,7 @@ impl From<CongestionControl> for zenoh::qos::CongestionControl {
   }
 }
 
+/// Transmission priority, from highest (`RealTime`) to lowest (`Background`).
 #[napi(string_enum)]
 pub enum Priority {
   RealTime,
@@ -84,10 +90,15 @@ impl From<Priority> for zenoh::qos::Priority {
   }
 }
 
+/// Restricts which subscribers a message can reach, by their location relative to
+/// this session.
 #[napi(string_enum)]
 pub enum Locality {
+  /// Only subscribers within this same session.
   SessionLocal,
+  /// Only subscribers in other sessions.
   Remote,
+  /// Any subscriber whether local or remote.
   Any,
 }
 

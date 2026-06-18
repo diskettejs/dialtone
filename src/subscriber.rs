@@ -7,7 +7,9 @@ use std::future::Future;
 type SampleSubscriber =
   zenoh::pubsub::Subscriber<zenoh::handlers::FifoChannelHandler<zenoh::sample::Sample>>;
 
-/// Channel-mode subscriber: an async iterator over Zenoh's FIFO handler.
+/// A subscriber declared on a session. It is async-iterable — consume samples with
+/// `for await (const sample of sub) { ... }` — or pull them one at a time with
+/// `receive()`.
 #[napi(async_iterator)]
 pub struct Subscriber {
   key_expr: String,
@@ -32,6 +34,7 @@ impl Subscriber {
 
 #[napi]
 impl Subscriber {
+  /// The key expression this subscriber listens on.
   #[napi(getter)]
   pub fn key_expr(&self) -> String {
     self.key_expr.clone()
@@ -47,6 +50,7 @@ impl Subscriber {
     }
   }
 
+  /// Undeclare the subscription and release its resources.
   #[napi]
   pub async fn undeclare(&self) -> Result<()> {
     let taken = self.subscriber.lock().unwrap().take();

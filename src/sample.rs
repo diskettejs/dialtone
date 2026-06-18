@@ -2,19 +2,18 @@ use crate::enums::{CongestionControl, Priority, SampleKind};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
-/// Zenoh `Timestamp` as plain data. Convert to a JS `Date` with the
-/// `ntp64ToDate(ntp64)` helper (lives in the JS layer) to keep `Sample` a POJO.
+/// The timestamp attached to a sample. Use the `ntp64ToDate(ntp64)` helper to turn
+/// the raw NTP64 value into a JS `Date`.
 #[napi(object)]
 pub struct Timestamp {
-  /// zid of the timestamp source.
+  /// Zenoh ID of the source that created the timestamp.
   pub id: String,
-  /// Raw NTP64.
+  /// Raw NTP64 timestamp value.
   pub ntp64: BigInt,
 }
 
-/// A sample delivered to JS. `#[napi(object)]` makes it a plain JS object, mapped
-/// field by field from Zenoh's getters. Only `unstable`-gated fields
-/// (`reliability`, `sourceInfo`) are omitted.
+/// A value delivered to a subscriber, with its key expression, payload, and the
+/// QoS and metadata it was published with.
 #[napi(object)]
 pub struct Sample {
   pub key_expr: String,

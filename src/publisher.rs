@@ -5,7 +5,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use std::sync::{Arc, Mutex};
 
-/// QoS + addressing fixed on the publisher at declare time.
+/// QoS and addressing for a publisher, fixed when it is declared.
 #[napi(object)]
 pub struct PublisherOptions {
   pub encoding: Option<String>,
@@ -15,27 +15,27 @@ pub struct PublisherOptions {
   pub allowed_destination: Option<Locality>,
 }
 
-/// Per-message overrides for `publisher.put()`. QoS is fixed at declare time, so
-/// only content/metadata vary here. (`timestamp` override lands in a later slice —
-/// it needs construction of a Zenoh `Timestamp` from JS.)
+/// Per-message options for `publisher.put()`. A publisher's QoS is fixed when it is
+/// declared, so only the payload encoding and attachment can vary per message.
 #[napi(object)]
 pub struct PublisherPutOptions {
   pub encoding: Option<String>,
   pub attachment: Option<Either<String, Uint8Array>>,
 }
 
-/// Per-message overrides for `publisher.delete()`.
+/// Per-message options for `publisher.delete()`.
 #[napi(object)]
 pub struct PublisherDeleteOptions {
   pub attachment: Option<Either<String, Uint8Array>>,
 }
 
-/// A declared publisher. The underlying `Publisher<'static>` is kept behind an
-/// `Arc` so `put`/`delete` can borrow it across the await on a shared `&self`,
-/// and behind a `Mutex<Option<…>>` so `undeclare` can take ownership.
+/// A publisher declared on a session. Sends values on a fixed key expression with
+/// the QoS chosen when it was declared. Call `undeclare()` when you're done.
 #[napi]
 pub struct Publisher {
   key_expr: String,
+  // Behind an Arc so put/delete can hold a clone across their await on a shared
+  // &self, and behind a Mutex<Option<…>> so undeclare can take ownership.
   publisher: Mutex<Option<Arc<zenoh::pubsub::Publisher<'static>>>>,
 }
 
@@ -60,11 +60,13 @@ impl Publisher {
 
 #[napi]
 impl Publisher {
+  /// The key expression this publisher sends on.
   #[napi(getter)]
   pub fn key_expr(&self) -> String {
     self.key_expr.clone()
   }
 
+  /// Publish a value on the publisher's key expression.
   #[napi]
   pub async fn put(
     &self,
@@ -85,6 +87,7 @@ impl Publisher {
     Ok(())
   }
 
+  /// Publish a delete (tombstone) on the publisher's key expression.
   #[napi]
   pub async fn delete(&self, options: Option<PublisherDeleteOptions>) -> Result<()> {
     let publisher = self.handle("publisher.delete")?;
@@ -98,6 +101,7 @@ impl Publisher {
     Ok(())
   }
 
+  /// Undeclare the publisher and release its resources.
   #[napi]
   pub async fn undeclare(&self) -> Result<()> {
     let taken = self.publisher.lock().unwrap().take();

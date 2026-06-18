@@ -2,11 +2,12 @@ use crate::error::zerr;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
-/// Zenoh session configuration (default = peer mode). Wraps `zenoh::Config`.
+/// Zenoh session configuration (defaults to peer mode).
 ///
-/// This is the surface deployments use for connectivity — e.g. explicit
-/// `connect`/`listen` endpoints when multicast discovery is unavailable between
-/// processes. Constructed via the static factories; pass the result to `open()`.
+/// Controls how a session connects to the network — for example, explicit
+/// `connect`/`listen` endpoints when multicast discovery isn't available between
+/// processes. Build one with `Config.default()` or `Config.fromJson5()`, then pass
+/// it to `Session.open()`.
 #[napi]
 pub struct Config {
   pub(crate) inner: zenoh::Config,

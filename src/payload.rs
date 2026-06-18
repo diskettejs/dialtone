@@ -1,10 +1,10 @@
 use napi::bindgen_prelude::*;
 
-/// Native payload boundary: `string | Uint8Array`. Strings are UTF-8 encoded;
-/// typed arrays / buffers are taken as raw bytes (a Node `Buffer` is a
-/// `Uint8Array`, so it is accepted too). The spec's `ArrayBuffer` arm is widened
-/// in the JS wrapper layer (`new Uint8Array(ab)`) — it borrows the V8 scope and so
-/// can't cross NAPI's async boundary directly.
+/// Convert a JS payload (`string | Uint8Array`) into Zenoh bytes. Strings are
+/// UTF-8 encoded; typed arrays and Node `Buffer`s (themselves `Uint8Array`s) are
+/// taken as raw bytes. The JS wrapper widens `ArrayBuffer` to `Uint8Array` before
+/// it reaches here, since an `ArrayBuffer` borrows the V8 scope and can't cross the
+/// async boundary directly.
 pub(crate) fn to_zbytes(input: Either<String, Uint8Array>) -> zenoh::bytes::ZBytes {
   match input {
     Either::A(s) => zenoh::bytes::ZBytes::from(s),
