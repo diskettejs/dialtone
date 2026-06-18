@@ -590,11 +590,12 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Config, Publisher, Session, Subscriber, CongestionControl, Locality, Priority, SampleKind } = nativeBinding
+const { Config, Publisher, Session, Subscriber, ChannelHandler, CongestionControl, Locality, Priority, SampleKind } = nativeBinding
 export { Config }
 export { Publisher }
 export { Session }
 export { Subscriber }
+export { ChannelHandler }
 export { CongestionControl }
 export { Locality }
 export { Priority }

@@ -4,7 +4,7 @@ use crate::error::zerr;
 use crate::macros::apply_common_options;
 use crate::payload::to_zbytes;
 use crate::publisher::{Publisher, PublisherOptions};
-use crate::subscriber::Subscriber;
+use crate::subscriber::{Subscriber, SubscriberOptions, build_handler};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -151,14 +151,24 @@ impl Session {
 
   /// Declare a subscriber. The returned object is async-iterable:
   /// `for await (const sample of sub) { ... }`.
+  ///
+  /// `options.handler` picks the channel that buffers incoming samples — `fifo`
+  /// (default) back-pressures the network, `ring` drops the oldest samples when
+  /// full. Both default to a capacity of 256.
   #[napi]
-  pub async fn declare_subscriber(&self, key_expr: String) -> Result<Subscriber> {
+  pub async fn declare_subscriber(
+    &self,
+    key_expr: String,
+    options: Option<SubscriberOptions>,
+  ) -> Result<Subscriber> {
     let session = self.session.clone();
+    let (callback, receiver) = build_handler(options.and_then(|o| o.handler));
     let subscriber = session
       .declare_subscriber(key_expr)
+      .with(callback)
       .await
       .map_err(|e| zerr("declare_subscriber", e))?;
-    Ok(Subscriber::new(subscriber))
+    Ok(Subscriber::new(subscriber, receiver))
   }
 
   /// Close the session and release its resources.

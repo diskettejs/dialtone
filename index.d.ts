@@ -66,8 +66,12 @@ export declare class Session {
   /**
    * Declare a subscriber. The returned object is async-iterable:
    * `for await (const sample of sub) { ... }`.
+   *
+   * `options.handler` picks the channel that buffers incoming samples — `fifo`
+   * (default) back-pressures the network, `ring` drops the oldest samples when
+   * full. Both default to a capacity of 256.
    */
-  declareSubscriber(keyExpr: string): Promise<Subscriber>
+  declareSubscriber(keyExpr: string, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
   /** Close the session and release its resources. */
   close(): Promise<void>
 }
@@ -92,6 +96,12 @@ export declare class Subscriber {
   [Symbol.asyncIterator](): AsyncGenerator<Sample, void, undefined>
 }
 
+/** Which channel handler buffers samples between the network and the consumer. */
+export type ChannelHandler = /** Back-pressures the network when full; a slow consumer can stall the Zenoh thread but never loses samples. */
+'fifo'|
+/** Keeps only the most recent samples and drops the oldest when full; a slow consumer loses old data instead of stalling the network. */
+'ring';
+
 /** How a message behaves when the network is congested. */
 export type CongestionControl = /** Drop the message rather than wait. */
 'Drop'|
@@ -108,6 +118,14 @@ export interface DeleteOptions {
   express?: boolean
   attachment?: string | Uint8Array
   allowedDestination?: Locality
+}
+
+/** Configures the channel that buffers a subscriber's samples. */
+export interface HandlerOptions {
+  /** Buffering strategy. Defaults to `fifo`. */
+  type?: ChannelHandler
+  /** Channel capacity (max buffered samples). Defaults to 256. */
+  capacity?: number
 }
 
 /**
@@ -197,6 +215,15 @@ export interface SessionInfo {
   routers: Array<string>
   /** Zenoh IDs of the peers this session is connected to. */
   peers: Array<string>
+}
+
+/** Options for `declareSubscriber`. */
+export interface SubscriberOptions {
+  /**
+   * The channel handler that buffers incoming samples. Defaults to a `fifo`
+   * channel with capacity 256.
+   */
+  handler?: HandlerOptions
 }
 
 /**
