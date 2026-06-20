@@ -1,6 +1,14 @@
-use napi_derive::napi;
+#![deny(clippy::all)]
 
-#[napi]
-pub fn plus_100(input: u32) -> u32 {
-  input + 100
-}
+//! Node.js native bindings for Zenoh, built with NAPI-RS.
+//!
+//! The surface mirrors `zenoh`'s public API 1:1; only runtime mechanics
+//! (async resolution, ownership, JS value marshaling) are adapted.
+
+mod bytes;
+mod config;
+mod error;
+mod qos;
+mod sample;
+mod session;
+mod time;

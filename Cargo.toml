@@ -7,10 +7,10 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "3", default-features = false, features = ["napi10"] }
+napi = { version = "3", default-features = false, features = ["napi10", "async"] }
 napi-derive = "3"
 
-zenoh = { version = "1.9.0", features = ["unstable"] }
+zenoh = { version = "1.9.0", features = ["unstable", "internal"] }
 
 [build-dependencies]
 napi-build = "2"
