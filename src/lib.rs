@@ -8,6 +8,8 @@
 mod bytes;
 mod config;
 mod error;
+mod matching;
+mod publisher;
 mod qos;
 mod sample;
 mod session;

@@ -590,8 +590,9 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Config, Session, SessionInfo, CongestionControl, Locality, Priority, Reliability } = nativeBinding
+const { Config, Publisher, Session, SessionInfo, CongestionControl, Locality, Priority, Reliability } = nativeBinding
 export { Config }
+export { Publisher }
 export { Session }
 export { SessionInfo }
 export { CongestionControl }

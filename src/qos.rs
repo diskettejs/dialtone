@@ -69,3 +69,39 @@ impl From<Reliability> for zenoh::qos::Reliability {
     }
   }
 }
+
+// Reverse conversions, used to read QoS back off declared entities.
+
+impl From<zenoh::qos::CongestionControl> for CongestionControl {
+  fn from(value: zenoh::qos::CongestionControl) -> Self {
+    match value {
+      zenoh::qos::CongestionControl::Drop => CongestionControl::Drop,
+      zenoh::qos::CongestionControl::Block => CongestionControl::Block,
+      zenoh::qos::CongestionControl::BlockFirst => CongestionControl::BlockFirst,
+    }
+  }
+}
+
+impl From<zenoh::qos::Priority> for Priority {
+  fn from(value: zenoh::qos::Priority) -> Self {
+    use zenoh::qos::Priority::*;
+    match value {
+      RealTime => Priority::RealTime,
+      InteractiveHigh => Priority::InteractiveHigh,
+      InteractiveLow => Priority::InteractiveLow,
+      DataHigh => Priority::DataHigh,
+      Data => Priority::Data,
+      DataLow => Priority::DataLow,
+      Background => Priority::Background,
+    }
+  }
+}
+
+impl From<zenoh::qos::Reliability> for Reliability {
+  fn from(value: zenoh::qos::Reliability) -> Self {
+    match value {
+      zenoh::qos::Reliability::BestEffort => Reliability::BestEffort,
+      zenoh::qos::Reliability::Reliable => Reliability::Reliable,
+    }
+  }
+}

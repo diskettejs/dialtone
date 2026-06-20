@@ -21,6 +21,37 @@ export declare class Config {
 }
 
 /**
+ * A publisher bound to a key expression, with QoS fixed at declaration time.
+ * Create one with [`Session::declarePublisher`].
+ */
+export declare class Publisher {
+  /** Publish a `Put` sample to this publisher's key expression. */
+  put(payload: string | Uint8Array, options?: PublisherPutOptions | undefined | null): Promise<void>
+  /** Publish a `Delete` sample to this publisher's key expression. */
+  delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
+  /** Whether any subscribers currently match this publisher's key expression. */
+  matchingStatus(): Promise<MatchingStatus>
+  /**
+   * Undeclare this publisher. Subsequent operations on it will error.
+   *
+   * Resolves synchronously, so awaiting the returned value is optional.
+   */
+  undeclare(): void
+  /** The key expression this publisher publishes to. */
+  get keyExpr(): string
+  /** The default encoding applied to publications. */
+  get encoding(): string
+  /** The congestion control strategy. */
+  get congestionControl(): CongestionControl
+  /** The publication priority. */
+  get priority(): Priority
+  /** The delivery reliability. */
+  get reliability(): Reliability
+  /** This publisher's globally-unique entity id. */
+  get id(): EntityGlobalId
+}
+
+/**
  * An open connection to the Zenoh network — the entry point from which every
  * publisher, subscriber, and query is declared.
  *
@@ -49,6 +80,11 @@ export declare class Session {
    * key is no longer valid.
    */
   delete(keyExpr: string, options?: DeleteOptions | undefined | null): Promise<void>
+  /**
+   * Declare a [`Publisher`] for `key_expr`. Its QoS is fixed at declaration
+   * time; per-publication `put`/`delete` can override only payload fields.
+   */
+  declarePublisher(keyExpr: string, options?: PublisherOptions | undefined | null): Promise<Publisher>
   /** Create a new timestamp using this session's hybrid logical clock. */
   newTimestamp(): Timestamp
   /** Access information about this session and the nodes it is connected to. */
@@ -122,6 +158,15 @@ export type Locality = /** Only entities in the same session. */
 /** Both local and remote entities (the default). */
 'Any';
 
+/**
+ * Whether a publisher currently has matching subscribers (or, later, a querier
+ * has matching queryables).
+ */
+export interface MatchingStatus {
+  /** `true` if at least one matching entity currently exists. */
+  matching: boolean
+}
+
 /** Priority of a publication. Listed highest to lowest; `Data` is the default. */
 export type Priority =  'RealTime'|
 'InteractiveHigh'|
@@ -130,6 +175,48 @@ export type Priority =  'RealTime'|
 'Data'|
 'DataLow'|
 'Background';
+
+/** Options for [`Publisher::delete`]. */
+export interface PublisherDeleteOptions {
+  /** Optional attachment carried alongside the deletion. */
+  attachment?: string | Uint8Array
+  /** Timestamp to attach; obtain one from [`Session::newTimestamp`]. */
+  timestamp?: Timestamp
+  /** Source metadata (producing entity + sequence number). */
+  sourceInfo?: SourceInfo
+}
+
+/**
+ * Options for [`Session::declarePublisher`]. These settings are fixed for the
+ * publisher's lifetime; per-publication `put`/`delete` may only override
+ * payload-level fields (encoding, attachment, …), not QoS.
+ */
+export interface PublisherOptions {
+  /** Default encoding for publications. */
+  encoding?: string
+  /** Congestion control strategy (default: `Drop`). */
+  congestionControl?: CongestionControl
+  /** Priority of publications (default: `Data`). */
+  priority?: Priority
+  /** When `true`, messages are sent unbatched, trading throughput for latency. */
+  express?: boolean
+  /** Delivery reliability (default: `Reliable`). */
+  reliability?: Reliability
+  /** Restrict which matching subscribers receive the data (default: `Any`). */
+  allowedDestination?: Locality
+}
+
+/** Options for [`Publisher::put`]. */
+export interface PublisherPutOptions {
+  /** Encoding of this payload, overriding the publisher's default. */
+  encoding?: string
+  /** Optional attachment carried alongside the payload. */
+  attachment?: string | Uint8Array
+  /** Timestamp to attach; obtain one from [`Session::newTimestamp`]. */
+  timestamp?: Timestamp
+  /** Source metadata (producing entity + sequence number). */
+  sourceInfo?: SourceInfo
+}
 
 /** Options for [`Session::put`]. */
 export interface PutOptions {

@@ -70,3 +70,36 @@ test('Session.info reports the session and peer ids', async () => {
 
   await session.close()
 }, 15_000)
+
+test('Session.declarePublisher exposes its config and publishes', async () => {
+  const session = await Session.open()
+  const publisher = await session.declarePublisher('demo/zenoh-ts/pub', {
+    encoding: 'text/plain',
+    congestionControl: CongestionControl.Block,
+    priority: Priority.DataHigh,
+    express: true,
+    reliability: Reliability.Reliable,
+    allowedDestination: Locality.Any,
+  })
+
+  expect(publisher.keyExpr).toBe('demo/zenoh-ts/pub')
+  expect(publisher.encoding).toBe('text/plain')
+  expect(publisher.congestionControl).toBe(CongestionControl.Block)
+  expect(publisher.priority).toBe(Priority.DataHigh)
+  expect(publisher.reliability).toBe(Reliability.Reliable)
+  expect(typeof publisher.id.zid).toBe('string')
+  expect(typeof publisher.id.eid).toBe('number')
+
+  await publisher.put('hello')
+  await publisher.put(Buffer.from([1, 2, 3]), {
+    encoding: 'application/octet-stream',
+    attachment: 'meta',
+  })
+  await publisher.delete()
+
+  const status = await publisher.matchingStatus()
+  expect(typeof status.matching).toBe('boolean')
+
+  publisher.undeclare()
+  await session.close()
+}, 15_000)

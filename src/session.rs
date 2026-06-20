@@ -7,6 +7,7 @@ use zenoh::session::ZenohId;
 use crate::bytes::to_zbytes;
 use crate::config::Config;
 use crate::error::to_napi_err;
+use crate::publisher::{Publisher, PublisherOptions};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::sample::{Locality, SourceInfo};
 use crate::time::Timestamp;
@@ -36,6 +37,13 @@ pub struct EntityGlobalId {
 }
 
 impl EntityGlobalId {
+  pub(crate) fn from_zenoh(id: zenoh::session::EntityGlobalId) -> Self {
+    Self {
+      zid: id.zid().to_string(),
+      eid: id.eid(),
+    }
+  }
+
   pub(crate) fn to_zenoh(&self) -> Result<zenoh::session::EntityGlobalId> {
     Ok(zenoh::session::EntityGlobalId::new(
       ZenohId::from_str(&self.zid).map_err(to_napi_err)?,
@@ -184,6 +192,40 @@ impl Session {
       }
     }
     builder.await.map_err(to_napi_err)
+  }
+
+  /// Declare a [`Publisher`] for `key_expr`. Its QoS is fixed at declaration
+  /// time; per-publication `put`/`delete` can override only payload fields.
+  #[napi]
+  pub async fn declare_publisher(
+    &self,
+    key_expr: String,
+    options: Option<PublisherOptions>,
+  ) -> Result<Publisher> {
+    let session = self.inner.clone();
+    let mut builder = session.declare_publisher(key_expr);
+    if let Some(options) = options {
+      if let Some(encoding) = options.encoding {
+        builder = builder.encoding(encoding);
+      }
+      if let Some(congestion_control) = options.congestion_control {
+        builder = builder.congestion_control(congestion_control.into());
+      }
+      if let Some(priority) = options.priority {
+        builder = builder.priority(priority.into());
+      }
+      if let Some(express) = options.express {
+        builder = builder.express(express);
+      }
+      if let Some(reliability) = options.reliability {
+        builder = builder.reliability(reliability.into());
+      }
+      if let Some(allowed_destination) = options.allowed_destination {
+        builder = builder.allowed_destination(allowed_destination.into());
+      }
+    }
+    let publisher = builder.await.map_err(to_napi_err)?;
+    Ok(Publisher::new(publisher, session))
   }
 
   /// Create a new timestamp using this session's hybrid logical clock.
