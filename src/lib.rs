@@ -8,9 +8,11 @@
 mod bytes;
 mod config;
 mod error;
+mod handlers;
 mod matching;
 mod publisher;
 mod qos;
 mod sample;
 mod session;
+mod subscriber;
 mod time;

@@ -21,6 +21,39 @@ export declare class Config {
 }
 
 /**
+ * Notifies of changes to a publisher's [`MatchingStatus`], delivered through a
+ * channel. Obtain one from [`Publisher::matchingListener`].
+ *
+ * Consume it with `for await (const status of listener)`, or pull with
+ * `recv()` / `tryRecv()`. The listener is tied to its publisher: if the
+ * publisher is undeclared or dropped, iteration ends.
+ *
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class MatchingListener {
+  /**
+   * Wait for the next matching-status change, resolving to `null` once the
+   * listener is closed.
+   */
+  recv(): Promise<MatchingStatus | null>
+  /**
+   * Return a buffered status if one is immediately available, or `null` if the
+   * channel is currently empty. Throws once the listener has disconnected,
+   * letting a polling loop tell "nothing yet" apart from "closed".
+   */
+  tryRecv(): MatchingStatus | null
+  /**
+   * Undeclare the listener; any buffered statuses are dropped with the handler.
+   * Resolves synchronously.
+   */
+  undeclare(): void
+  [Symbol.asyncIterator](): AsyncGenerator<MatchingStatus, void, undefined>
+}
+
+/**
  * A publisher bound to a key expression, with QoS fixed at declaration time.
  * Create one with [`Session::declarePublisher`].
  */
@@ -31,6 +64,12 @@ export declare class Publisher {
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   /** Whether any subscribers currently match this publisher's key expression. */
   matchingStatus(): Promise<MatchingStatus>
+  /**
+   * Declare a [`MatchingListener`] that notifies when this publisher's set of
+   * matching subscribers changes. The optional channel `handler` (FIFO or
+   * Ring) backs the notifications; defaults to FIFO.
+   */
+  matchingListener(handler?: ChannelHandler | undefined | null): Promise<MatchingListener>
   /**
    * Undeclare this publisher. Subsequent operations on it will error.
    *
@@ -52,15 +91,40 @@ export declare class Publisher {
 }
 
 /**
+ * A data sample received by a subscriber (or a query reply): the payload plus
+ * all of its metadata.
+ *
+ * Fields are exposed as lazy getters; the payload is only copied into a
+ * `Buffer` when accessed.
+ */
+export declare class Sample {
+  /** The key expression this sample was published on. */
+  get keyExpr(): string
+  /** The payload bytes. */
+  get payload(): Buffer
+  /** Whether this sample is a `Put` or a `Delete`. */
+  get kind(): SampleKind
+  /** The payload encoding. */
+  get encoding(): string
+  /** The timestamp attached to the sample, if any. */
+  get timestamp(): Timestamp | null
+  /** The congestion control strategy the sample was sent with. */
+  get congestionControl(): CongestionControl
+  /** The priority the sample was sent with. */
+  get priority(): Priority
+  /** Whether the sample was sent express (unbatched). */
+  get express(): boolean
+  /** The delivery reliability the sample was sent with. */
+  get reliability(): Reliability
+  /** The attachment bytes, if any. */
+  get attachment(): Buffer | null
+  /** The source metadata, if any. */
+  get sourceInfo(): SourceInfo | null
+}
+
+/**
  * An open connection to the Zenoh network — the entry point from which every
- * publisher, subscriber, and query is declared.
- *
- * `zenoh::Session` is internally an `Arc`, so the underlying session lives as
- * long as any handle to it. It is closed either explicitly via [`close`] or
- * when this handle is garbage-collected (the Rust `Drop` closes the last
- * remaining reference).
- *
- * [`close`]: Session::close
+ * publisher, subscriber, and query is declared. Close it with `close`.
  */
 export declare class Session {
   /**
@@ -85,6 +149,11 @@ export declare class Session {
    * time; per-publication `put`/`delete` can override only payload fields.
    */
   declarePublisher(keyExpr: string, options?: PublisherOptions | undefined | null): Promise<Publisher>
+  /**
+   * Declare a [`Subscriber`] for `key_expr`. Samples are delivered through a
+   * FIFO channel, consumable as an async iterator or via `recv`/`tryRecv`.
+   */
+  declareSubscriber(keyExpr: string, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
   /** Create a new timestamp using this session's hybrid logical clock. */
   newTimestamp(): Timestamp
   /** Access information about this session and the nodes it is connected to. */
@@ -104,6 +173,59 @@ export declare class SessionInfo {
   /** The Zenoh IDs of the peers this session is currently connected to. */
   peersZid(): Promise<Array<string>>
 }
+
+/**
+ * A subscriber that delivers [`Sample`]s through a channel.
+ *
+ * Consume it with `for await (const sample of subscriber)`, or pull samples
+ * individually with `recv()` / `tryRecv()`. Iteration ends (yields `null`)
+ * once the subscriber is undeclared — its buffered samples are dropped with the
+ * handler, as in zenoh — or once the session/link closes and any buffered
+ * samples have been drained.
+ *
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class Subscriber {
+  /**
+   * Wait for the next sample, resolving to `null` once the subscriber is
+   * undeclared, or once it closes and all buffered samples have been drained.
+   */
+  recv(): Promise<Sample | null>
+  /**
+   * Return a buffered sample if one is immediately available, or `null` if the
+   * channel is currently empty. Throws once the subscriber has disconnected
+   * (undeclared, or the session closed and all buffered samples drained),
+   * letting a polling loop tell "nothing yet" apart from "closed".
+   */
+  tryRecv(): Sample | null
+  /**
+   * Undeclare the subscriber. Iteration / `recv` then end and `tryRecv` throws;
+   * any buffered samples are dropped with the handler. Resolves synchronously.
+   */
+  undeclare(): void
+  /** The key expression this subscriber is subscribed to. */
+  get keyExpr(): string
+  /** This subscriber's globally-unique entity id. */
+  get id(): EntityGlobalId
+  [Symbol.asyncIterator](): AsyncGenerator<Sample, void, undefined>
+}
+
+/** Channel handler configuration for a subscriber or listener. */
+export interface ChannelHandler {
+  /** `Fifo` or `Ring`. */
+  kind: ChannelType
+  /** Channel capacity. Defaults to Zenoh's default channel size when omitted. */
+  capacity?: number
+}
+
+/** Which channel kind buffers items for a subscriber or listener. */
+export type ChannelType = /** Bounded FIFO queue; applies backpressure to Zenoh when full. */
+'Fifo'|
+/** Bounded ring buffer; drops the oldest item when full (never blocks). */
+'Ring';
 
 /** What a node does when a message reaches it with a full transmission queue. */
 export type CongestionControl = /** Drop the message (the default for `put`/`delete`). */
@@ -251,6 +373,12 @@ export type Reliability = /** Messages may be lost. */
 /** Messages are guaranteed to be delivered (the default). */
 'Reliable';
 
+/** Whether a sample was produced by a `put` or a `delete`. */
+export type SampleKind = /** Issued by a `put`. */
+'Put'|
+/** Issued by a `delete`. */
+'Delete';
+
 /**
  * Source metadata for a publication: which entity produced the sample and the
  * source's own sequence number for it. Used by advanced pub/sub (e.g. for
@@ -261,6 +389,14 @@ export interface SourceInfo {
   sourceId: EntityGlobalId
   /** The source's sequence number for this sample. */
   sourceSn: number
+}
+
+/** Options for [`Session::declareSubscriber`]. */
+export interface SubscriberOptions {
+  /** Restrict which publishers' samples are accepted (default: `Any`). */
+  allowedOrigin?: Locality
+  /** Channel handler (FIFO or Ring) backing delivery. Defaults to FIFO. */
+  handler?: ChannelHandler
 }
 
 /**

@@ -10,17 +10,11 @@ use crate::error::to_napi_err;
 use crate::publisher::{Publisher, PublisherOptions};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::sample::{Locality, SourceInfo};
+use crate::subscriber::{Subscriber, SubscriberOptions};
 use crate::time::Timestamp;
 
 /// An open connection to the Zenoh network — the entry point from which every
-/// publisher, subscriber, and query is declared.
-///
-/// `zenoh::Session` is internally an `Arc`, so the underlying session lives as
-/// long as any handle to it. It is closed either explicitly via [`close`] or
-/// when this handle is garbage-collected (the Rust `Drop` closes the last
-/// remaining reference).
-///
-/// [`close`]: Session::close
+/// publisher, subscriber, and query is declared. Close it with `close`.
 #[napi]
 pub struct Session {
   pub(crate) inner: zenoh::Session,
@@ -110,10 +104,7 @@ impl Session {
   /// Close the session, undeclaring every entity declared on it.
   #[napi]
   pub async fn close(&self) -> Result<()> {
-    // `zenoh::Session` is a cheap `Arc` clone; cloning gives the future an
-    // owned handle rather than borrowing `self` across the await.
-    let session = self.inner.clone();
-    session.close().await.map_err(to_napi_err)
+    self.inner.close().await.map_err(to_napi_err)
   }
 
   /// Publish a `Put` sample: send `payload` to every subscriber whose key
@@ -125,8 +116,7 @@ impl Session {
     payload: Either<String, Uint8Array>,
     options: Option<PutOptions>,
   ) -> Result<()> {
-    let session = self.inner.clone();
-    let mut builder = session.put(key_expr, to_zbytes(payload));
+    let mut builder = self.inner.put(key_expr, to_zbytes(payload));
     if let Some(options) = options {
       if let Some(encoding) = options.encoding {
         builder = builder.encoding(encoding);
@@ -163,8 +153,7 @@ impl Session {
   /// key is no longer valid.
   #[napi]
   pub async fn delete(&self, key_expr: String, options: Option<DeleteOptions>) -> Result<()> {
-    let session = self.inner.clone();
-    let mut builder = session.delete(key_expr);
+    let mut builder = self.inner.delete(key_expr);
     if let Some(options) = options {
       if let Some(attachment) = options.attachment {
         builder = builder.attachment(to_zbytes(attachment));
@@ -202,8 +191,7 @@ impl Session {
     key_expr: String,
     options: Option<PublisherOptions>,
   ) -> Result<Publisher> {
-    let session = self.inner.clone();
-    let mut builder = session.declare_publisher(key_expr);
+    let mut builder = self.inner.declare_publisher(key_expr);
     if let Some(options) = options {
       if let Some(encoding) = options.encoding {
         builder = builder.encoding(encoding);
@@ -225,7 +213,26 @@ impl Session {
       }
     }
     let publisher = builder.await.map_err(to_napi_err)?;
-    Ok(Publisher::new(publisher, session))
+    Ok(Publisher::new(publisher))
+  }
+
+  /// Declare a [`Subscriber`] for `key_expr`. Samples are delivered through a
+  /// FIFO channel, consumable as an async iterator or via `recv`/`tryRecv`.
+  #[napi]
+  pub async fn declare_subscriber(
+    &self,
+    key_expr: String,
+    options: Option<SubscriberOptions>,
+  ) -> Result<Subscriber> {
+    let mut builder = self.inner.declare_subscriber(key_expr);
+    let mut channel = None;
+    if let Some(options) = options {
+      if let Some(allowed_origin) = options.allowed_origin {
+        builder = builder.allowed_origin(allowed_origin.into());
+      }
+      channel = options.handler;
+    }
+    Subscriber::declare(builder, channel).await
   }
 
   /// Create a new timestamp using this session's hybrid logical clock.

@@ -3,7 +3,8 @@ use napi_derive::napi;
 
 use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
-use crate::matching::MatchingStatus;
+use crate::handlers::ChannelHandler;
+use crate::matching::{MatchingListener, MatchingStatus};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::sample::{Locality, SourceInfo};
 use crate::session::EntityGlobalId;
@@ -57,19 +58,11 @@ pub struct PublisherDeleteOptions {
 #[napi]
 pub struct Publisher {
   inner: Option<zenoh::pubsub::Publisher<'static>>,
-  // The underlying `zenoh::Publisher` only holds a *weak* reference to its
-  // session, so we keep a strong clone here to ensure the session outlives the
-  // publisher even if the JS `Session` handle is garbage-collected first.
-  #[allow(dead_code)]
-  session: zenoh::Session,
 }
 
 impl Publisher {
-  pub(crate) fn new(inner: zenoh::pubsub::Publisher<'static>, session: zenoh::Session) -> Self {
-    Self {
-      inner: Some(inner),
-      session,
-    }
+  pub(crate) fn new(inner: zenoh::pubsub::Publisher<'static>) -> Self {
+    Self { inner: Some(inner) }
   }
 
   fn get(&self) -> Result<&zenoh::pubsub::Publisher<'static>> {
@@ -135,6 +128,18 @@ impl Publisher {
     Ok(MatchingStatus {
       matching: status.matching(),
     })
+  }
+
+  /// Declare a [`MatchingListener`] that notifies when this publisher's set of
+  /// matching subscribers changes. The optional channel `handler` (FIFO or
+  /// Ring) backs the notifications; defaults to FIFO.
+  #[napi]
+  pub async fn matching_listener(
+    &self,
+    handler: Option<ChannelHandler>,
+  ) -> Result<MatchingListener> {
+    let builder = self.get()?.matching_listener();
+    MatchingListener::declare(builder, handler).await
   }
 
   /// Undeclare this publisher. Subsequent operations on it will error.
