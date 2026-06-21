@@ -31,6 +31,7 @@
     "build:debug": "napi build --esm --platform --js binding.js --dts binding.d.ts",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version",
+    "preversion": "napi build --esm --platform --js binding.js --dts binding.d.ts && git add .",
     "test": "vitest",
     "typecheck": "tsc"
   },
