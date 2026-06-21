@@ -24,6 +24,7 @@
     "build:debug": "napi build --esm --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version",
+    "lint": "cargo fmt && cargo clippy",
     "test": "vitest",
     "fmt:js": "oxfmt",
     "fmt:rs": "cargo fmt"

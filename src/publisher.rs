@@ -158,7 +158,9 @@ impl Publisher {
   /// The key expression this publisher publishes to.
   #[napi(getter)]
   pub fn key_expr(&self) -> Result<KeyExpr> {
-    Ok(KeyExpr::from_zenoh(self.get()?.key_expr().clone().into_owned()))
+    Ok(KeyExpr::from_zenoh(
+      self.get()?.key_expr().clone().into_owned(),
+    ))
   }
 
   /// The default encoding applied to publications.

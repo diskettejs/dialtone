@@ -98,10 +98,7 @@ pub struct ReplySample {
 
 impl ReplySample {
   pub(crate) fn new(sample: zenoh::sample::Sample, replier_id: Option<EntityGlobalId>) -> Self {
-    Self {
-      sample,
-      replier_id,
-    }
+    Self { sample, replier_id }
   }
 }
 
@@ -132,14 +129,8 @@ pub struct ReplyError {
 }
 
 impl ReplyError {
-  pub(crate) fn new(
-    error: zenoh::query::ReplyError,
-    replier_id: Option<EntityGlobalId>,
-  ) -> Self {
-    Self {
-      error,
-      replier_id,
-    }
+  pub(crate) fn new(error: zenoh::query::ReplyError, replier_id: Option<EntityGlobalId>) -> Self {
+    Self { error, replier_id }
   }
 }
 
