@@ -1,11 +1,10 @@
 {
-  "name": "@diskette/zenoh-ts",
+  "name": "@diskette/dialtone",
   "version": "0.0.0",
-  "description": "Template project for writing node package with napi-rs",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/diskettejs/zenoh-ts.git"
+    "url": "git+https://github.com/diskettejs/dialtone.git"
   },
   "files": [
     "index.d.ts",
@@ -39,7 +38,7 @@
     "vitest": "^4.1.9"
   },
   "napi": {
-    "binaryName": "zenoh-ts",
+    "binaryName": "dialtone",
     "constEnum": false,
     "targets": [
       "x86_64-pc-windows-msvc",
