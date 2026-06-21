@@ -232,7 +232,7 @@ jobs:
           image: ${{ steps.docker.outputs.IMAGE }}
           name: test-binding
           options: -v ${{ steps.docker.outputs.PNPM_STORE_PATH }}:${{ steps.docker.outputs.PNPM_STORE_PATH }} -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}
-          args: sh -c "set -e; for d in packages/*/; do npm --prefix $d run test --if-present; done"
+          args: sh -c 'set -e; for d in packages/*/; do npm --prefix "$d" run test --if-present; done'
   publish:
     name: Publish
     runs-on: ubuntu-latest
