@@ -4,6 +4,7 @@ use std::sync::Arc;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers::{DefaultHandler, FifoChannelHandler, RingChannelHandler};
+use zenoh::liveliness::LivelinessSubscriberBuilder;
 use zenoh::pubsub::SubscriberBuilder;
 
 use crate::error::to_napi_err;
@@ -74,6 +75,37 @@ pub struct Subscriber {
 impl Subscriber {
   pub(crate) async fn declare(
     builder: SubscriberBuilder<'_, '_, DefaultHandler>,
+    channel: Option<ChannelHandler>,
+  ) -> Result<Self> {
+    let (kind, capacity) = match channel {
+      Some(channel) => (channel.kind, channel.capacity),
+      None => (ChannelType::Fifo, None),
+    };
+    let (inner, receiver) = match kind {
+      ChannelType::Fifo => {
+        let (handler, receiver) = handlers::fifo_parts::<zenoh::sample::Sample>(capacity);
+        let subscriber = builder.with(handler).await.map_err(to_napi_err)?;
+        (SubscriberInner::Fifo(subscriber), receiver)
+      }
+      ChannelType::Ring => {
+        let (handler, receiver) = handlers::ring_parts::<zenoh::sample::Sample>(capacity);
+        let subscriber = builder.with(handler).await.map_err(to_napi_err)?;
+        (SubscriberInner::Ring(subscriber), receiver)
+      }
+    };
+    Ok(Self {
+      inner: Some(inner),
+      receiver: Some(receiver),
+    })
+  }
+
+  /// Declare a liveliness subscriber from a [`LivelinessSubscriberBuilder`],
+  /// mirroring [`Subscriber::declare`]. A liveliness subscriber delivers the
+  /// same [`zenoh::sample::Sample`]s a regular subscriber does (here, the
+  /// liveliness changes — `Put` on a token appearing, `Delete` on it vanishing),
+  /// so it is backed by exactly the same channel machinery and `Subscriber` type.
+  pub(crate) async fn declare_liveliness(
+    builder: LivelinessSubscriberBuilder<'_, '_, DefaultHandler>,
     channel: Option<ChannelHandler>,
   ) -> Result<Self> {
     let (kind, capacity) = match channel {

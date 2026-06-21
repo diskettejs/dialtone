@@ -3,6 +3,7 @@ use std::future::Future;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers::DefaultHandler;
+use zenoh::liveliness::LivelinessGetBuilder;
 use zenoh::query::QuerierGetBuilder;
 use zenoh::session::SessionGetBuilder;
 
@@ -224,6 +225,29 @@ pub struct Replies {
 impl Replies {
   pub(crate) async fn from_session_get(
     builder: SessionGetBuilder<'_, '_, DefaultHandler>,
+    channel: Option<ChannelHandler>,
+  ) -> Result<Self> {
+    let (kind, capacity) = match channel {
+      Some(channel) => (channel.kind, channel.capacity),
+      None => (ChannelType::Fifo, None),
+    };
+    let receiver = match kind {
+      ChannelType::Fifo => {
+        let (handler, receiver) = handlers::fifo_parts::<zenoh::query::Reply>(capacity);
+        builder.with(handler).await.map_err(to_napi_err)?;
+        receiver
+      }
+      ChannelType::Ring => {
+        let (handler, receiver) = handlers::ring_parts::<zenoh::query::Reply>(capacity);
+        builder.with(handler).await.map_err(to_napi_err)?;
+        receiver
+      }
+    };
+    Ok(Self { receiver })
+  }
+
+  pub(crate) async fn from_liveliness_get(
+    builder: LivelinessGetBuilder<'_, '_, DefaultHandler>,
     channel: Option<ChannelHandler>,
   ) -> Result<Self> {
     let (kind, capacity) = match channel {

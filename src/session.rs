@@ -8,6 +8,7 @@ use crate::bytes::to_zbytes;
 use crate::config::Config;
 use crate::error::to_napi_err;
 use crate::keyexpr::KeyExprArg;
+use crate::liveliness::Liveliness;
 use crate::publisher::{Publisher, PublisherOptions};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::querier::{Querier, QuerierOptions};
@@ -351,6 +352,13 @@ impl Session {
     }
     let querier = builder.await.map_err(to_napi_err)?;
     Ok(Querier::new(querier))
+  }
+
+  /// Access this session's liveliness API: declare liveliness tokens, query
+  /// existing ones, and subscribe to liveliness changes.
+  #[napi]
+  pub fn liveliness(&self) -> Liveliness {
+    Liveliness::new(self.inner.clone())
   }
 
   /// Create a new timestamp using this session's hybrid logical clock.

@@ -10,6 +10,7 @@ mod config;
 mod error;
 mod handlers;
 mod keyexpr;
+mod liveliness;
 mod matching;
 mod publisher;
 mod qos;
