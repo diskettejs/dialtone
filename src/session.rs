@@ -7,6 +7,7 @@ use zenoh::session::ZenohId;
 use crate::bytes::to_zbytes;
 use crate::config::Config;
 use crate::error::to_napi_err;
+use crate::keyexpr::KeyExprArg;
 use crate::publisher::{Publisher, PublisherOptions};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::querier::{Querier, QuerierOptions};
@@ -116,11 +117,11 @@ impl Session {
   #[napi]
   pub async fn put(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     payload: Either<String, Uint8Array>,
     options: Option<PutOptions>,
   ) -> Result<()> {
-    let mut builder = self.inner.put(key_expr, to_zbytes(payload));
+    let mut builder = self.inner.put(key_expr.0, to_zbytes(payload));
     if let Some(options) = options {
       if let Some(encoding) = options.encoding {
         builder = builder.encoding(encoding);
@@ -156,8 +157,12 @@ impl Session {
   /// Publish a `Delete` sample for `key_expr`, signalling that the value at that
   /// key is no longer valid.
   #[napi]
-  pub async fn delete(&self, key_expr: String, options: Option<DeleteOptions>) -> Result<()> {
-    let mut builder = self.inner.delete(key_expr);
+  pub async fn delete(
+    &self,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
+    options: Option<DeleteOptions>,
+  ) -> Result<()> {
+    let mut builder = self.inner.delete(key_expr.0);
     if let Some(options) = options {
       if let Some(attachment) = options.attachment {
         builder = builder.attachment(to_zbytes(attachment));
@@ -240,10 +245,10 @@ impl Session {
   #[napi]
   pub async fn declare_publisher(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     options: Option<PublisherOptions>,
   ) -> Result<Publisher> {
-    let mut builder = self.inner.declare_publisher(key_expr);
+    let mut builder = self.inner.declare_publisher(key_expr.0);
     if let Some(options) = options {
       if let Some(encoding) = options.encoding {
         builder = builder.encoding(encoding);
@@ -273,10 +278,10 @@ impl Session {
   #[napi]
   pub async fn declare_subscriber(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     options: Option<SubscriberOptions>,
   ) -> Result<Subscriber> {
-    let mut builder = self.inner.declare_subscriber(key_expr);
+    let mut builder = self.inner.declare_subscriber(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
       if let Some(allowed_origin) = options.allowed_origin {
@@ -292,10 +297,10 @@ impl Session {
   #[napi]
   pub async fn declare_queryable(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     options: Option<QueryableOptions>,
   ) -> Result<Queryable> {
-    let mut builder = self.inner.declare_queryable(key_expr);
+    let mut builder = self.inner.declare_queryable(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
       if let Some(complete) = options.complete {
@@ -314,10 +319,10 @@ impl Session {
   #[napi]
   pub async fn declare_querier(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     options: Option<QuerierOptions>,
   ) -> Result<Querier> {
-    let mut builder = self.inner.declare_querier(key_expr);
+    let mut builder = self.inner.declare_querier(key_expr.0);
     if let Some(options) = options {
       if let Some(congestion_control) = options.congestion_control {
         builder = builder.congestion_control(congestion_control.into());

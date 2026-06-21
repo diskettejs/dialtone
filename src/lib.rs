@@ -9,6 +9,7 @@ mod bytes;
 mod config;
 mod error;
 mod handlers;
+mod keyexpr;
 mod matching;
 mod publisher;
 mod qos;

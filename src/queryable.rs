@@ -9,6 +9,7 @@ use zenoh::query::QueryableBuilder;
 use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
 use crate::handlers::{self, ChannelHandler, ChannelReceiver, ChannelType};
+use crate::keyexpr::{KeyExpr, KeyExprArg};
 use crate::qos::{CongestionControl, Priority};
 use crate::query::ReplyKeyExpr;
 use crate::sample::{Locality, SourceInfo};
@@ -76,8 +77,8 @@ impl Query {
 
   /// The key expression this query targets.
   #[napi(getter)]
-  pub fn key_expr(&self) -> String {
-    self.inner.key_expr().as_str().to_string()
+  pub fn key_expr(&self) -> KeyExpr {
+    KeyExpr::from_zenoh(self.inner.key_expr().clone().into_owned())
   }
 
   /// The selector parameters (the part after `?`), as a raw string.
@@ -144,11 +145,11 @@ impl Query {
   #[napi]
   pub async fn reply(
     &self,
-    key_expr: String,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     payload: Either<String, Uint8Array>,
     options: Option<ReplyOptions>,
   ) -> Result<()> {
-    let mut builder = self.inner.reply(key_expr, to_zbytes(payload));
+    let mut builder = self.inner.reply(key_expr.0, to_zbytes(payload));
     if let Some(options) = options {
       if let Some(encoding) = options.encoding {
         builder = builder.encoding(encoding);
@@ -187,8 +188,12 @@ impl Query {
 
   /// Reply to this query with a `Delete` sample for `key_expr`.
   #[napi]
-  pub async fn reply_del(&self, key_expr: String, options: Option<ReplyDelOptions>) -> Result<()> {
-    let mut builder = self.inner.reply_del(key_expr);
+  pub async fn reply_del(
+    &self,
+    #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
+    options: Option<ReplyDelOptions>,
+  ) -> Result<()> {
+    let mut builder = self.inner.reply_del(key_expr.0);
     if let Some(options) = options {
       if let Some(attachment) = options.attachment {
         builder = builder.attachment(to_zbytes(attachment));
@@ -218,10 +223,10 @@ enum QueryableInner {
 }
 
 impl QueryableInner {
-  fn key_expr(&self) -> String {
+  fn key_expr(&self) -> zenoh::key_expr::KeyExpr<'static> {
     match self {
-      QueryableInner::Fifo(queryable) => queryable.key_expr().as_str().to_string(),
-      QueryableInner::Ring(queryable) => queryable.key_expr().as_str().to_string(),
+      QueryableInner::Fifo(queryable) => queryable.key_expr().clone().into_owned(),
+      QueryableInner::Ring(queryable) => queryable.key_expr().clone().into_owned(),
     }
   }
 
@@ -348,8 +353,8 @@ impl Queryable {
 
   /// The key expression this queryable answers.
   #[napi(getter)]
-  pub fn key_expr(&self) -> Result<String> {
-    Ok(self.get()?.key_expr())
+  pub fn key_expr(&self) -> Result<KeyExpr> {
+    Ok(KeyExpr::from_zenoh(self.get()?.key_expr()))
   }
 
   /// This queryable's globally-unique entity id.

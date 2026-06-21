@@ -1,6 +1,7 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
+use crate::keyexpr::KeyExpr;
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::session::EntityGlobalId;
 use crate::time::Timestamp;
@@ -92,8 +93,8 @@ impl Sample {
 impl Sample {
   /// The key expression this sample was published on.
   #[napi(getter)]
-  pub fn key_expr(&self) -> String {
-    self.inner.key_expr().as_str().to_string()
+  pub fn key_expr(&self) -> KeyExpr {
+    KeyExpr::from_zenoh(self.inner.key_expr().clone().into_owned())
   }
 
   /// The payload bytes.

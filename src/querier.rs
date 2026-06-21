@@ -4,6 +4,7 @@ use napi_derive::napi;
 use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
 use crate::handlers::ChannelHandler;
+use crate::keyexpr::KeyExpr;
 use crate::matching::{MatchingListener, MatchingStatus};
 use crate::qos::{CongestionControl, Priority};
 use crate::query::{ConsolidationMode, QueryTarget, Replies, ReplyKeyExpr};
@@ -136,8 +137,10 @@ impl Querier {
 
   /// The key expression this querier sends queries on.
   #[napi(getter)]
-  pub fn key_expr(&self) -> Result<String> {
-    Ok(self.querier()?.key_expr().as_str().to_string())
+  pub fn key_expr(&self) -> Result<KeyExpr> {
+    Ok(KeyExpr::from_zenoh(
+      self.querier()?.key_expr().clone().into_owned(),
+    ))
   }
 
   /// The congestion control strategy applied to queries.

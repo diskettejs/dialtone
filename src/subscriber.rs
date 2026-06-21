@@ -8,6 +8,7 @@ use zenoh::pubsub::SubscriberBuilder;
 
 use crate::error::to_napi_err;
 use crate::handlers::{self, ChannelHandler, ChannelReceiver, ChannelType};
+use crate::keyexpr::KeyExpr;
 use crate::sample::{Locality, Sample};
 use crate::session::EntityGlobalId;
 
@@ -22,10 +23,10 @@ enum SubscriberInner {
 }
 
 impl SubscriberInner {
-  fn key_expr(&self) -> String {
+  fn key_expr(&self) -> zenoh::key_expr::KeyExpr<'static> {
     match self {
-      SubscriberInner::Fifo(subscriber) => subscriber.key_expr().as_str().to_string(),
-      SubscriberInner::Ring(subscriber) => subscriber.key_expr().as_str().to_string(),
+      SubscriberInner::Fifo(subscriber) => subscriber.key_expr().clone().into_owned(),
+      SubscriberInner::Ring(subscriber) => subscriber.key_expr().clone().into_owned(),
     }
   }
 
@@ -149,8 +150,8 @@ impl Subscriber {
 
   /// The key expression this subscriber is subscribed to.
   #[napi(getter)]
-  pub fn key_expr(&self) -> Result<String> {
-    Ok(self.get()?.key_expr())
+  pub fn key_expr(&self) -> Result<KeyExpr> {
+    Ok(KeyExpr::from_zenoh(self.get()?.key_expr()))
   }
 
   /// This subscriber's globally-unique entity id.

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { Config, Session } from '../index.js'
+import { Config, KeyExpr, Session } from '../index.js'
 
 test('Config factory methods construct instances', () => {
   expect(Config.default()).toBeInstanceOf(Config)
@@ -75,7 +75,7 @@ test('Session.declarePublisher exposes its config and publishes', async () => {
     allowedDestination: 'Any',
   })
 
-  expect(publisher.keyExpr).toBe('demo/zenoh-ts/pub')
+  expect(publisher.keyExpr.toString()).toBe('demo/zenoh-ts/pub')
   expect(publisher.encoding).toBe('text/plain')
   expect(publisher.congestionControl).toBe('Block')
   expect(publisher.priority).toBe('DataHigh')
@@ -105,7 +105,7 @@ test('pub/sub round-trip within a session, via recv', async () => {
 
   const sample = await subscriber.recv()
   expect(sample).not.toBeNull()
-  expect(sample!.keyExpr).toBe('demo/zenoh-ts/rt')
+  expect(sample!.keyExpr.toString()).toBe('demo/zenoh-ts/rt')
   expect(sample!.kind).toBe('Put')
   expect(sample!.payload.toString()).toBe('hello')
 
@@ -204,7 +204,7 @@ test('get/queryable round-trip surfaces sample and error replies', async () => {
   // Answer the one incoming query with a sample reply, then an error reply.
   const serve = (async () => {
     for await (const query of queryable) {
-      expect(query.keyExpr).toBe('demo/zenoh-ts/q')
+      expect(query.keyExpr.toString()).toBe('demo/zenoh-ts/q')
       await query.reply('demo/zenoh-ts/q', 'answer')
       await query.replyErr('boom')
       break
@@ -244,7 +244,7 @@ test('Queryable.recv exposes query metadata and get carries a payload', async ()
 
   const query = await queryable.recv()
   expect(query).not.toBeNull()
-  expect(query!.keyExpr).toBe('demo/zenoh-ts/meta')
+  expect(query!.keyExpr.toString()).toBe('demo/zenoh-ts/meta')
   expect(query!.selector).toContain('arg=1')
   expect(query!.parameters).toContain('arg=1')
   expect(query!.payload?.toString()).toBe('q-payload')
@@ -269,7 +269,7 @@ test('declareQuerier issues gets, round-trips, and exposes its config', async ()
     congestionControl: 'Block',
     priority: 'DataHigh',
   })
-  expect(querier.keyExpr).toBe('demo/zenoh-ts/qr')
+  expect(querier.keyExpr.toString()).toBe('demo/zenoh-ts/qr')
   expect(querier.congestionControl).toBe('Block')
   expect(querier.priority).toBe('DataHigh')
   expect(typeof querier.id.zid).toBe('string')
@@ -296,5 +296,38 @@ test('declareQuerier issues gets, round-trips, and exposes its config', async ()
 
   querier.undeclare()
   queryable.undeclare()
+  await session.close()
+}, 15_000)
+
+test('KeyExpr validates, canonizes, compares, and joins', () => {
+  const ke = new KeyExpr('demo/zenoh-ts/**')
+  expect(ke.toString()).toBe('demo/zenoh-ts/**')
+
+  // The constructor rejects non-canon input...
+  expect(() => new KeyExpr('demo/**/**/x')).toThrow()
+  // ...while autocanonize repairs it.
+  expect(KeyExpr.autocanonize('demo/**/**/x').toString()).toBe('demo/**/x')
+
+  // Matching accepts either a string or a KeyExpr.
+  expect(ke.intersects('demo/zenoh-ts/value')).toBe(true)
+  expect(ke.includes('demo/zenoh-ts/value')).toBe(true)
+  expect(ke.intersects(new KeyExpr('other/**'))).toBe(false)
+  expect(ke.equals(new KeyExpr('demo/zenoh-ts/**'))).toBe(true)
+
+  expect(ke.join('child').toString()).toBe('demo/zenoh-ts/**/child')
+})
+
+test('a KeyExpr is accepted anywhere a string key expression is', async () => {
+  const session = await Session.open()
+  const subscriber = await session.declareSubscriber(new KeyExpr('demo/zenoh-ts/ke'))
+
+  await session.put(new KeyExpr('demo/zenoh-ts/ke'), 'hi')
+
+  const sample = await subscriber.recv()
+  expect(sample).not.toBeNull()
+  expect(sample!.keyExpr).toBeInstanceOf(KeyExpr)
+  expect(sample!.keyExpr.toString()).toBe('demo/zenoh-ts/ke')
+
+  subscriber.undeclare()
   await session.close()
 }, 15_000)

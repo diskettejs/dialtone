@@ -21,6 +21,45 @@ export declare class Config {
 }
 
 /**
+ * A Zenoh key expression: a `/`-separated expression that addresses a set of
+ * keys (mirrors `zenoh::key_expr::KeyExpr`).
+ *
+ * To be valid a key expression must be *canon*. Build one from a string with
+ * the constructor — which rejects non-canon input — or with
+ * [`KeyExpr::autocanonize`], which canonizes the input first.
+ *
+ * Anywhere this library accepts a key expression you may pass either a
+ * `string` or a `KeyExpr`; the getters that expose one hand back a `KeyExpr`.
+ */
+export declare class KeyExpr {
+  /**
+   * Build a key expression from a string, failing if it is not a valid, canon
+   * key expression. Use [`KeyExpr::autocanonize`] to canonize automatically.
+   */
+  constructor(keyExpr: string)
+  /**
+   * Build a key expression from a string, canonizing it first. Fails only if
+   * the value is not a valid key expression even after canonization.
+   */
+  static autocanonize(keyExpr: string): KeyExpr
+  /** Whether this key expression and `other` share at least one matching key. */
+  intersects(other: string | KeyExpr): boolean
+  /** Whether every key matched by `other` is also matched by this expression. */
+  includes(other: string | KeyExpr): boolean
+  /** Whether this key expression is equal to `other`. */
+  equals(other: string | KeyExpr): boolean
+  /**
+   * Join this key expression with `other`, inserting a `/` between them.
+   * Prefer this over [`KeyExpr::concat`] so Zenoh can exploit the separation.
+   */
+  join(other: string): KeyExpr
+  /** Concatenate `other` onto this key expression with no separator inserted. */
+  concat(other: string): KeyExpr
+  /** The canon string form of this key expression. */
+  toString(): string
+}
+
+/**
  * Notifies of changes to a publisher's [`MatchingStatus`], delivered through a
  * channel. Obtain one from [`Publisher::matchingListener`].
  *
@@ -77,7 +116,7 @@ export declare class Publisher {
    */
   undeclare(): void
   /** The key expression this publisher publishes to. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** The default encoding applied to publications. */
   get encoding(): string
   /** The congestion control strategy. */
@@ -117,7 +156,7 @@ export declare class Querier {
    */
   undeclare(): void
   /** The key expression this querier sends queries on. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** The congestion control strategy applied to queries. */
   get congestionControl(): CongestionControl
   /** The priority of queries. */
@@ -139,7 +178,7 @@ export declare class Query {
   /** The full selector (key expression plus parameters) this query targets. */
   get selector(): string
   /** The key expression this query targets. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** The selector parameters (the part after `?`), as a raw string. */
   get parameters(): string
   /** The query's payload bytes, if it carried any. */
@@ -159,11 +198,11 @@ export declare class Query {
   /** Whether the query was sent express (unbatched). */
   get express(): boolean
   /** Reply to this query with a `Put` sample for `key_expr`. */
-  reply(keyExpr: string, payload: string | Uint8Array, options?: ReplyOptions | undefined | null): Promise<void>
+  reply(keyExpr: string | KeyExpr, payload: string | Uint8Array, options?: ReplyOptions | undefined | null): Promise<void>
   /** Reply to this query with an error response. */
   replyErr(payload: string | Uint8Array, options?: ReplyErrOptions | undefined | null): Promise<void>
   /** Reply to this query with a `Delete` sample for `key_expr`. */
-  replyDel(keyExpr: string, options?: ReplyDelOptions | undefined | null): Promise<void>
+  replyDel(keyExpr: string | KeyExpr, options?: ReplyDelOptions | undefined | null): Promise<void>
 }
 
 /**
@@ -199,7 +238,7 @@ export declare class Queryable {
    */
   undeclare(): void
   /** The key expression this queryable answers. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** This queryable's globally-unique entity id. */
   get id(): EntityGlobalId
   [Symbol.asyncIterator](): AsyncGenerator<Query, void, undefined>
@@ -274,7 +313,7 @@ export declare class ReplySample {
  */
 export declare class Sample {
   /** The key expression this sample was published on. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** The payload bytes. */
   get payload(): Buffer
   /** Whether this sample is a `Put` or a `Delete`. */
@@ -313,12 +352,12 @@ export declare class Session {
    * Publish a `Put` sample: send `payload` to every subscriber whose key
    * expression matches `key_expr`.
    */
-  put(keyExpr: string, payload: string | Uint8Array, options?: PutOptions | undefined | null): Promise<void>
+  put(keyExpr: string | KeyExpr, payload: string | Uint8Array, options?: PutOptions | undefined | null): Promise<void>
   /**
    * Publish a `Delete` sample for `key_expr`, signalling that the value at that
    * key is no longer valid.
    */
-  delete(keyExpr: string, options?: DeleteOptions | undefined | null): Promise<void>
+  delete(keyExpr: string | KeyExpr, options?: DeleteOptions | undefined | null): Promise<void>
   /**
    * Query `selector` and receive the matching queryables' replies through a
    * channel, consumable as an async iterator or via `recv`/`tryRecv`.
@@ -328,22 +367,22 @@ export declare class Session {
    * Declare a [`Publisher`] for `key_expr`. Its QoS is fixed at declaration
    * time; per-publication `put`/`delete` can override only payload fields.
    */
-  declarePublisher(keyExpr: string, options?: PublisherOptions | undefined | null): Promise<Publisher>
+  declarePublisher(keyExpr: string | KeyExpr, options?: PublisherOptions | undefined | null): Promise<Publisher>
   /**
    * Declare a [`Subscriber`] for `key_expr`. Samples are delivered through a
    * FIFO channel, consumable as an async iterator or via `recv`/`tryRecv`.
    */
-  declareSubscriber(keyExpr: string, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
+  declareSubscriber(keyExpr: string | KeyExpr, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
   /**
    * Declare a [`Queryable`] for `key_expr`. Queries are delivered through a
    * channel, consumable as an async iterator or via `recv`/`tryRecv`.
    */
-  declareQueryable(keyExpr: string, options?: QueryableOptions | undefined | null): Promise<Queryable>
+  declareQueryable(keyExpr: string | KeyExpr, options?: QueryableOptions | undefined | null): Promise<Queryable>
   /**
    * Declare a [`Querier`] for `key_expr` — a reusable handle for querying that
    * key, with query settings fixed here at declaration time.
    */
-  declareQuerier(keyExpr: string, options?: QuerierOptions | undefined | null): Promise<Querier>
+  declareQuerier(keyExpr: string | KeyExpr, options?: QuerierOptions | undefined | null): Promise<Querier>
   /** Create a new timestamp using this session's hybrid logical clock. */
   newTimestamp(): Timestamp
   /** Access information about this session and the nodes it is connected to. */
@@ -397,7 +436,7 @@ export declare class Subscriber {
    */
   undeclare(): void
   /** The key expression this subscriber is subscribed to. */
-  get keyExpr(): string
+  get keyExpr(): KeyExpr
   /** This subscriber's globally-unique entity id. */
   get id(): EntityGlobalId
   [Symbol.asyncIterator](): AsyncGenerator<Sample, void, undefined>
