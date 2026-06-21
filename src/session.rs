@@ -6,6 +6,7 @@ use zenoh::session::ZenohId;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::bytes::to_zbytes;
+use crate::cancellation::CancellationToken;
 use crate::config::Config;
 use crate::error::to_napi_err;
 use crate::keyexpr::KeyExprArg;
@@ -168,7 +169,12 @@ impl Session {
   /// Query `selector` and receive the matching queryables' replies through a
   /// channel, consumable as an async iterator or via `recv`/`tryRecv`.
   #[napi]
-  pub async fn get(&self, selector: String, options: Option<GetOptions>) -> Result<Replies> {
+  pub async fn get(
+    &self,
+    selector: String,
+    options: Option<GetOptions>,
+    cancellation_token: Option<&CancellationToken>,
+  ) -> Result<Replies> {
     let mut builder = self.inner.get(selector);
     let mut channel = None;
     if let Some(options) = options {
@@ -187,6 +193,9 @@ impl Session {
         source_info => try_zenoh,
       });
       channel = options.handler;
+    }
+    if let Some(token) = cancellation_token {
+      builder = builder.cancellation_token(token.inner.clone());
     }
     Replies::from_session_get(builder, channel).await
   }

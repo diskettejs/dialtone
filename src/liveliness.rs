@@ -1,6 +1,7 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
+use crate::cancellation::CancellationToken;
 use crate::error::to_napi_err;
 use crate::handlers::ChannelHandler;
 use crate::keyexpr::KeyExprArg;
@@ -99,6 +100,7 @@ impl Liveliness {
     &self,
     #[napi(ts_arg_type = "string | KeyExpr")] key_expr: KeyExprArg,
     options: Option<LivelinessGetOptions>,
+    cancellation_token: Option<&CancellationToken>,
   ) -> Result<Replies> {
     let mut builder = self.session.liveliness().get(key_expr.0);
     let mut channel = None;
@@ -107,6 +109,9 @@ impl Liveliness {
         timeout => duration_ms,
       });
       channel = options.handler;
+    }
+    if let Some(token) = cancellation_token {
+      builder = builder.cancellation_token(token.inner.clone());
     }
     Replies::from_liveliness_get(builder, channel).await
   }

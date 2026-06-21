@@ -5,6 +5,7 @@
 
 mod advanced;
 mod bytes;
+mod cancellation;
 mod config;
 mod error;
 mod handlers;
