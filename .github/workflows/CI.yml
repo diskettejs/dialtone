@@ -258,7 +258,7 @@ jobs:
       - name: Create npm dirs
         run: pnpm --filter "./packages/**" exec napi create-npm-dirs
       - name: Move artifacts
-        run: pnpm --filter "./packages/**" exec napi artifacts --output-dir "$GITHUB_WORKSPACE/artifacts"
+        run: pnpm --filter "./packages/**" exec napi artifacts --output-dir ../../artifacts
       - name: List packages
         run: ls -R packages
         shell: bash
