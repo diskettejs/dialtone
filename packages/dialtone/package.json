@@ -8,11 +8,13 @@
   },
   "files": [
     "index.d.ts",
-    "index.js"
+    "index.js",
+    "main.d.ts",
+    "main.js"
   ],
   "type": "module",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "main.js",
+  "types": "main.d.ts",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

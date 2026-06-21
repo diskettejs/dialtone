@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { Config, KeyExpr, scout, Session } from '../index.js'
+import { Config, KeyExpr, scout, Session, Subscriber } from '../main.js'
 
 test('Config factory methods construct instances', () => {
   expect(Config.default()).toBeInstanceOf(Config)
@@ -407,4 +407,34 @@ test('scout accepts an empty matcher (scout all) and a Ring handler', async () =
   expect(first === null || typeof first === 'object').toBe(true)
 
   handle.stop()
+}, 15_000)
+
+test('await using closes the session at scope exit', async () => {
+  let captured: Session | undefined
+  {
+    await using session = await Session.open()
+    captured = session
+    expect(session.isClosed).toBe(false)
+  }
+  // Leaving the block invokes Symbol.asyncDispose -> close(), and awaits it.
+  expect(captured!.isClosed).toBe(true)
+}, 15_000)
+
+test('using + await using compose: entities undeclare before the session closes', async () => {
+  let session: Session | undefined
+  let subscriber: Subscriber | undefined
+  {
+    await using s = await Session.open()
+    using sub = await s.declareSubscriber('demo/zenoh-ts/using')
+    session = s
+    subscriber = sub
+
+    await s.put('demo/zenoh-ts/using', 'x')
+    const sample = await sub.recv()
+    expect(sample!.payload.toString()).toBe('x')
+  }
+  // Disposal is LIFO: sub.undeclare() runs first -- tryRecv now reports closed
+  // (distinct from empty) -- then session.close() is awaited.
+  expect(() => subscriber!.tryRecv()).toThrow()
+  expect(session!.isClosed).toBe(true)
 }, 15_000)
