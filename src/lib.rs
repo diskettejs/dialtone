@@ -18,6 +18,7 @@ mod querier;
 mod query;
 mod queryable;
 mod sample;
+mod scouting;
 mod session;
 mod subscriber;
 mod time;
