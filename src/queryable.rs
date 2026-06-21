@@ -10,6 +10,7 @@ use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
 use crate::handlers::{self, ChannelHandler, ChannelReceiver, ChannelType};
 use crate::keyexpr::{KeyExpr, KeyExprArg};
+use crate::macros::apply_options;
 use crate::qos::{CongestionControl, Priority};
 use crate::query::ReplyKeyExpr;
 use crate::sample::{Locality, SourceInfo};
@@ -151,21 +152,13 @@ impl Query {
   ) -> Result<()> {
     let mut builder = self.inner.reply(key_expr.0, to_zbytes(payload));
     if let Some(options) = options {
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        encoding,
+        attachment => zbytes,
+        express,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }
@@ -178,10 +171,10 @@ impl Query {
     options: Option<ReplyErrOptions>,
   ) -> Result<()> {
     let mut builder = self.inner.reply_err(to_zbytes(payload));
-    if let Some(options) = options
-      && let Some(encoding) = options.encoding
-    {
-      builder = builder.encoding(encoding);
+    if let Some(options) = options {
+      apply_options!(builder, options, {
+        encoding,
+      });
     }
     builder.await.map_err(to_napi_err)
   }
@@ -195,18 +188,12 @@ impl Query {
   ) -> Result<()> {
     let mut builder = self.inner.reply_del(key_expr.0);
     if let Some(options) = options {
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        attachment => zbytes,
+        express,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }

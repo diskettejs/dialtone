@@ -4,6 +4,7 @@ use napi_derive::napi;
 use crate::error::to_napi_err;
 use crate::handlers::ChannelHandler;
 use crate::keyexpr::KeyExprArg;
+use crate::macros::apply_options;
 use crate::query::Replies;
 use crate::subscriber::Subscriber;
 
@@ -82,9 +83,9 @@ impl Liveliness {
     let mut builder = self.session.liveliness().declare_subscriber(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(history) = options.history {
-        builder = builder.history(history);
-      }
+      apply_options!(builder, options, {
+        history,
+      });
       channel = options.handler;
     }
     Subscriber::declare_liveliness(builder, channel).await
@@ -102,9 +103,9 @@ impl Liveliness {
     let mut builder = self.session.liveliness().get(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(timeout) = options.timeout {
-        builder = builder.timeout(std::time::Duration::from_millis(timeout.into()));
-      }
+      apply_options!(builder, options, {
+        timeout => duration_ms,
+      });
       channel = options.handler;
     }
     Replies::from_liveliness_get(builder, channel).await

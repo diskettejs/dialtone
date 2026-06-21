@@ -1,10 +1,10 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
-use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
 use crate::handlers::ChannelHandler;
 use crate::keyexpr::KeyExpr;
+use crate::macros::apply_options;
 use crate::matching::{MatchingListener, MatchingStatus};
 use crate::qos::{CongestionControl, Priority};
 use crate::query::{ConsolidationMode, QueryTarget, Replies, ReplyKeyExpr};
@@ -81,21 +81,13 @@ impl Querier {
     let mut builder = self.querier()?.get();
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(parameters) = options.parameters {
-        builder = builder.parameters(parameters);
-      }
-      if let Some(payload) = options.payload {
-        builder = builder.payload(to_zbytes(payload));
-      }
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        parameters,
+        payload => zbytes,
+        encoding,
+        attachment => zbytes,
+        source_info => try_zenoh,
+      });
       channel = options.handler;
     }
     Replies::from_querier_get(builder, channel).await

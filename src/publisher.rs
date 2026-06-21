@@ -5,6 +5,7 @@ use crate::bytes::to_zbytes;
 use crate::error::to_napi_err;
 use crate::handlers::ChannelHandler;
 use crate::keyexpr::KeyExpr;
+use crate::macros::apply_options;
 use crate::matching::{MatchingListener, MatchingStatus};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::sample::{Locality, SourceInfo};
@@ -86,18 +87,12 @@ impl Publisher {
     let publisher = self.get()?;
     let mut builder = publisher.put(to_zbytes(payload));
     if let Some(options) = options {
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        encoding,
+        attachment => zbytes,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }
@@ -108,15 +103,11 @@ impl Publisher {
     let publisher = self.get()?;
     let mut builder = publisher.delete();
     if let Some(options) = options {
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        attachment => zbytes,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }

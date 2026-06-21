@@ -9,6 +9,7 @@ use crate::config::Config;
 use crate::error::to_napi_err;
 use crate::keyexpr::KeyExprArg;
 use crate::liveliness::Liveliness;
+use crate::macros::apply_options;
 use crate::publisher::{Publisher, PublisherOptions};
 use crate::qos::{CongestionControl, Priority, Reliability};
 use crate::querier::{Querier, QuerierOptions};
@@ -124,33 +125,17 @@ impl Session {
   ) -> Result<()> {
     let mut builder = self.inner.put(key_expr.0, to_zbytes(payload));
     if let Some(options) = options {
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(congestion_control) = options.congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
-      if let Some(priority) = options.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(reliability) = options.reliability {
-        builder = builder.reliability(reliability.into());
-      }
-      if let Some(allowed_destination) = options.allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        encoding,
+        attachment => zbytes,
+        congestion_control => into,
+        priority => into,
+        express,
+        reliability => into,
+        allowed_destination => into,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }
@@ -165,30 +150,16 @@ impl Session {
   ) -> Result<()> {
     let mut builder = self.inner.delete(key_expr.0);
     if let Some(options) = options {
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(congestion_control) = options.congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
-      if let Some(priority) = options.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(reliability) = options.reliability {
-        builder = builder.reliability(reliability.into());
-      }
-      if let Some(allowed_destination) = options.allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
-      if let Some(timestamp) = options.timestamp {
-        builder = builder.timestamp(timestamp.to_zenoh()?);
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        attachment => zbytes,
+        congestion_control => into,
+        priority => into,
+        express,
+        reliability => into,
+        allowed_destination => into,
+        timestamp => try_zenoh,
+        source_info => try_zenoh,
+      });
     }
     builder.await.map_err(to_napi_err)
   }
@@ -200,42 +171,20 @@ impl Session {
     let mut builder = self.inner.get(selector);
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(payload) = options.payload {
-        builder = builder.payload(to_zbytes(payload));
-      }
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(attachment) = options.attachment {
-        builder = builder.attachment(to_zbytes(attachment));
-      }
-      if let Some(congestion_control) = options.congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
-      if let Some(priority) = options.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(target) = options.target {
-        builder = builder.target(target.into());
-      }
-      if let Some(consolidation) = options.consolidation {
-        builder = builder.consolidation(zenoh::query::ConsolidationMode::from(consolidation));
-      }
-      if let Some(allowed_destination) = options.allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
-      if let Some(timeout) = options.timeout {
-        builder = builder.timeout(std::time::Duration::from_millis(timeout.into()));
-      }
-      if let Some(accept_replies) = options.accept_replies {
-        builder = builder.accept_replies(accept_replies.into());
-      }
-      if let Some(source_info) = options.source_info {
-        builder = builder.source_info(source_info.to_zenoh()?);
-      }
+      apply_options!(builder, options, {
+        payload => zbytes,
+        encoding,
+        attachment => zbytes,
+        congestion_control => into,
+        priority => into,
+        express,
+        target => into,
+        consolidation => from(zenoh::query::ConsolidationMode),
+        allowed_destination => into,
+        timeout => duration_ms,
+        accept_replies => into,
+        source_info => try_zenoh,
+      });
       channel = options.handler;
     }
     Replies::from_session_get(builder, channel).await
@@ -251,24 +200,14 @@ impl Session {
   ) -> Result<Publisher> {
     let mut builder = self.inner.declare_publisher(key_expr.0);
     if let Some(options) = options {
-      if let Some(encoding) = options.encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(congestion_control) = options.congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
-      if let Some(priority) = options.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(reliability) = options.reliability {
-        builder = builder.reliability(reliability.into());
-      }
-      if let Some(allowed_destination) = options.allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
+      apply_options!(builder, options, {
+        encoding,
+        congestion_control => into,
+        priority => into,
+        express,
+        reliability => into,
+        allowed_destination => into,
+      });
     }
     let publisher = builder.await.map_err(to_napi_err)?;
     Ok(Publisher::new(publisher))
@@ -285,9 +224,9 @@ impl Session {
     let mut builder = self.inner.declare_subscriber(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(allowed_origin) = options.allowed_origin {
-        builder = builder.allowed_origin(allowed_origin.into());
-      }
+      apply_options!(builder, options, {
+        allowed_origin => into,
+      });
       channel = options.handler;
     }
     Subscriber::declare(builder, channel).await
@@ -304,12 +243,10 @@ impl Session {
     let mut builder = self.inner.declare_queryable(key_expr.0);
     let mut channel = None;
     if let Some(options) = options {
-      if let Some(complete) = options.complete {
-        builder = builder.complete(complete);
-      }
-      if let Some(allowed_origin) = options.allowed_origin {
-        builder = builder.allowed_origin(allowed_origin.into());
-      }
+      apply_options!(builder, options, {
+        complete,
+        allowed_origin => into,
+      });
       channel = options.handler;
     }
     Queryable::declare(builder, channel).await
@@ -325,30 +262,16 @@ impl Session {
   ) -> Result<Querier> {
     let mut builder = self.inner.declare_querier(key_expr.0);
     if let Some(options) = options {
-      if let Some(congestion_control) = options.congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
-      if let Some(priority) = options.priority {
-        builder = builder.priority(priority.into());
-      }
-      if let Some(express) = options.express {
-        builder = builder.express(express);
-      }
-      if let Some(target) = options.target {
-        builder = builder.target(target.into());
-      }
-      if let Some(consolidation) = options.consolidation {
-        builder = builder.consolidation(zenoh::query::ConsolidationMode::from(consolidation));
-      }
-      if let Some(allowed_destination) = options.allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
-      if let Some(timeout) = options.timeout {
-        builder = builder.timeout(std::time::Duration::from_millis(timeout.into()));
-      }
-      if let Some(accept_replies) = options.accept_replies {
-        builder = builder.accept_replies(accept_replies.into());
-      }
+      apply_options!(builder, options, {
+        congestion_control => into,
+        priority => into,
+        express,
+        target => into,
+        consolidation => from(zenoh::query::ConsolidationMode),
+        allowed_destination => into,
+        timeout => duration_ms,
+        accept_replies => into,
+      });
     }
     let querier = builder.await.map_err(to_napi_err)?;
     Ok(Querier::new(querier))

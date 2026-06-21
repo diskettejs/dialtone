@@ -9,6 +9,7 @@ mod error;
 mod handlers;
 mod keyexpr;
 mod liveliness;
+mod macros;
 mod matching;
 mod publisher;
 mod qos;
