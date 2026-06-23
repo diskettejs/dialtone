@@ -33,6 +33,21 @@ pub struct ChannelConfig {
 /// `DefaultHandler`, a FIFO of 256).
 pub const DEFAULT_CHANNEL_CAPACITY: usize = 256;
 
+/// Converts a wall-clock deadline in epoch milliseconds (e.g. from `Date.now()`)
+/// into the monotonic [`Instant`](std::time::Instant) that zenoh's
+/// `recv_deadline` expects. `Instant` has no public epoch constructor, so the
+/// deadline is re-expressed as the offset still remaining from the current
+/// instant. A negative or already-elapsed deadline collapses to "now", making
+/// the receive return immediately.
+fn deadline_from_epoch_ms(deadline_ms: f64) -> std::time::Instant {
+  use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+  let deadline_sys = UNIX_EPOCH + Duration::from_millis(deadline_ms.max(0.0) as u64);
+  let remaining = deadline_sys
+    .duration_since(SystemTime::now())
+    .unwrap_or(Duration::ZERO);
+  Instant::now() + remaining
+}
+
 /// Generates a concrete FIFO handler class (and its async-iterator companion)
 /// for one payload type.
 ///
@@ -61,8 +76,6 @@ macro_rules! fifo_channel_handler {
       /// the channel is disconnected (the producer has been dropped).
       #[napi]
       pub async fn recv_async(&self) -> napi::Result<$napi> {
-        // Clone the (cheap) flume handler so nothing borrows `&self` across the
-        // await; the clone shares the same underlying channel.
         let handler = self.inner.clone();
         let value = handler
           .recv_async()
@@ -80,6 +93,59 @@ macro_rules! fifo_channel_handler {
           .try_recv()
           .map(|opt| opt.map($wrap))
           .map_err(|e| napi::Error::from_reason(e.to_string()))
+      }
+
+      /// Resolves with the next value once one is available, rejecting if the
+      /// channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+      /// `recv` is a synchronous blocking call; it is run on a worker thread so
+      /// the wait never freezes the JS event loop.
+      #[napi]
+      pub async fn recv(&self) -> napi::Result<$napi> {
+        let handler = self.inner.clone();
+        let value = napi::bindgen_prelude::spawn_blocking(move || handler.recv())
+          // Outer: the blocking task panicked or was cancelled.
+          .await
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?
+          // Inner: zenoh returned a disconnect error.
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok($wrap(value))
+      }
+
+      /// Resolves with the next value, or `null` if `timeoutMs` milliseconds
+      /// elapse first. Rejects if the channel disconnects. The blocking wait
+      /// runs on a worker thread.
+      #[napi]
+      pub async fn recv_timeout(&self, timeout_ms: f64) -> napi::Result<Option<$napi>> {
+        let handler = self.inner.clone();
+        let timeout = std::time::Duration::from_millis(timeout_ms as u64);
+        let value = napi::bindgen_prelude::spawn_blocking(move || handler.recv_timeout(timeout))
+          .await
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok(value.map($wrap))
+      }
+
+      /// Resolves with the next value, or `null` once the wall-clock
+      /// `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+      /// Rejects if the channel disconnects. The blocking wait runs on a worker
+      /// thread.
+      #[napi]
+      pub async fn recv_deadline(&self, deadline_ms: f64) -> napi::Result<Option<$napi>> {
+        let handler = self.inner.clone();
+        let deadline = deadline_from_epoch_ms(deadline_ms);
+        let value = napi::bindgen_prelude::spawn_blocking(move || handler.recv_deadline(deadline))
+          .await
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok(value.map($wrap))
+      }
+
+      /// Takes every value currently queued and returns them as an array,
+      /// without blocking. Unlike repeated `tryRecv`, no further values are
+      /// fetched from the channel once this snapshot is taken.
+      #[napi]
+      pub fn drain(&self) -> Vec<$napi> {
+        self.inner.drain().map($wrap).collect()
       }
 
       /// Returns an async-iterator object over the channel, for use with
@@ -248,6 +314,52 @@ macro_rules! ring_channel_handler {
           .try_recv()
           .map(|opt| opt.map($wrap))
           .map_err(|e| napi::Error::from_reason(e.to_string()))
+      }
+
+      /// Resolves with the next value once one is available, rejecting once the
+      /// producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+      /// run on a worker thread so the wait never freezes the JS event loop.
+      #[napi]
+      pub async fn recv(&self) -> napi::Result<$napi> {
+        let source = std::sync::Arc::clone(&self.source);
+        let value = napi::bindgen_prelude::spawn_blocking(move || source.ring().recv())
+          // Outer: the blocking task panicked or was cancelled.
+          .await
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?
+          // Inner: zenoh returned a producer-dropped error.
+          .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok($wrap(value))
+      }
+
+      /// Resolves with the next value, or `null` if `timeoutMs` milliseconds
+      /// elapse first. Rejects once the producer is gone. The blocking wait runs
+      /// on a worker thread.
+      #[napi]
+      pub async fn recv_timeout(&self, timeout_ms: f64) -> napi::Result<Option<$napi>> {
+        let source = std::sync::Arc::clone(&self.source);
+        let timeout = std::time::Duration::from_millis(timeout_ms as u64);
+        let value =
+          napi::bindgen_prelude::spawn_blocking(move || source.ring().recv_timeout(timeout))
+            .await
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok(value.map($wrap))
+      }
+
+      /// Resolves with the next value, or `null` once the wall-clock
+      /// `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+      /// Rejects once the producer is gone. The blocking wait runs on a worker
+      /// thread.
+      #[napi]
+      pub async fn recv_deadline(&self, deadline_ms: f64) -> napi::Result<Option<$napi>> {
+        let source = std::sync::Arc::clone(&self.source);
+        let deadline = deadline_from_epoch_ms(deadline_ms);
+        let value =
+          napi::bindgen_prelude::spawn_blocking(move || source.ring().recv_deadline(deadline))
+            .await
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?
+            .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+        Ok(value.map($wrap))
       }
     }
   };

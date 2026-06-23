@@ -189,6 +189,32 @@ export declare class FifoChannelHandlerMatchingStatus {
    */
   tryRecv(): MatchingStatus | null
   /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<MatchingStatus>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<MatchingStatus | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<MatchingStatus | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<MatchingStatus>
+  /**
    * Returns an async-iterator object over the channel, for use with
    * `for await`. The handler itself is not iterable; iteration lives here.
    */
@@ -222,6 +248,32 @@ export declare class FifoChannelHandlerMiss {
    * currently empty.
    */
   tryRecv(): Miss | null
+  /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Miss>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Miss | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Miss | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<Miss>
   /**
    * Returns an async-iterator object over the channel, for use with
    * `for await`. The handler itself is not iterable; iteration lives here.
@@ -257,6 +309,32 @@ export declare class FifoChannelHandlerReply {
    */
   tryRecv(): Reply | null
   /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Reply>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Reply | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Reply | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<Reply>
+  /**
    * Returns an async-iterator object over the channel, for use with
    * `for await`. The handler itself is not iterable; iteration lives here.
    */
@@ -290,6 +368,32 @@ export declare class FifoChannelHandlerSample {
    * currently empty.
    */
   tryRecv(): Sample | null
+  /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Sample>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Sample | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Sample | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<Sample>
   /**
    * Returns an async-iterator object over the channel, for use with
    * `for await`. The handler itself is not iterable; iteration lives here.
@@ -660,6 +764,25 @@ export declare class RingChannelHandlerMatchingStatus {
    * currently empty.
    */
   tryRecv(): MatchingStatus | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<MatchingStatus>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<MatchingStatus | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<MatchingStatus | null>
 }
 
 export declare class RingChannelHandlerMiss {
@@ -673,6 +796,25 @@ export declare class RingChannelHandlerMiss {
    * currently empty.
    */
   tryRecv(): Miss | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Miss>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Miss | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Miss | null>
 }
 
 export declare class RingChannelHandlerReply {
@@ -686,6 +828,25 @@ export declare class RingChannelHandlerReply {
    * currently empty.
    */
   tryRecv(): Reply | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Reply>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Reply | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Reply | null>
 }
 
 export declare class RingChannelHandlerSample {
@@ -699,6 +860,25 @@ export declare class RingChannelHandlerSample {
    * currently empty.
    */
   tryRecv(): Sample | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<Sample>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<Sample | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<Sample | null>
 }
 
 export declare class Sample {
