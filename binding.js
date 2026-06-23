@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerHello, FifoChannelHandlerLinkEvent, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerQuery, FifoChannelHandlerReply, FifoChannelHandlerSample, FifoChannelHandlerTransportEvent, Hello, HelloStream, KeyExpr, Link, LinkEvent, LinkEventsListener, LinkEventStream, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyStream, RingChannelHandlerHello, RingChannelHandlerLinkEvent, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerQuery, RingChannelHandlerReply, RingChannelHandlerSample, RingChannelHandlerTransportEvent, Sample, SampleMissListener, SampleStream, Scout, Selector, Serializer, Session, SessionInfo, SourceInfo, Subscriber, TimeRange, Timestamp, Transport, TransportEvent, TransportEventsListener, TransportEventStream, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerHello, FifoChannelHandlerLinkEvent, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerQuery, FifoChannelHandlerReply, FifoChannelHandlerSample, FifoChannelHandlerTransportEvent, Hello, HelloStream, KeyExpr, Link, LinkEvent, LinkEventsListener, LinkEventStream, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyStream, RingChannelHandlerHello, RingChannelHandlerLinkEvent, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerQuery, RingChannelHandlerReply, RingChannelHandlerSample, RingChannelHandlerTransportEvent, Sample, SampleMissListener, SampleStream, Scout, Selector, Serializer, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, TimeRange, Timestamp, Transport, TransportEvent, TransportEventsListener, TransportEventStream, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -647,6 +647,7 @@ export { Scout }
 export { Selector }
 export { Serializer }
 export { Session }
+export { SessionConfig }
 export { SessionInfo }
 export { SourceInfo }
 export { Subscriber }

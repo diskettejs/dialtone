@@ -23,6 +23,7 @@ use crate::publisher::Publisher;
 use crate::querier::Querier;
 use crate::queryable::Queryable;
 use crate::selector::SelectorArg;
+use crate::session_config::SessionConfig;
 use crate::session_info::SessionInfo;
 use crate::subscriber::Subscriber;
 use crate::time::Timestamp;
@@ -87,6 +88,14 @@ impl Session {
   #[napi]
   pub fn info(&self) -> SessionInfo {
     SessionInfo::from_session(self.inner.clone())
+  }
+
+  /// The live configuration sub-API for this session: read current values with
+  /// `get` / `getPluginConfig`, reconfigure the running session with
+  /// `insertJson5`.
+  #[napi]
+  pub fn config(&self) -> SessionConfig {
+    SessionConfig::from_session(self.inner.clone())
   }
 
   /// Closes the session, undeclaring everything declared on it.

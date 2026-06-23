@@ -1592,6 +1592,12 @@ export declare class Session {
    * Zenoh ids, and lifecycle-event listeners).
    */
   info(): SessionInfo
+  /**
+   * The live configuration sub-API for this session: read current values with
+   * `get` / `getPluginConfig`, reconfigure the running session with
+   * `insertJson5`.
+   */
+  config(): SessionConfig
   /** Closes the session, undeclaring everything declared on it. */
   close(): Promise<void>
   /** Publishes `payload` on `keyExpr`. */
@@ -1649,6 +1655,32 @@ export declare class Session {
    * (disconnects) once the query is resolved.
    */
   get(selector: string | KeyExpr | Selector, options?: GetOptions | undefined | null): Promise<FifoChannelHandlerReply | RingChannelHandlerReply>
+}
+
+/**
+ * The live configuration sub-API for a session, reached via `Session.config()`.
+ *
+ * Distinct from the [`Config`](crate::config::Config) used to *open* a session
+ * (an owned, pre-open snapshot): this is a live handle onto the running
+ * session's configuration. `get` / `getPluginConfig` read the current values
+ * and `insertJson5` reconfigures the session in place. Mirrors zenoh's
+ * `GenericConfig`.
+ *
+ * Like the other session sub-APIs, this holds a clone of the session and reads
+ * the live config (`session.config()`) per call; the surface methods thread
+ * through zenoh's `IConfig` without requiring its config internals to be named.
+ */
+export declare class SessionConfig {
+  /** Reads the configuration value at `key`, returned as a JSON string. */
+  get(key: string): string
+  /** Inserts the JSON5 `value` at `key`, reconfiguring the running session. */
+  insertJson5(key: string, value: string): void
+  /** The full current configuration, as a JSON string. */
+  toJson(): string
+  /** The default timeout applied to queries, in milliseconds. */
+  queriesDefaultTimeoutMs(): bigint
+  /** Reads the configuration of plugin `pluginName`, returned as a JSON string. */
+  getPluginConfig(pluginName: string): string
 }
 
 /**

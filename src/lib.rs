@@ -38,6 +38,7 @@ mod scout;
 mod selector;
 mod serialization;
 mod session;
+mod session_config;
 mod session_info;
 mod source_info;
 mod subscriber;
