@@ -118,10 +118,17 @@ declare module './binding.js' {
     /** Async-disposes by undeclaring the sample-miss listener (`await using`). */
     [Symbol.asyncDispose](): Promise<void>;
   }
+  interface LivelinessToken {
+    /** Async-disposes by undeclaring the liveliness token (`await using`). */
+    [Symbol.asyncDispose](): Promise<void>;
+  }
+  interface LivelinessSubscriber {
+    /** Async-disposes by undeclaring the liveliness subscriber (`await using`). */
+    [Symbol.asyncDispose](): Promise<void>;
+  }
 }
 
-// Future entities (Queryable / Querier / LivelinessToken / Scout) get
-// `[Symbol.asyncDispose]` the same way as they land: declare it on the entity
-// (a facade class here, or via `declare module './binding.js'` augmentation for
-// non-shadowed types like `Publisher` above) and patch the prototype in
-// `index.js`.
+// Future entities (Queryable / Querier / Scout) get `[Symbol.asyncDispose]` the
+// same way as they land: declare it on the entity (a facade class here, or via
+// `declare module './binding.js'` augmentation for non-shadowed types like
+// `Publisher` above) and patch the prototype in `index.js`.

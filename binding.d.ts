@@ -325,6 +325,49 @@ export declare class KeyExpr {
   get isWild(): boolean
 }
 
+export declare class Liveliness {
+  /**
+   * Declares a liveliness token on `keyExpr`. The token asserts this session's
+   * liveliness for that key expression until it is undeclared or dropped.
+   */
+  declareToken(keyExpr: string | KeyExpr): Promise<LivelinessToken>
+  /**
+   * Declares a subscription to liveliness changes matching `keyExpr`.
+   *
+   * The `handler` option chooses the channel (default: FIFO of
+   * [`DEFAULT_CHANNEL_CAPACITY`]); `history` replays the current matching
+   * tokens on declaration.
+   */
+  declareSubscriber(keyExpr: string | KeyExpr, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
+}
+
+/**
+ * A subscription to liveliness changes on a key expression, declared via
+ * `Liveliness.declareSubscriber`.
+ */
+export declare class LivelinessSubscriber {
+  /** The key expression this subscription matches. */
+  get keyExpr(): KeyExpr
+  /** The global id of this subscription entity. */
+  get id(): EntityGlobalId
+  /**
+   * The receive end of the subscription. A `FifoChannelHandler` or
+   * `RingChannelHandler` depending on the channel chosen at declare time.
+   *
+   * The handler is not iterable; iterate via `subscriber.handler.stream()`.
+   */
+  get handler(): FifoChannelHandlerSample | RingChannelHandlerSample
+  /**
+   * Undeclare this subscription. Resolves once undeclaration completes; a
+   * second call is a no-op.
+   *
+   * For a ring subscription still referenced by an outstanding handler, this
+   * drops our strong reference and lets the background drop undeclare it once
+   * the last handler is released.
+   */
+  undeclare(): Promise<void>
+}
+
 export declare class LivelinessToken {
   /**
    * Undeclare this liveliness token. `undeclare(self)` consumes the token, so
@@ -512,7 +555,7 @@ export declare class ReplyError {
 export declare class RingChannelHandlerMatchingStatus {
   /**
    * Receives the next value, resolving when one is available. Rejects once
-   * the subscription is gone (the ring's strong owner has been dropped).
+   * the producer is gone (the ring's strong owner has been dropped).
    */
   recvAsync(): Promise<MatchingStatus>
   /**
@@ -525,7 +568,7 @@ export declare class RingChannelHandlerMatchingStatus {
 export declare class RingChannelHandlerMiss {
   /**
    * Receives the next value, resolving when one is available. Rejects once
-   * the subscription is gone (the ring's strong owner has been dropped).
+   * the producer is gone (the ring's strong owner has been dropped).
    */
   recvAsync(): Promise<Miss>
   /**
@@ -538,7 +581,7 @@ export declare class RingChannelHandlerMiss {
 export declare class RingChannelHandlerSample {
   /**
    * Receives the next value, resolving when one is available. Rejects once
-   * the subscription is gone (the ring's strong owner has been dropped).
+   * the producer is gone (the ring's strong owner has been dropped).
    */
   recvAsync(): Promise<Sample>
   /**
@@ -672,6 +715,8 @@ export declare class Session {
   get zid(): string
   /** Whether the session has been closed. */
   get isClosed(): boolean
+  /** The liveliness sub-API for this session (tokens, subscribers, get). */
+  liveliness(): Liveliness
   /** Closes the session, undeclaring everything declared on it. */
   close(): Promise<void>
   /** Publishes `payload` on `keyExpr`. */
@@ -889,6 +934,8 @@ export interface LivelinessGetOptions {
 /** Options for `Liveliness.declareSubscriber` — mirrors `LivelinessSubscriberBuilder`. */
 export interface LivelinessSubscriberOptions {
   history?: boolean
+  /** Channel selection for the subscriber's handler (default: FIFO). */
+  handler?: ChannelConfig
 }
 
 /** Restricts which entities (relative to this session) data is routed to/from. */

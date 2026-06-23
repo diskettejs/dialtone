@@ -300,6 +300,8 @@ pub struct ReplyOptions {
 #[napi(object, object_to_js = false)]
 pub struct LivelinessSubscriberOptions {
   pub history: Option<bool>,
+  /// Channel selection for the subscriber's handler (default: FIFO).
+  pub handler: Option<ChannelConfig>,
 }
 
 /// Options for `Liveliness.get` — mirrors `LivelinessGetBuilder`.

@@ -9,6 +9,7 @@ use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 use crate::config::Config;
 use crate::handlers::{ChannelKind, DEFAULT_CHANNEL_CAPACITY};
 use crate::keyexpr::KeyExprArg;
+use crate::liveliness::Liveliness;
 use crate::options::{PublisherOptions, PutOptions, SubscriberOptions, recovery_into_zenoh};
 use crate::publisher::Publisher;
 use crate::subscriber::Subscriber;
@@ -47,6 +48,12 @@ impl Session {
   #[napi(getter)]
   pub fn is_closed(&self) -> bool {
     self.inner.is_closed()
+  }
+
+  /// The liveliness sub-API for this session (tokens, subscribers, get).
+  #[napi]
+  pub fn liveliness(&self) -> Liveliness {
+    Liveliness::from_session(self.inner.clone())
   }
 
   /// Closes the session, undeclaring everything declared on it.

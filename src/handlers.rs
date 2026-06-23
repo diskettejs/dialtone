@@ -168,48 +168,69 @@ macro_rules! fifo_channel_handler {
   };
 }
 
+/// A producer that owns a ring channel handler for payload `T`.
+///
+/// A `RingChannelHandler` is a `Weak`, so the producer that registered the
+/// channel (e.g. an `AdvancedSubscriber`, plain `Subscriber`, `MatchingListener`
+/// or `SampleMissListener`) must be kept alive for the handle to stay upgradable.
+/// The napi ring handler therefore holds the producer type-erased as
+/// `Arc<dyn RingSource<T>>` — one concrete handler class per payload, regardless
+/// of which producer minted it (a single `Sample` ring handler serves both the
+/// advanced and the liveliness subscriber). Every such producer `Deref`s to its
+/// handler, so each impl is a uniform deref coercion (see [`impl_ring_source`]).
+pub(crate) trait RingSource<T>: Send + Sync {
+  fn ring(&self) -> &::zenoh::handlers::RingChannelHandler<T>;
+}
+
+/// Implements [`RingSource`] for a producer that `Deref`s to its ring handler.
+macro_rules! impl_ring_source {
+  ($producer:ty, $zty:ty) => {
+    impl RingSource<$zty> for $producer {
+      fn ring(&self) -> &::zenoh::handlers::RingChannelHandler<$zty> {
+        // Deref coercion: `&$producer -> &RingChannelHandler<$zty>`.
+        self
+      }
+    }
+  };
+}
+
 /// Generates a concrete Ring handler class for one payload type.
 ///
 /// The ring handler is sparse (receive variants only — no `stream`, no
-/// introspection) and, because `RingChannelHandler` is not `Clone`, holds an
-/// `Arc<$producer>` (the live producer keeping the ring's `Weak` upgradable).
+/// introspection). It is producer-agnostic: it holds an `Arc<dyn RingSource<$zty>>`
+/// and reaches the channel via [`RingSource::ring`]. Pair it with one
+/// [`impl_ring_source`] per producer that can mint this payload.
 ///
-/// The channel handler is reached by **auto-deref**, not `producer.handler()`:
-/// every producer that owns a ring handler (`AdvancedSubscriber`,
-/// `MatchingListener`, `SampleMissListener`) `Deref`s to its handler, but only
-/// the first two expose an inherent `.handler()`. `SampleMissListener` exposes
-/// the handler through `Deref` alone, so `sub.recv_async()` / `sub.try_recv()`
-/// (which resolve through `Arc -> $producer -> RingChannelHandler`) is the one
-/// form that works for all three.
-///
-/// - `$name`     — the handler class name (e.g. `RingChannelHandlerSample`)
-/// - `$producer` — the entity owning the handler (e.g. `AdvancedSubscriber<RingChannelHandler<Sample>>`)
-/// - `$napi`     — the napi payload class yielded to JS, as a bare in-scope identifier
-/// - `$wrap`     — a path mapping the channel payload `-> $napi`
+/// - `$name`  — the handler class name (e.g. `RingChannelHandlerSample`)
+/// - `$napi`  — the napi payload class yielded to JS, as a bare in-scope identifier
+/// - `$zty`   — the zenoh payload carried by the channel
+/// - `$wrap`  — a path mapping the channel payload `-> $napi`
 macro_rules! ring_channel_handler {
-  ($name:ident, $producer:ty, $napi:ident, $wrap:path) => {
+  ($name:ident, $napi:ident, $zty:ty, $wrap:path) => {
     #[napi]
     pub struct $name {
-      sub: std::sync::Arc<$producer>,
+      source: std::sync::Arc<dyn RingSource<$zty>>,
     }
 
     impl $name {
-      pub(crate) fn from_arc(sub: std::sync::Arc<$producer>) -> Self {
-        Self { sub }
+      pub(crate) fn from_arc<P: RingSource<$zty> + 'static>(source: std::sync::Arc<P>) -> Self {
+        // `Arc<P>` unsizes to `Arc<dyn RingSource<$zty>>`.
+        Self { source }
       }
     }
 
     #[napi]
     impl $name {
       /// Receives the next value, resolving when one is available. Rejects once
-      /// the subscription is gone (the ring's strong owner has been dropped).
+      /// the producer is gone (the ring's strong owner has been dropped).
       #[napi]
       pub async fn recv_async(&self) -> napi::Result<$napi> {
         // Clone the `Arc` so the future owns a strong ref to the producer
-        // (keeping the ring alive) without borrowing `&self` across the await.
-        // `recv_async` resolves through `Arc -> $producer -> RingChannelHandler`.
-        let sub = std::sync::Arc::clone(&self.sub);
-        let value = sub
+        // (keeping the ring's channel alive) without borrowing `&self` across
+        // the await.
+        let source = std::sync::Arc::clone(&self.source);
+        let value = source
+          .ring()
           .recv_async()
           .await
           .map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -221,7 +242,8 @@ macro_rules! ring_channel_handler {
       #[napi]
       pub fn try_recv(&self) -> napi::Result<Option<$napi>> {
         self
-          .sub
+          .source
+          .ring()
           .try_recv()
           .map(|opt| opt.map($wrap))
           .map_err(|e| napi::Error::from_reason(e.to_string()))
@@ -238,11 +260,21 @@ fifo_channel_handler!(
   Sample::new
 );
 
+// `Sample` ring handler — minted by both the advanced subscriber and the
+// (plain) liveliness subscriber, so it has two `RingSource` producers.
 ring_channel_handler!(
   RingChannelHandlerSample,
-  zenoh_ext::AdvancedSubscriber<zenoh::handlers::RingChannelHandler<zenoh::sample::Sample>>,
   Sample,
+  zenoh::sample::Sample,
   Sample::new
+);
+impl_ring_source!(
+  zenoh_ext::AdvancedSubscriber<zenoh::handlers::RingChannelHandler<zenoh::sample::Sample>>,
+  zenoh::sample::Sample
+);
+impl_ring_source!(
+  zenoh::pubsub::Subscriber<zenoh::handlers::RingChannelHandler<zenoh::sample::Sample>>,
+  zenoh::sample::Sample
 );
 
 fifo_channel_handler!(
@@ -255,11 +287,15 @@ fifo_channel_handler!(
 
 ring_channel_handler!(
   RingChannelHandlerMatchingStatus,
+  MatchingStatus,
+  zenoh::matching::MatchingStatus,
+  MatchingStatus::from_inner
+);
+impl_ring_source!(
   zenoh::matching::MatchingListener<
     zenoh::handlers::RingChannelHandler<zenoh::matching::MatchingStatus>,
   >,
-  MatchingStatus,
-  MatchingStatus::from_inner
+  zenoh::matching::MatchingStatus
 );
 
 fifo_channel_handler!(
@@ -272,7 +308,11 @@ fifo_channel_handler!(
 
 ring_channel_handler!(
   RingChannelHandlerMiss,
-  zenoh_ext::SampleMissListener<zenoh::handlers::RingChannelHandler<zenoh_ext::Miss>>,
   Miss,
+  zenoh_ext::Miss,
   Miss::from_inner
+);
+impl_ring_source!(
+  zenoh_ext::SampleMissListener<zenoh::handlers::RingChannelHandler<zenoh_ext::Miss>>,
+  zenoh_ext::Miss
 );

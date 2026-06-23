@@ -14,6 +14,8 @@ mod entity_global_id;
 mod handlers;
 mod hello;
 mod keyexpr;
+mod liveliness;
+mod liveliness_subscriber;
 mod liveliness_token;
 mod locator;
 mod matching_listener;

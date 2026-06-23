@@ -11,6 +11,8 @@
 // convenience helpers.
 
 import {
+  LivelinessSubscriber,
+  LivelinessToken,
   MatchingListener,
   Publisher,
   SampleMissListener,
@@ -38,7 +40,15 @@ SampleMissListener.prototype[Symbol.asyncDispose] = function () {
   return this.undeclare()
 }
 
-// Future entities (Queryable / Querier / LivelinessToken / Scout) follow the
-// same pattern as they land — async cleanup → `Symbol.asyncDispose`.
+LivelinessToken.prototype[Symbol.asyncDispose] = function () {
+  return this.undeclare()
+}
+
+LivelinessSubscriber.prototype[Symbol.asyncDispose] = function () {
+  return this.undeclare()
+}
+
+// Future entities (Queryable / Querier / Scout) follow the same pattern as they
+// land — async cleanup → `Symbol.asyncDispose`.
 
 export * from './binding.js'
