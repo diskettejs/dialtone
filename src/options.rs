@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use napi::bindgen_prelude::Uint8Array;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -19,10 +21,48 @@ pub struct HistoryConfig {
   pub max_age_secs: Option<f64>,
 }
 
+// Recovery is modeled as a discriminated union, mirroring zenoh's `RecoveryConfig`
+// type-state where periodic-queries and heartbeat are mutually exclusive and the
+// query period is intrinsic to the periodic-queries mode. Each arm carries its own
+// single-variant `mode` tag so napi emits an exact string literal (`'PeriodicQueries'`
+// / `'Heartbeat'`), which both discriminates the `Either` at runtime and yields a
+// precise TS union. There is therefore no representable "both", "neither", or
+// "periodic-queries without a period" state — no resolution logic is needed.
+
+#[napi(string_enum)]
+pub enum PeriodicQueriesMode {
+  PeriodicQueries,
+}
+
+#[napi(string_enum)]
+pub enum HeartbeatMode {
+  Heartbeat,
+}
+
+/// Recover missed samples by periodically querying for them.
 #[napi(object, object_to_js = false)]
-pub struct RecoveryConfig {
-  pub heartbeat: Option<bool>,
-  pub periodic_queries_ms: Option<u32>,
+pub struct PeriodicQueriesRecovery {
+  pub mode: PeriodicQueriesMode,
+  /// Query period in milliseconds.
+  pub period_ms: u32,
+}
+
+/// Recover the last missed sample by subscribing to publisher heartbeats.
+#[napi(object, object_to_js = false)]
+pub struct HeartbeatRecovery {
+  pub mode: HeartbeatMode,
+}
+
+pub(crate) fn recovery_into_zenoh(
+  recovery: Either<PeriodicQueriesRecovery, HeartbeatRecovery>,
+) -> zenoh_ext::RecoveryConfig {
+  let config = zenoh_ext::RecoveryConfig::<false>::default();
+  match recovery {
+    Either::A(periodic) => {
+      config.periodic_queries(Duration::from_millis(periodic.period_ms as u64))
+    }
+    Either::B(_heartbeat) => config.heartbeat(),
+  }
 }
 
 #[napi(object, object_to_js = false)]
@@ -40,6 +80,51 @@ pub struct HeartbeatConfig {
 #[napi(object, object_to_js = false)]
 pub struct MissDetectionConfig {
   pub heartbeat: Option<HeartbeatConfig>,
+}
+
+impl HistoryConfig {
+  pub(crate) fn into_zenoh(self) -> zenoh_ext::HistoryConfig {
+    let mut config = zenoh_ext::HistoryConfig::default();
+    if self.detect_late_publishers == Some(true) {
+      config = config.detect_late_publishers();
+    }
+    if let Some(max_samples) = self.max_samples {
+      config = config.max_samples(max_samples as usize);
+    }
+    if let Some(max_age_secs) = self.max_age_secs {
+      config = config.max_age(max_age_secs);
+    }
+    config
+  }
+}
+
+impl CacheConfig {
+  pub(crate) fn into_zenoh(self) -> zenoh_ext::CacheConfig {
+    let mut config = zenoh_ext::CacheConfig::default();
+    if let Some(max_samples) = self.max_samples {
+      config = config.max_samples(max_samples as usize);
+    }
+    if let Some(replies_config) = self.replies_config {
+      config = config.replies_config(replies_config.into_zenoh());
+    }
+    config
+  }
+}
+
+impl MissDetectionConfig {
+  pub(crate) fn into_zenoh(self) -> zenoh_ext::MissDetectionConfig {
+    let mut config = zenoh_ext::MissDetectionConfig::default();
+    if let Some(heartbeat) = self.heartbeat {
+      let period = Duration::from_millis(heartbeat.period_ms as u64);
+      // `heartbeat` and `sporadic_heartbeat` are mutually exclusive in zenoh.
+      config = if heartbeat.sporadic == Some(true) {
+        config.sporadic_heartbeat(period)
+      } else {
+        config.heartbeat(period)
+      };
+    }
+    config
+  }
 }
 
 /// Options for `Session.put` — mirrors `SessionPutBuilder`.
@@ -140,7 +225,8 @@ pub struct SubscriberOptions {
   /// Channel selection for the subscription's handler (default: FIFO).
   pub handler: Option<ChannelConfig>,
   pub history: Option<HistoryConfig>,
-  pub recovery: Option<RecoveryConfig>,
+  #[napi(ts_type = "PeriodicQueriesRecovery | HeartbeatRecovery")]
+  pub recovery: Option<Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
   pub subscriber_detection: Option<bool>,
   // TODO: this should also accept KeyExpr
   pub subscriber_detection_metadata: Option<String>,

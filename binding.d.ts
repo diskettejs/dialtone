@@ -680,15 +680,16 @@ export declare class Session {
    * Declares a subscription on `keyExpr`.
    *
    * The `handler` option chooses the channel (default: FIFO of
-   * [`DEFAULT_CHANNEL_CAPACITY`]). Advanced options (history, recovery,
-   * detection, …) are wired in a later phase.
+   * [`DEFAULT_CHANNEL_CAPACITY`]). Advanced options (`allowedOrigin`,
+   * `history`, `recovery`, subscriber detection, `queryTimeoutMs`) are applied
+   * to the advanced builder.
    */
   declareSubscriber(keyExpr: string | KeyExpr, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
   /**
    * Declares a publisher on `keyExpr`, fixing its QoS for every publication.
    *
-   * Advanced options (cache, sample-miss detection, publisher detection) are
-   * wired in a later phase.
+   * Advanced options (`cache`, `sampleMissDetection`, publisher detection) are
+   * applied to the advanced builder.
    */
   declarePublisher(keyExpr: string | KeyExpr, options?: PublisherOptions | undefined | null): Promise<Publisher>
 }
@@ -865,6 +866,13 @@ export interface HeartbeatConfig {
   sporadic?: boolean
 }
 
+export type HeartbeatMode =  'Heartbeat';
+
+/** Recover the last missed sample by subscribing to publisher heartbeats. */
+export interface HeartbeatRecovery {
+  mode: HeartbeatMode
+}
+
 export interface HistoryConfig {
   detectLatePublishers?: boolean
   maxSamples?: number
@@ -899,6 +907,15 @@ export interface MatchingListenerOptions {
 
 export interface MissDetectionConfig {
   heartbeat?: HeartbeatConfig
+}
+
+export type PeriodicQueriesMode =  'PeriodicQueries';
+
+/** Recover missed samples by periodically querying for them. */
+export interface PeriodicQueriesRecovery {
+  mode: PeriodicQueriesMode
+  /** Query period in milliseconds. */
+  periodMs: number
 }
 
 /** The priority of a message when routing. */
@@ -998,11 +1015,6 @@ export type QueryTarget = /** Let zenoh find the best matching queryable capable
 /** Deliver the query to all matching queryables declared as complete. */
 'AllComplete';
 
-export interface RecoveryConfig {
-  heartbeat?: boolean
-  periodicQueriesMs?: number
-}
-
 /** The reliability to apply when routing data. */
 export type Reliability =  'BestEffort'|
 'Reliable';
@@ -1054,7 +1066,7 @@ export interface SubscriberOptions {
   /** Channel selection for the subscription's handler (default: FIFO). */
   handler?: ChannelConfig
   history?: HistoryConfig
-  recovery?: RecoveryConfig
+  recovery?: PeriodicQueriesRecovery | HeartbeatRecovery
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use napi::bindgen_prelude::{Either, Uint8Array};
 use napi_derive::napi;
 use zenoh::bytes::ZBytes;
@@ -7,7 +9,7 @@ use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 use crate::config::Config;
 use crate::handlers::{ChannelKind, DEFAULT_CHANNEL_CAPACITY};
 use crate::keyexpr::KeyExprArg;
-use crate::options::{PublisherOptions, PutOptions, SubscriberOptions};
+use crate::options::{PublisherOptions, PutOptions, SubscriberOptions, recovery_into_zenoh};
 use crate::publisher::Publisher;
 use crate::subscriber::Subscriber;
 
@@ -111,8 +113,9 @@ impl Session {
   /// Declares a subscription on `keyExpr`.
   ///
   /// The `handler` option chooses the channel (default: FIFO of
-  /// [`DEFAULT_CHANNEL_CAPACITY`]). Advanced options (history, recovery,
-  /// detection, …) are wired in a later phase.
+  /// [`DEFAULT_CHANNEL_CAPACITY`]). Advanced options (`allowedOrigin`,
+  /// `history`, `recovery`, subscriber detection, `queryTimeoutMs`) are applied
+  /// to the advanced builder.
   #[napi]
   pub async fn declare_subscriber(
     &self,
@@ -129,13 +132,33 @@ impl Session {
       .unwrap_or(DEFAULT_CHANNEL_CAPACITY);
     let is_ring = handler_cfg.is_some_and(|c| matches!(c.kind, ChannelKind::Ring));
 
-    // TODO(advanced-options): wire allowed_origin / history / recovery /
-    // subscriber_detection / subscriber_detection_metadata / query_timeout onto
-    // the advanced builder.
+    // Advanced options are applied to the `.advanced()` builder before the
+    // channel is chosen (they're generic over the handler), so the builder is
+    // built once and only `.with()` differs per channel below.
+    let mut builder = session.declare_subscriber(ke).advanced();
+    if let Some(opts) = options {
+      if let Some(allowed_origin) = opts.allowed_origin {
+        builder = builder.allowed_origin(allowed_origin.into());
+      }
+      if let Some(history) = opts.history {
+        builder = builder.history(history.into_zenoh());
+      }
+      if let Some(recovery) = opts.recovery {
+        builder = builder.recovery(recovery_into_zenoh(recovery));
+      }
+      if opts.subscriber_detection == Some(true) {
+        builder = builder.subscriber_detection();
+      }
+      if let Some(metadata) = opts.subscriber_detection_metadata {
+        builder = builder.subscriber_detection_metadata(metadata);
+      }
+      if let Some(query_timeout_ms) = opts.query_timeout_ms {
+        builder = builder.query_timeout(Duration::from_millis(query_timeout_ms as u64));
+      }
+    }
+
     if is_ring {
-      let sub = session
-        .declare_subscriber(ke)
-        .advanced()
+      let sub = builder
         .with(RingChannel::new(capacity))
         .await
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -143,9 +166,7 @@ impl Session {
       let id = sub.id();
       Ok(Subscriber::from_ring(sub, key_expr, id))
     } else {
-      let sub = session
-        .declare_subscriber(ke)
-        .advanced()
+      let sub = builder
         .with(FifoChannel::new(capacity))
         .await
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
@@ -157,8 +178,8 @@ impl Session {
 
   /// Declares a publisher on `keyExpr`, fixing its QoS for every publication.
   ///
-  /// Advanced options (cache, sample-miss detection, publisher detection) are
-  /// wired in a later phase.
+  /// Advanced options (`cache`, `sampleMissDetection`, publisher detection) are
+  /// applied to the advanced builder.
   #[napi]
   pub async fn declare_publisher(
     &self,
@@ -188,9 +209,18 @@ impl Session {
       if let Some(allowed_destination) = opts.allowed_destination {
         builder = builder.allowed_destination(allowed_destination.into());
       }
-      // TODO(advanced-options): wire cache / sample_miss_detection /
-      // publisher_detection / publisher_detection_metadata onto the advanced
-      // builder.
+      if let Some(cache) = opts.cache {
+        builder = builder.cache(cache.into_zenoh());
+      }
+      if let Some(sample_miss_detection) = opts.sample_miss_detection {
+        builder = builder.sample_miss_detection(sample_miss_detection.into_zenoh());
+      }
+      if opts.publisher_detection == Some(true) {
+        builder = builder.publisher_detection();
+      }
+      if let Some(metadata) = opts.publisher_detection_metadata {
+        builder = builder.publisher_detection_metadata(metadata);
+      }
     }
 
     let publisher = builder

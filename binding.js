@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerSample, Hello, KeyExpr, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Reply, ReplyError, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerSample, Sample, SampleMissListener, SampleStream, Selector, Serializer, Session, SourceInfo, Subscriber, TimeRange, Timestamp, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, Locality, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerSample, Hello, KeyExpr, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Reply, ReplyError, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerSample, Sample, SampleMissListener, SampleStream, Selector, Serializer, Session, SourceInfo, Subscriber, TimeRange, Timestamp, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -632,7 +632,9 @@ export { WhatAmIMatcher }
 export { ChannelKind }
 export { CongestionControl }
 export { ConsolidationMode }
+export { HeartbeatMode }
 export { Locality }
+export { PeriodicQueriesMode }
 export { Priority }
 export { QueryTarget }
 export { Reliability }
