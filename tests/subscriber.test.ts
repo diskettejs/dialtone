@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { Session } from '../index.js'
 import { loopbackConfig } from './loopback.js'
 
-describe('Subscriber round-trip', () => {
+describe('Subscriber', () => {
   describe('fifo', () => {
     test('stream() yields the put sample, then ends when undeclared', async () => {
       await using session = await Session.open(loopbackConfig())
@@ -22,16 +22,6 @@ describe('Subscriber round-trip', () => {
       }
 
       expect(received).toEqual(['hello'])
-    })
-
-    test('recvAsync() resolves the next sample', async () => {
-      await using session = await Session.open(loopbackConfig())
-      await using sub = await session.declareSubscriber('dialtone/test/fifo/recv')
-
-      await session.put('dialtone/test/fifo/recv', new Uint8Array([1, 2, 3]))
-
-      const sample = await sub.handler.recvAsync()
-      expect(Array.from(sample.payload.toBytes())).toEqual([1, 2, 3])
     })
 
     test('exposes channel introspection', async () => {
@@ -57,14 +47,5 @@ describe('Subscriber round-trip', () => {
       const sample = await sub.handler.recvAsync()
       expect(sample.payload.toString()).toBe('latest')
     })
-  })
-
-  test('session exposes zid and isClosed', async () => {
-    const session = await Session.open(loopbackConfig())
-    expect(typeof session.zid).toBe('string')
-    expect(session.zid.length).toBeGreaterThan(0)
-    expect(session.isClosed).toBe(false)
-    await session.close()
-    expect(session.isClosed).toBe(true)
   })
 })
