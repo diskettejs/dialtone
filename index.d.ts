@@ -259,6 +259,14 @@ declare module './binding.js' {
     /** Async-disposes by undeclaring the sample-miss listener (`await using`). */
     [Symbol.asyncDispose](): Promise<void>;
   }
+  interface TransportEventsListener {
+    /** Async-disposes by undeclaring the transport-events listener (`await using`). */
+    [Symbol.asyncDispose](): Promise<void>;
+  }
+  interface LinkEventsListener {
+    /** Async-disposes by undeclaring the link-events listener (`await using`). */
+    [Symbol.asyncDispose](): Promise<void>;
+  }
   interface LivelinessToken {
     /** Async-disposes by undeclaring the liveliness token (`await using`). */
     [Symbol.asyncDispose](): Promise<void>;

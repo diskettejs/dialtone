@@ -69,6 +69,20 @@ test('event listeners declare, expose a handler, and undeclare', async () => {
   await session.close()
 })
 
+test('event listeners are disposable via `await using`', async () => {
+  await using session = await Session.open(loopbackConfig())
+  const info = session.info()
+
+  // Both `SessionInfo` listeners patch `Symbol.asyncDispose`, so `await using`
+  // releases them at scope exit — parity with the other declared listeners.
+  {
+    await using transportEvents = await info.transportEventsListener()
+    await using linkEvents = await info.linkEventsListener()
+    expect(Symbol.asyncDispose in transportEvents).toBe(true)
+    expect(Symbol.asyncDispose in linkEvents).toBe(true)
+  }
+})
+
 test('connected peers see each other as a transport with links', async () => {
   const listener = await Session.open(listenConfig())
   const connector = await Session.open(connectConfig())

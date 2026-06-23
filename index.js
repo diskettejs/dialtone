@@ -11,6 +11,7 @@
 // convenience helpers.
 
 import {
+  LinkEventsListener,
   LivelinessSubscriber,
   LivelinessToken,
   MatchingListener,
@@ -21,6 +22,7 @@ import {
   Scout,
   Session,
   Subscriber,
+  TransportEventsListener,
 } from './binding.js'
 
 Session.prototype[Symbol.asyncDispose] = function () {
@@ -40,6 +42,14 @@ MatchingListener.prototype[Symbol.asyncDispose] = function () {
 }
 
 SampleMissListener.prototype[Symbol.asyncDispose] = function () {
+  return this.undeclare()
+}
+
+TransportEventsListener.prototype[Symbol.asyncDispose] = function () {
+  return this.undeclare()
+}
+
+LinkEventsListener.prototype[Symbol.asyncDispose] = function () {
   return this.undeclare()
 }
 
