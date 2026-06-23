@@ -7,11 +7,13 @@ use napi_derive::napi;
 // then dropped). An `:ident` is not group-wrapped, so `type Yield = Sample;`
 // stays a bare `Type::Path` and the signature is generated.
 use crate::hello::Hello;
+use crate::link::LinkEvent;
 use crate::matching_status::MatchingStatus;
 use crate::miss::Miss;
 use crate::query::Query;
 use crate::reply::Reply;
 use crate::sample::Sample;
+use crate::transport::TransportEvent;
 
 /// Which channel backs a subscription's handler.
 #[napi(string_enum)]
@@ -495,4 +497,50 @@ ring_channel_handler!(
 impl_ring_source!(
   zenoh::scouting::Scout<zenoh::handlers::RingChannelHandler<zenoh::scouting::Hello>>,
   zenoh::scouting::Hello
+);
+
+// `TransportEvent` handler — minted by `SessionInfo.transportEventsListener`. The
+// ring producer is the listener itself (it `Deref`s to its handler).
+fifo_channel_handler!(
+  FifoChannelHandlerTransportEvent,
+  TransportEventStream,
+  TransportEvent,
+  zenoh::session::TransportEvent,
+  TransportEvent::from_inner
+);
+
+ring_channel_handler!(
+  RingChannelHandlerTransportEvent,
+  TransportEvent,
+  zenoh::session::TransportEvent,
+  TransportEvent::from_inner
+);
+impl_ring_source!(
+  zenoh::session::TransportEventsListener<
+    zenoh::handlers::RingChannelHandler<zenoh::session::TransportEvent>,
+  >,
+  zenoh::session::TransportEvent
+);
+
+// `LinkEvent` handler — minted by `SessionInfo.linkEventsListener`. As above, the
+// listener is its own ring producer via deref coercion.
+fifo_channel_handler!(
+  FifoChannelHandlerLinkEvent,
+  LinkEventStream,
+  LinkEvent,
+  zenoh::session::LinkEvent,
+  LinkEvent::from_inner
+);
+
+ring_channel_handler!(
+  RingChannelHandlerLinkEvent,
+  LinkEvent,
+  zenoh::session::LinkEvent,
+  LinkEvent::from_inner
+);
+impl_ring_source!(
+  zenoh::session::LinkEventsListener<
+    zenoh::handlers::RingChannelHandler<zenoh::session::LinkEvent>,
+  >,
+  zenoh::session::LinkEvent
 );

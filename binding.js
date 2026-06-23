@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerHello, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerQuery, FifoChannelHandlerReply, FifoChannelHandlerSample, Hello, HelloStream, KeyExpr, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyStream, RingChannelHandlerHello, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerQuery, RingChannelHandlerReply, RingChannelHandlerSample, Sample, SampleMissListener, SampleStream, Scout, Selector, Serializer, Session, SourceInfo, Subscriber, TimeRange, Timestamp, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannelHandlerHello, FifoChannelHandlerLinkEvent, FifoChannelHandlerMatchingStatus, FifoChannelHandlerMiss, FifoChannelHandlerQuery, FifoChannelHandlerReply, FifoChannelHandlerSample, FifoChannelHandlerTransportEvent, Hello, HelloStream, KeyExpr, Link, LinkEvent, LinkEventsListener, LinkEventStream, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyStream, RingChannelHandlerHello, RingChannelHandlerLinkEvent, RingChannelHandlerMatchingStatus, RingChannelHandlerMiss, RingChannelHandlerQuery, RingChannelHandlerReply, RingChannelHandlerSample, RingChannelHandlerTransportEvent, Sample, SampleMissListener, SampleStream, Scout, Selector, Serializer, Session, SessionInfo, SourceInfo, Subscriber, TimeRange, Timestamp, Transport, TransportEvent, TransportEventsListener, TransportEventStream, WhatAmIMatcher, ChannelKind, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -599,14 +599,20 @@ export { Encoding }
 export { EndPoint }
 export { EntityGlobalId }
 export { FifoChannelHandlerHello }
+export { FifoChannelHandlerLinkEvent }
 export { FifoChannelHandlerMatchingStatus }
 export { FifoChannelHandlerMiss }
 export { FifoChannelHandlerQuery }
 export { FifoChannelHandlerReply }
 export { FifoChannelHandlerSample }
+export { FifoChannelHandlerTransportEvent }
 export { Hello }
 export { HelloStream }
 export { KeyExpr }
+export { Link }
+export { LinkEvent }
+export { LinkEventsListener }
+export { LinkEventStream }
 export { Liveliness }
 export { LivelinessSubscriber }
 export { LivelinessToken }
@@ -627,11 +633,13 @@ export { Reply }
 export { ReplyError }
 export { ReplyStream }
 export { RingChannelHandlerHello }
+export { RingChannelHandlerLinkEvent }
 export { RingChannelHandlerMatchingStatus }
 export { RingChannelHandlerMiss }
 export { RingChannelHandlerQuery }
 export { RingChannelHandlerReply }
 export { RingChannelHandlerSample }
+export { RingChannelHandlerTransportEvent }
 export { Sample }
 export { SampleMissListener }
 export { SampleStream }
@@ -639,10 +647,15 @@ export { Scout }
 export { Selector }
 export { Serializer }
 export { Session }
+export { SessionInfo }
 export { SourceInfo }
 export { Subscriber }
 export { TimeRange }
 export { Timestamp }
+export { Transport }
+export { TransportEvent }
+export { TransportEventsListener }
+export { TransportEventStream }
 export { WhatAmIMatcher }
 export { ChannelKind }
 export { CongestionControl }

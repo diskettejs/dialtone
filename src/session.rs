@@ -23,6 +23,7 @@ use crate::publisher::Publisher;
 use crate::querier::Querier;
 use crate::queryable::Queryable;
 use crate::selector::SelectorArg;
+use crate::session_info::SessionInfo;
 use crate::subscriber::Subscriber;
 use crate::time::Timestamp;
 
@@ -79,6 +80,13 @@ impl Session {
   #[napi]
   pub fn liveliness(&self) -> Liveliness {
     Liveliness::from_session(self.inner.clone())
+  }
+
+  /// The connectivity info sub-API for this session (transports, links, their
+  /// Zenoh ids, and lifecycle-event listeners).
+  #[napi]
+  pub fn info(&self) -> SessionInfo {
+    SessionInfo::from_session(self.inner.clone())
   }
 
   /// Closes the session, undeclaring everything declared on it.

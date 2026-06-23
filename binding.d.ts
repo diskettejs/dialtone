@@ -237,6 +237,66 @@ export declare class FifoChannelHandlerHello {
   sameChannel(other: FifoChannelHandlerHello): boolean
 }
 
+export declare class FifoChannelHandlerLinkEvent {
+  /**
+   * Receives the next value, resolving when one is available. Rejects once
+   * the channel is disconnected (the producer has been dropped).
+   */
+  recvAsync(): Promise<LinkEvent>
+  /**
+   * Receives a value without blocking, returning `null` if the channel is
+   * currently empty.
+   */
+  tryRecv(): LinkEvent | null
+  /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<LinkEvent>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<LinkEvent | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<LinkEvent | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<LinkEvent>
+  /**
+   * Returns an async-iterator object over the channel, for use with
+   * `for await`. The handler itself is not iterable; iteration lives here.
+   */
+  stream(): LinkEventStream
+  /** The number of values currently queued. */
+  get len(): number
+  /** The channel's bound, or `null` if unbounded. */
+  get capacity(): number | null
+  /** Whether the channel currently holds no values. */
+  get isEmpty(): boolean
+  /** Whether the channel is currently at capacity. */
+  get isFull(): boolean
+  /** The number of senders feeding this channel. */
+  get senderCount(): number
+  /** The number of receivers sharing this channel. */
+  get receiverCount(): number
+  /** Whether the channel has been disconnected (all senders dropped). */
+  get isDisconnected(): boolean
+  /** Whether `other` is a handle to the same underlying channel. */
+  sameChannel(other: FifoChannelHandlerLinkEvent): boolean
+}
+
 export declare class FifoChannelHandlerMatchingStatus {
   /**
    * Receives the next value, resolving when one is available. Rejects once
@@ -537,6 +597,66 @@ export declare class FifoChannelHandlerSample {
   sameChannel(other: FifoChannelHandlerSample): boolean
 }
 
+export declare class FifoChannelHandlerTransportEvent {
+  /**
+   * Receives the next value, resolving when one is available. Rejects once
+   * the channel is disconnected (the producer has been dropped).
+   */
+  recvAsync(): Promise<TransportEvent>
+  /**
+   * Receives a value without blocking, returning `null` if the channel is
+   * currently empty.
+   */
+  tryRecv(): TransportEvent | null
+  /**
+   * Resolves with the next value once one is available, rejecting if the
+   * channel disconnects (all senders dropped). Unlike `recvAsync`, zenoh's
+   * `recv` is a synchronous blocking call; it is run on a worker thread so
+   * the wait never freezes the JS event loop.
+   */
+  recv(): Promise<TransportEvent>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects if the channel disconnects. The blocking wait
+   * runs on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<TransportEvent | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects if the channel disconnects. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<TransportEvent | null>
+  /**
+   * Takes every value currently queued and returns them as an array,
+   * without blocking. Unlike repeated `tryRecv`, no further values are
+   * fetched from the channel once this snapshot is taken.
+   */
+  drain(): Array<TransportEvent>
+  /**
+   * Returns an async-iterator object over the channel, for use with
+   * `for await`. The handler itself is not iterable; iteration lives here.
+   */
+  stream(): TransportEventStream
+  /** The number of values currently queued. */
+  get len(): number
+  /** The channel's bound, or `null` if unbounded. */
+  get capacity(): number | null
+  /** Whether the channel currently holds no values. */
+  get isEmpty(): boolean
+  /** Whether the channel is currently at capacity. */
+  get isFull(): boolean
+  /** The number of senders feeding this channel. */
+  get senderCount(): number
+  /** The number of receivers sharing this channel. */
+  get receiverCount(): number
+  /** Whether the channel has been disconnected (all senders dropped). */
+  get isDisconnected(): boolean
+  /** Whether `other` is a handle to the same underlying channel. */
+  sameChannel(other: FifoChannelHandlerTransportEvent): boolean
+}
+
 export declare class Hello {
   locators(): Array<Locator>
   get whatami(): WhatAmI
@@ -591,6 +711,88 @@ export declare class KeyExpr {
   includes(other: string | KeyExpr): boolean
   /** Returns `true` if `self` contains any wildcard character (`**` or `$*`). */
   get isWild(): boolean
+}
+
+/**
+ * A concrete link within a [`Transport`](crate::transport::Transport). Zenoh can
+ * establish multiple links to the same remote node using different protocols
+ * (TCP, UDP, QUIC, ...).
+ *
+ * Obtained from `SessionInfo.links` or a [`LinkEvent`].
+ */
+export declare class Link {
+  /** The Zenoh id of the transport this link belongs to, as a hex string. */
+  get zid(): string
+  /** The source locator (local endpoint). */
+  get src(): Locator
+  /** The destination locator (remote endpoint). */
+  get dst(): Locator
+  /** The group locator (the destination, when the link is multicast), or `null`. */
+  get group(): Locator | null
+  /** The maximum transmission unit of the link, in bytes. */
+  get mtu(): number
+  /** Whether the link is streamed. */
+  get isStreamed(): boolean
+  /** The network interfaces associated with the link. */
+  get interfaces(): Array<string>
+  /** The authentication identifier used for the link, or `null` if none. */
+  get authIdentifier(): string | null
+  /**
+   * The priority range `{ min, max }` of the link, or `null` if the transport
+   * does not support QoS.
+   */
+  get priorities(): LinkPriorities | null
+  /**
+   * The reliability level of the link, or `null` if the transport does not
+   * support QoS.
+   */
+  get reliability(): Reliability | null
+}
+
+/**
+ * An event emitted when a link is added or removed. `kind` is `Put` when the
+ * link was added and `Delete` when it was removed.
+ *
+ * Delivered by a [`LinkEventsListener`].
+ */
+export declare class LinkEvent {
+  /** `Put` if the link was added, `Delete` if it was removed. */
+  get kind(): SampleKind
+  /** The link this event is about. */
+  get link(): Link
+}
+
+/**
+ * A listener that notifies of link lifecycle events (a link being added or
+ * removed). Declared via `SessionInfo.linkEventsListener`.
+ */
+export declare class LinkEventsListener {
+  /**
+   * The receive end of the listener. A `FifoChannelHandler` or
+   * `RingChannelHandler` depending on the channel chosen at declare time.
+   *
+   * The handler is not iterable; iterate via `listener.handler.stream()`.
+   */
+  get handler(): FifoChannelHandlerLinkEvent | RingChannelHandlerLinkEvent
+  /**
+   * Undeclare this listener. Resolves once undeclaration completes; a second
+   * call is a no-op.
+   *
+   * For a ring listener still referenced by an outstanding handler, this drops
+   * our strong reference and lets the background drop undeclare it once the
+   * last handler is released.
+   */
+  undeclare(): Promise<void>
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class LinkEventStream {
+  [Symbol.asyncIterator](): AsyncGenerator<LinkEvent, void, undefined>
 }
 
 export declare class Liveliness {
@@ -1001,6 +1203,38 @@ export declare class RingChannelHandlerHello {
   recvDeadline(deadlineMs: number): Promise<Hello | null>
 }
 
+export declare class RingChannelHandlerLinkEvent {
+  /**
+   * Receives the next value, resolving when one is available. Rejects once
+   * the producer is gone (the ring's strong owner has been dropped).
+   */
+  recvAsync(): Promise<LinkEvent>
+  /**
+   * Receives a value without blocking, returning `null` if the ring is
+   * currently empty.
+   */
+  tryRecv(): LinkEvent | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<LinkEvent>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<LinkEvent | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<LinkEvent | null>
+}
+
 export declare class RingChannelHandlerMatchingStatus {
   /**
    * Receives the next value, resolving when one is available. Rejects once
@@ -1159,6 +1393,38 @@ export declare class RingChannelHandlerSample {
    * thread.
    */
   recvDeadline(deadlineMs: number): Promise<Sample | null>
+}
+
+export declare class RingChannelHandlerTransportEvent {
+  /**
+   * Receives the next value, resolving when one is available. Rejects once
+   * the producer is gone (the ring's strong owner has been dropped).
+   */
+  recvAsync(): Promise<TransportEvent>
+  /**
+   * Receives a value without blocking, returning `null` if the ring is
+   * currently empty.
+   */
+  tryRecv(): TransportEvent | null
+  /**
+   * Resolves with the next value once one is available, rejecting once the
+   * producer is gone. zenoh's `recv` is a synchronous blocking call; it is
+   * run on a worker thread so the wait never freezes the JS event loop.
+   */
+  recv(): Promise<TransportEvent>
+  /**
+   * Resolves with the next value, or `null` if `timeoutMs` milliseconds
+   * elapse first. Rejects once the producer is gone. The blocking wait runs
+   * on a worker thread.
+   */
+  recvTimeout(timeoutMs: number): Promise<TransportEvent | null>
+  /**
+   * Resolves with the next value, or `null` once the wall-clock
+   * `deadlineMs` (epoch milliseconds, e.g. from `Date.now()`) passes.
+   * Rejects once the producer is gone. The blocking wait runs on a worker
+   * thread.
+   */
+  recvDeadline(deadlineMs: number): Promise<TransportEvent | null>
 }
 
 export declare class Sample {
@@ -1321,6 +1587,11 @@ export declare class Session {
   newTimestamp(): Timestamp
   /** The liveliness sub-API for this session (tokens, subscribers, get). */
   liveliness(): Liveliness
+  /**
+   * The connectivity info sub-API for this session (transports, links, their
+   * Zenoh ids, and lifecycle-event listeners).
+   */
+  info(): SessionInfo
   /** Closes the session, undeclaring everything declared on it. */
   close(): Promise<void>
   /** Publishes `payload` on `keyExpr`. */
@@ -1378,6 +1649,46 @@ export declare class Session {
    * (disconnects) once the query is resolved.
    */
   get(selector: string | KeyExpr | Selector, options?: GetOptions | undefined | null): Promise<FifoChannelHandlerReply | RingChannelHandlerReply>
+}
+
+/**
+ * The connectivity sub-API for a session: who it is connected to (transports,
+ * links), its own and its neighbours' Zenoh ids, and listeners for transport /
+ * link lifecycle events. Reached via `Session.info()`.
+ */
+export declare class SessionInfo {
+  /** This session's Zenoh id, as a hex string. */
+  zid(): Promise<string>
+  /**
+   * The Zenoh ids of the routers this session is currently connected to (or of
+   * the current router, if running inside one), as hex strings.
+   */
+  routersZid(): Promise<Array<string>>
+  /**
+   * The Zenoh ids of the peers this session is currently connected to, as hex
+   * strings.
+   */
+  peersZid(): Promise<Array<string>>
+  /** The locators this session is listening on. */
+  locators(): Promise<Array<Locator>>
+  /** The currently-open transports (connections to remote nodes). */
+  transports(): Promise<Array<Transport>>
+  /** The currently-established links across all transports. */
+  links(): Promise<Array<Link>>
+  /**
+   * Declares a listener for transport lifecycle events (a transport opening or
+   * closing). The `handler` option chooses the channel (default: FIFO of
+   * [`DEFAULT_CHANNEL_CAPACITY`]); `history` replays the currently-open
+   * transports on declaration.
+   */
+  transportEventsListener(options?: TransportEventsListenerOptions | undefined | null): Promise<TransportEventsListener>
+  /**
+   * Declares a listener for link lifecycle events (a link being added or
+   * removed). The `handler` option chooses the channel (default: FIFO of
+   * [`DEFAULT_CHANNEL_CAPACITY`]); `history` replays the currently-established
+   * links on declaration.
+   */
+  linkEventsListener(options?: LinkEventsListenerOptions | undefined | null): Promise<LinkEventsListener>
 }
 
 export declare class SourceInfo {
@@ -1468,6 +1779,70 @@ export declare class Timestamp {
   getId(): string
   /** Returns the time difference from `other` in milliseconds. */
   getDiffDuration(other: Timestamp): number
+}
+
+/**
+ * A transport is a connection established to a remote zenoh node. Multiple
+ * transports to the same node can coexist (e.g. a unicast and a multicast one).
+ * Each transport carries one or more [`Link`](crate::link::Link)s.
+ *
+ * Obtained from `SessionInfo.transports` or a [`TransportEvent`].
+ */
+export declare class Transport {
+  /** The Zenoh id of the remote node, as a hex string. */
+  get zid(): string
+  /** The type of the remote node (Router, Peer or Client). */
+  get whatami(): WhatAmI
+  /** Whether this transport supports QoS. */
+  get isQos(): boolean
+  /** Whether this transport is multicast. */
+  get isMulticast(): boolean
+}
+
+/**
+ * An event emitted when a transport is opened or closed. `kind` is `Put` when
+ * the transport opened and `Delete` when it closed.
+ *
+ * Delivered by a [`TransportEventsListener`].
+ */
+export declare class TransportEvent {
+  /** `Put` if the transport opened, `Delete` if it closed. */
+  get kind(): SampleKind
+  /** The transport this event is about. */
+  get transport(): Transport
+}
+
+/**
+ * A listener that notifies of transport lifecycle events (a transport opening
+ * or closing). Declared via `SessionInfo.transportEventsListener`.
+ */
+export declare class TransportEventsListener {
+  /**
+   * The receive end of the listener. A `FifoChannelHandler` or
+   * `RingChannelHandler` depending on the channel chosen at declare time.
+   *
+   * The handler is not iterable; iterate via `listener.handler.stream()`.
+   */
+  get handler(): FifoChannelHandlerTransportEvent | RingChannelHandlerTransportEvent
+  /**
+   * Undeclare this listener. Resolves once undeclaration completes; a second
+   * call is a no-op.
+   *
+   * For a ring listener still referenced by an outstanding handler, this drops
+   * our strong reference and lets the background drop undeclare it once the
+   * last handler is released.
+   */
+  undeclare(): Promise<void>
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class TransportEventStream {
+  [Symbol.asyncIterator](): AsyncGenerator<TransportEvent, void, undefined>
 }
 
 export declare class WhatAmIMatcher {
@@ -1577,6 +1952,27 @@ export interface HistoryConfig {
   detectLatePublishers?: boolean
   maxSamples?: number
   maxAgeSecs?: number
+}
+
+/**
+ * Options for `SessionInfo.linkEventsListener` — mirrors
+ * `LinkEventsListenerBuilder`.
+ */
+export interface LinkEventsListenerOptions {
+  /** Send events for the currently-established links before live events. */
+  history?: boolean
+  /** Channel selection for the listener's handler (default: FIFO). */
+  handler?: ChannelConfig
+}
+
+/**
+ * The priority range `(min, max)` a link is configured with. The numeric
+ * priority values correspond to [`Priority`](crate::qos::Priority) but may also
+ * include `0` (Control), which is not exposed in that enum.
+ */
+export interface LinkPriorities {
+  min: number
+  max: number
 }
 
 /** Options for `Liveliness.get` — mirrors `LivelinessGetBuilder`. */
@@ -1811,6 +2207,17 @@ export interface SubscriberOptions {
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number
+}
+
+/**
+ * Options for `SessionInfo.transportEventsListener` — mirrors
+ * `TransportEventsListenerBuilder`.
+ */
+export interface TransportEventsListenerOptions {
+  /** Send events for the currently-open transports before live events. */
+  history?: boolean
+  /** Channel selection for the listener's handler (default: FIFO). */
+  handler?: ChannelConfig
 }
 
 export type WhatAmI =  'Router'|

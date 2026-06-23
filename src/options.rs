@@ -352,3 +352,23 @@ pub struct ScoutOptions {
   /// Channel selection for the `Hello` handler (default: FIFO).
   pub handler: Option<ChannelConfig>,
 }
+
+/// Options for `SessionInfo.transportEventsListener` — mirrors
+/// `TransportEventsListenerBuilder`.
+#[napi(object, object_to_js = false)]
+pub struct TransportEventsListenerOptions {
+  /// Send events for the currently-open transports before live events.
+  pub history: Option<bool>,
+  /// Channel selection for the listener's handler (default: FIFO).
+  pub handler: Option<ChannelConfig>,
+}
+
+/// Options for `SessionInfo.linkEventsListener` — mirrors
+/// `LinkEventsListenerBuilder`.
+#[napi(object, object_to_js = false)]
+pub struct LinkEventsListenerOptions {
+  /// Send events for the currently-established links before live events.
+  pub history: Option<bool>,
+  /// Channel selection for the listener's handler (default: FIFO).
+  pub handler: Option<ChannelConfig>,
+}
