@@ -1,9 +1,10 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::handlers::fifo as zfifo;
-use zenoh::{config as zconfig, handlers::IntoHandler, sample as zsample, scouting as zscouting};
+use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
-use crate::{channels::FifoChannel, config::*, error::*, info::*, options::*, protocol::*};
+use crate::options::ScoutOptions;
+use crate::{channels::FifoChannel, config::*, error::*, info::*, protocol::*};
 
 #[napi]
 pub struct Scout {
@@ -24,16 +25,19 @@ impl Scout {
 }
 
 #[napi]
+#[allow(clippy::self_named_constructors)]
 impl Scout {
   #[napi]
   pub fn scout<'env>(
     env: &'env Env,
     what: &WhatAmIMatcher,
     config: &Config,
+    options: Option<ScoutOptions>,
   ) -> napi::Result<PromiseRaw<'env, Scout>> {
     let what: zconfig::WhatAmIMatcher = what.into();
     let config: zconfig::Config = config.into();
-    let (cb, receiver) = FifoChannel::default().into_handler();
+    let ScoutOptions { capacity } = options.unwrap_or_default();
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
     env.spawn_future(async move {
       let scout = zscouting::scout(what, config)

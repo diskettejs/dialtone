@@ -1,4 +1,3 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers as zhandlers;
 use zenoh::handlers::IntoHandler;

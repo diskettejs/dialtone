@@ -5,6 +5,7 @@ use napi_derive::napi;
 
 use crate::{cancellation::*, channels::*, qos::*, query::*, sample::*, time::*};
 
+#[allow(dead_code)]
 #[napi]
 pub type ChannelArg<'a> = Either<ClassInstance<'a, FifoChannel>, ClassInstance<'a, RingChannel>>;
 
@@ -137,8 +138,9 @@ impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct ScoutOptions<'a> {
-  pub channel: Option<ChannelArg<'a>>,
+pub struct ScoutOptions {
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg>,
 }
 
 #[derive(Default)]

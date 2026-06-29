@@ -2,11 +2,11 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
   handlers::{self as zhandlers, IntoHandler},
-  key_expr as zkey_expr, liveliness as zliveliness, sample as zsample, session as zsession,
+  key_expr as zkey_expr, sample as zsample, session as zsession,
 };
 
 use crate::{
-  channels::*, config::*, error::*, key_expr::*, liveliness::*, miss::*, options::*, sample::Sample,
+  channels::*, config::*, error::*, key_expr::*, liveliness::*, miss::*, options::*, sample::*,
 };
 
 #[napi]

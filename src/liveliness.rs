@@ -5,7 +5,7 @@ use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
 use zenoh::{
   cancellation as zcancellation, handlers as zhandlers, key_expr as zkey_expr,
-  liveliness as zliveliness, pubsub as zpubsub, query as zquery, sample as zsample,
+  liveliness as zliveliness, pubsub as zpubsub, sample as zsample,
   session as zsession,
 };
 

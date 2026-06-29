@@ -1,5 +1,3 @@
-#![allow(dead_code, unused)] // TODO: remove this once API is establish
-
 mod bytes;
 mod cancellation;
 mod channels;

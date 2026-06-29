@@ -258,6 +258,9 @@ export declare class Query {
   get express(): boolean
   get parameters(): Parameters
   get acceptReplies(): ReplyKeyExpr
+  reply(keyExpr: KeyExprArg, payload: PayloadArg, options?: ReplyOptions | undefined | null): Promise<undefined>
+  replyErr(payload: PayloadArg, options?: ReplyErrOptions | undefined | null): Promise<void>
+  replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<undefined>
 }
 
 export declare class Queryable {
@@ -336,7 +339,7 @@ export declare class SampleMissListener {
 }
 
 export declare class Scout {
-  static scout(what: WhatAmIMatcher, config: Config): Promise<Scout>
+  static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
   recv(): Promise<Hello>
   tryRecv(): Hello | null
   drain(): Array<Hello>
@@ -417,10 +420,6 @@ export declare class Subscriber {
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): Promise<undefined>
-}
-
-export declare class TimeRange {
-
 }
 
 export declare class Timestamp {
@@ -672,7 +671,7 @@ export interface SampleMissListenerOptions {
 }
 
 export interface ScoutOptions {
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export type SelectorArg =

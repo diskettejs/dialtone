@@ -2,8 +2,7 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
   Wait, bytes as zbytes, cancellation as zcancellation, handlers::IntoHandler,
-  internal::traits::{EncodingBuilderTrait, SampleBuilderTrait},
-  key_expr as zkey_expr, matching as zmatching, qos as zqos, query as zquery, sample as zsample,
+  key_expr as zkey_expr, qos as zqos, query as zquery, sample as zsample,
   session as zsession,
 };
 

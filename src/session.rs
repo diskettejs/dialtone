@@ -3,19 +3,14 @@ use std::time::Duration;
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
-  cancellation as zcancellation,
-  handlers::IntoHandler,
-  internal::traits::{
-    EncodingBuilderTrait, QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait,
-  },
-  query as zquery, sample as zsample, time as ztime,
+  cancellation as zcancellation, handlers::IntoHandler, query as zquery, sample as zsample,
+  time as ztime,
 };
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, channels::FifoChannel, config::*, error::*, handlers::Replies, info::*,
-  key_expr::*, liveliness::*, options::*, publisher::*, querier::*, query::Reply, queryable::*,
-  selector::*, subscriber::*, time::*,
+  bytes::*, channels::*, config::*, error::*, handlers::*, info::*, key_expr::*, liveliness::*,
+  options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*, time::*,
 };
 
 #[napi]

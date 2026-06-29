@@ -1,17 +1,13 @@
-use std::{alloc::System, time::SystemTime};
-
-use chrono::Utc;
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{
   bytes as zbytes,
-  internal::traits::*,
   query::{self as zquery},
   sample as zsample, time as ztime,
 };
 
 use crate::{
-  bytes::*, config::*, encoding::*, error::MapNapiErr, key_expr::*, options::*, qos::*, sample::*,
+  bytes::*, config::*, encoding::*, error::*, key_expr::*, options::*, qos::*, sample::*,
   selector::*,
 };
 
@@ -81,6 +77,107 @@ impl Query {
   #[napi(getter)]
   pub fn accept_replies(&self) -> ReplyKeyExpr {
     self.inner.accepts_replies().into()
+  }
+
+  #[napi]
+  pub fn reply<'env>(
+    &self,
+    env: &'env Env,
+    key_expr: KeyExprArg,
+    payload: PayloadArg,
+    options: Option<ReplyOptions<'_>>,
+  ) -> napi::Result<PromiseRaw<'env, ()>> {
+    let expr = KeyExpr::try_from(key_expr)?;
+    let payload = payload.into_zbytes();
+    let query = self.inner.clone();
+
+    let ReplyOptions {
+      encoding,
+      express,
+      timestamp,
+      attachment,
+      source_info,
+    } = options.unwrap_or_default();
+    let encoding = encoding.map(zbytes::Encoding::from);
+    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
+    let attachment = attachment.map(IntoZBytes::into_zbytes);
+    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
+
+    env.spawn_future(async move {
+      let mut builder = query.reply(expr, payload);
+      if let Some(encoding) = encoding {
+        builder = builder.encoding(encoding);
+      }
+      if let Some(express) = express {
+        builder = builder.express(express);
+      }
+      if let Some(timestamp) = timestamp {
+        builder = builder.timestamp(timestamp);
+      }
+      if let Some(attachment) = attachment {
+        builder = builder.attachment(attachment);
+      }
+      if let Some(source_info) = source_info {
+        builder = builder.source_info(source_info);
+      }
+      builder.await.map_napi_err()
+    })
+  }
+
+  #[napi]
+  pub async fn reply_err(
+    &self,
+    payload: PayloadArg,
+    options: Option<ReplyErrOptions>,
+  ) -> napi::Result<()> {
+    let payload = payload.into_zbytes();
+
+    let ReplyErrOptions { encoding } = options.unwrap_or_default();
+    let encoding = encoding.map(zbytes::Encoding::from);
+
+    let mut builder = self.inner.reply_err(payload);
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding);
+    }
+    builder.await.map_napi_err()
+  }
+
+  #[napi]
+  pub fn reply_del<'env>(
+    &self,
+    env: &'env Env,
+    key_expr: KeyExprArg<'_>,
+    options: Option<ReplyDelOptions<'_>>,
+  ) -> napi::Result<PromiseRaw<'env, ()>> {
+    let expr = KeyExpr::try_from(key_expr)?;
+    let query = self.inner.clone();
+
+    let ReplyDelOptions {
+      express,
+      timestamp,
+      attachment,
+      source_info,
+    } = options.unwrap_or_default();
+    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
+    let attachment = attachment.map(IntoZBytes::into_zbytes);
+    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
+
+    env.spawn_future(async move {
+      let mut builder = query.reply_del(expr);
+      if let Some(express) = express {
+        builder = builder.express(express);
+      }
+      if let Some(timestamp) = timestamp {
+        builder = builder.timestamp(timestamp);
+      }
+      if let Some(attachment) = attachment {
+        builder = builder.attachment(attachment);
+      }
+      if let Some(source_info) = source_info {
+        builder = builder.source_info(source_info);
+      }
+      builder.await.map_napi_err()
+    })
   }
 }
 
@@ -293,31 +390,5 @@ impl From<zquery::ConsolidationMode> for ConsolidationMode {
       zquery::ConsolidationMode::Monotonic => Self::Monotonic,
       zquery::ConsolidationMode::Latest => Self::Latest,
     }
-  }
-}
-
-#[napi]
-pub struct TimeRange {
-  inner: zquery::TimeRange,
-}
-
-impl From<zquery::TimeRange> for TimeRange {
-  fn from(inner: zquery::TimeRange) -> Self {
-    Self { inner }
-  }
-}
-
-#[napi]
-impl TimeRange {
-  pub fn resolve_at(&self, now: chrono::DateTime<Utc>) -> TimeRange {
-    // self.inner.resolve_at(now.into())
-    todo!()
-  }
-
-  pub fn resolve(self) -> TimeRange {
-    todo!()
-  }
-  pub fn contains(&self, instant: SystemTime) -> bool {
-    todo!()
   }
 }

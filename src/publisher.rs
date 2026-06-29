@@ -5,8 +5,7 @@ use napi_derive::napi;
 use zenoh::{
   bytes as zbytes,
   handlers::IntoHandler,
-  internal::traits::{EncodingBuilderTrait, TimestampBuilderTrait},
-  key_expr as zkey_expr, matching as zmatching, qos as zqos, session as zsession, time as ztime,
+  key_expr as zkey_expr, qos as zqos, session as zsession, time as ztime,
 };
 
 use crate::{
