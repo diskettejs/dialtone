@@ -30,4 +30,7 @@ declare module './binding.js' {
   interface Querier {
     [Symbol.asyncDispose](): Promise<void>
   }
+  interface Queryable {
+    [Symbol.asyncDispose](): Promise<void>
+  }
 }

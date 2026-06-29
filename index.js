@@ -4,6 +4,7 @@ import {
   MatchingListener,
   Publisher,
   Querier,
+  Queryable,
   SampleMissListener,
   Scout,
   Session,
@@ -39,6 +40,10 @@ LivelinessSubscriber.prototype[Symbol.asyncDispose] = async function () {
 }
 
 Querier.prototype[Symbol.asyncDispose] = async function () {
+  return await this.undeclare()
+}
+
+Queryable.prototype[Symbol.asyncDispose] = async function () {
   return await this.undeclare()
 }
 
