@@ -11,6 +11,12 @@ pub struct Subscriber {
   inner: zenoh_ext::AdvancedSubscriber<()>,
 }
 
+impl From<zenoh_ext::AdvancedSubscriber<()>> for Subscriber {
+  fn from(inner: zenoh_ext::AdvancedSubscriber<()>) -> Self {
+    Self { inner }
+  }
+}
+
 impl Subscriber {
   pub(crate) fn new(inner: zenoh_ext::AdvancedSubscriber<()>) -> Self {
     Self { inner }

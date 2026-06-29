@@ -422,6 +422,9 @@ export interface GetOptions {
   channel?: ChannelArg
 }
 
+export type HandlerPayload =
+  Sample | Query | Miss
+
 export interface HeartbeatConfig {
   periodMs: number
   sporadic?: boolean

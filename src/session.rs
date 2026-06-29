@@ -312,10 +312,17 @@ impl Session {
     key_expr: KeyExprArg,
     options: Option<SubscriberOptions<'_>>,
   ) -> napi::Result<PromiseRaw<'env, Subscriber>> {
-    todo!()
-
-    // let key_expr = KeyExpr::try_from(key_expr)?;
-    // let session = self.inner.clone();
+    let key_expr = KeyExpr::try_from(key_expr)?;
+    let SubscriberOptions {
+      allowed_origin,
+      history,
+      query_timeout_ms,
+      recovery,
+      subscriber_detection,
+      subscriber_detection_metadata,
+      channel,
+    } = options.unwrap_or_default();
+    let session = self.inner.clone();
 
     // env.spawn_future(async move {
     //   let subscriber = session
@@ -324,8 +331,10 @@ impl Session {
     //     .with(zenoh_channel)
     //     .await
     //     .map_napi_err()?;
-    //   Ok(Subscriber::new(subscriber, receiver))
-    // })
+    //   Ok(subscriber.into())
+    // });
+
+    todo!()
   }
 
   #[napi]
@@ -334,9 +343,19 @@ impl Session {
     key_expr: KeyExprArg<'_>,
     options: Option<PublisherOptions>,
   ) -> napi::Result<Publisher> {
-    todo!()
-
-    // let expr = KeyExpr::try_from(key_expr)?;
+    let expr = KeyExpr::try_from(key_expr)?;
+    let PublisherOptions {
+      cache,
+      encoding,
+      congestion_control,
+      express,
+      allowed_destination,
+      priority,
+      publisher_detection,
+      publisher_detection_metadata,
+      reliability,
+      sample_miss_detection,
+    } = options.unwrap_or_default();
     // let mut builder = self.inner.declare_publisher(expr).advanced();
 
     // if let Some(sample_miss_detection) = options.and_then(|options| options.sample_miss_detection) {
@@ -346,5 +365,7 @@ impl Session {
     // let zpublisher = builder.await.map_napi_err()?;
 
     // Ok(Publisher::from(zpublisher))
+
+    todo!()
   }
 }
