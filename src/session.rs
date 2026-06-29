@@ -2,11 +2,20 @@ use std::time::Duration;
 
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
-use zenoh::{cancellation as zcancellation, query as zquery, sample as zsample};
+use zenoh::{
+  cancellation as zcancellation,
+  handlers::IntoHandler,
+  internal::traits::{
+    EncodingBuilderTrait, QoSBuilderTrait, SampleBuilderTrait, TimestampBuilderTrait,
+  },
+  query as zquery, sample as zsample, time as ztime,
+};
+use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, config::*, error::*, info::*, key_expr::*, liveliness::*, options::*, publisher::*,
-  querier::*, queryable::*, selector::*, subscriber::*, time::*,
+  bytes::*, channels::FifoChannel, config::*, error::*, handlers::Replies, info::*,
+  key_expr::*, liveliness::*, options::*, publisher::*, querier::*, query::Reply, queryable::*,
+  selector::*, subscriber::*, time::*,
 };
 
 #[napi]
@@ -72,14 +81,66 @@ impl Session {
     payload: PayloadArg,
     options: Option<PutOptions<'_>>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
-    todo!()
+    let expr = KeyExpr::try_from(key_expr)?;
+    let payload = payload.into_zbytes();
+    let PutOptions {
+      encoding,
+      congestion_control,
+      priority,
+      express,
+      reliability,
+      allowed_destination,
+      timestamp,
+      attachment,
+      source_info,
+    } = options.unwrap_or_default();
 
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let opts = options.unwrap_or_default();
-    // let payload = payload.into_zbytes();
-    // let session = self.inner.clone();
-    // TODO: map options to build session builder calls
-    // env.spawn_future(async move { session.put(expr, payload).await.map_napi_err() })
+    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
+    let attachment = attachment.map(|attachment| attachment.into_zbytes());
+    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
+    let session = self.inner.clone();
+
+    env.spawn_future(async move {
+      let mut builder = session.put(expr, payload);
+
+      if let Some(encoding) = encoding {
+        builder = builder.encoding(encoding);
+      }
+
+      if let Some(congestion_control) = congestion_control {
+        builder = builder.congestion_control(congestion_control.into());
+      }
+
+      if let Some(priority) = priority {
+        builder = builder.priority(priority.into());
+      }
+
+      if let Some(express) = express {
+        builder = builder.express(express);
+      }
+
+      if let Some(reliability) = reliability {
+        builder = builder.reliability(reliability.into());
+      }
+
+      if let Some(allowed_destination) = allowed_destination {
+        builder = builder.allowed_destination(allowed_destination.into());
+      }
+
+      if let Some(timestamp) = timestamp {
+        builder = builder.timestamp(timestamp);
+      }
+
+      if let Some(attachment) = attachment {
+        builder = builder.attachment(attachment);
+      }
+
+      if let Some(source_info) = source_info {
+        builder = builder.source_info(source_info);
+      }
+
+      builder.await.map_napi_err()
+    })
   }
 
   #[napi]
@@ -88,96 +149,95 @@ impl Session {
     env: &'env Env,
     selector: SelectorArg<'_>,
     options: Option<GetOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Either<(), ()>>> {
-    todo!()
+  ) -> napi::Result<PromiseRaw<'env, Replies>> {
+    let GetOptions {
+      parameters,
+      target,
+      consolidation,
+      congestion_control,
+      priority,
+      express,
+      allowed_destination,
+      timeout,
+      payload,
+      encoding,
+      attachment,
+      source_info,
+      cancellation_token,
+      capacity,
+    } = options.unwrap_or_default();
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    // let GetOptions {
-    //   parameters,
-    //   target,
-    //   consolidation,
-    //   congestion_control,
-    //   priority,
-    //   express,
-    //   allowed_destination,
-    //   timeout,
-    //   payload,
-    //   encoding,
-    //   attachment,
-    //   source_info,
-    //   cancellation_token,
-    //   channel,
-    // } = options.unwrap_or_default();
+    let mut selector = zquery::Selector::from(Selector::try_from(selector)?);
+    if let Some(parameters) = parameters {
+      let key_expr = selector.key_expr().clone().into_owned();
+      selector = zquery::Selector::owned(key_expr, zquery::Parameters::from(&*parameters));
+    }
 
-    // let mut selector = zquery::Selector::from(Selector::try_from(selector)?);
-    // if let Some(parameters) = parameters {
-    //   let key_expr = selector.key_expr().clone().into_owned();
-    //   selector = zquery::Selector::owned(key_expr, zquery::Parameters::from(&*parameters));
-    // }
+    let timeout = timeout
+      .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
+      .transpose()?;
+    let payload = payload.map(|payload| payload.into_zbytes());
+    let attachment = attachment.map(|attachment| attachment.into_zbytes());
+    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
+    let cancellation_token =
+      cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
+    let session = self.inner.clone();
 
-    // let timeout = timeout
-    //   .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
-    //   .transpose()?;
-    // let payload = payload.map(|payload| payload.into_zbytes());
-    // let attachment = attachment.map(|attachment| attachment.into_zbytes());
-    // let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
-    // let cancellation_token =
-    //   cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
-    // let session = self.inner.clone();
+    env.spawn_future(async move {
+      let mut builder = session.get(selector).with(cb);
 
-    // env.spawn_future(async move {
-    //   let mut builder = session.get(selector).with(callback);
+      if let Some(target) = target {
+        builder = builder.target(target.into());
+      }
 
-    //   if let Some(target) = target {
-    //     builder = builder.target(target.into());
-    //   }
+      if let Some(consolidation) = consolidation {
+        builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
+      }
 
-    //   if let Some(consolidation) = consolidation {
-    //     builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
-    //   }
+      if let Some(congestion_control) = congestion_control {
+        builder = builder.congestion_control(congestion_control.into());
+      }
 
-    //   if let Some(congestion_control) = congestion_control {
-    //     builder = builder.congestion_control(congestion_control.into());
-    //   }
+      if let Some(priority) = priority {
+        builder = builder.priority(priority.into());
+      }
 
-    //   if let Some(priority) = priority {
-    //     builder = builder.priority(priority.into());
-    //   }
+      if let Some(express) = express {
+        builder = builder.express(express);
+      }
 
-    //   if let Some(express) = express {
-    //     builder = builder.express(express);
-    //   }
+      if let Some(allowed_destination) = allowed_destination {
+        builder = builder.allowed_destination(allowed_destination.into());
+      }
 
-    //   if let Some(allowed_destination) = allowed_destination {
-    //     builder = builder.allowed_destination(allowed_destination.into());
-    //   }
+      if let Some(timeout) = timeout {
+        builder = builder.timeout(timeout);
+      }
 
-    //   if let Some(timeout) = timeout {
-    //     builder = builder.timeout(timeout);
-    //   }
+      if let Some(payload) = payload {
+        builder = builder.payload(payload);
+      }
 
-    //   if let Some(payload) = payload {
-    //     builder = builder.payload(payload);
-    //   }
+      if let Some(encoding) = encoding {
+        builder = builder.encoding(encoding);
+      }
 
-    //   if let Some(encoding) = encoding {
-    //     builder = builder.encoding(encoding);
-    //   }
+      if let Some(attachment) = attachment {
+        builder = builder.attachment(attachment);
+      }
 
-    //   if let Some(attachment) = attachment {
-    //     builder = builder.attachment(attachment);
-    //   }
+      if let Some(source_info) = source_info {
+        builder = builder.source_info(source_info);
+      }
 
-    //   if let Some(source_info) = source_info {
-    //     builder = builder.source_info(source_info);
-    //   }
+      if let Some(cancellation_token) = cancellation_token {
+        builder = builder.cancellation_token(cancellation_token);
+      }
 
-    //   if let Some(cancellation_token) = cancellation_token {
-    //     builder = builder.cancellation_token(cancellation_token);
-    //   }
-
-    //   builder.await.map_napi_err()?;
-    //   Ok(receiver.handler())
-    // })
+      builder.await.map_napi_err()?;
+      Ok(receiver.into())
+    })
   }
 
   #[napi]
@@ -187,29 +247,73 @@ impl Session {
     key_expr: KeyExprArg,
     options: Option<DeleteOptions<'_>>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
-    todo!()
+    let expr = KeyExpr::try_from(key_expr)?;
+    let DeleteOptions {
+      congestion_control,
+      priority,
+      express,
+      reliability,
+      allowed_destination,
+      timestamp,
+      attachment,
+      source_info,
+    } = options.unwrap_or_default();
 
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let session = self.inner.clone();
-    // // TODO: map options to build session builder calls
-    // env.spawn_future(async move { session.delete(expr).await.map_napi_err() })
+    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
+    let attachment = attachment.map(|attachment| attachment.into_zbytes());
+    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
+    let session = self.inner.clone();
+
+    env.spawn_future(async move {
+      let mut builder = session.delete(expr);
+
+      if let Some(congestion_control) = congestion_control {
+        builder = builder.congestion_control(congestion_control.into());
+      }
+
+      if let Some(priority) = priority {
+        builder = builder.priority(priority.into());
+      }
+
+      if let Some(express) = express {
+        builder = builder.express(express);
+      }
+
+      if let Some(reliability) = reliability {
+        builder = builder.reliability(reliability.into());
+      }
+
+      if let Some(allowed_destination) = allowed_destination {
+        builder = builder.allowed_destination(allowed_destination.into());
+      }
+
+      if let Some(timestamp) = timestamp {
+        builder = builder.timestamp(timestamp);
+      }
+
+      if let Some(attachment) = attachment {
+        builder = builder.attachment(attachment);
+      }
+
+      if let Some(source_info) = source_info {
+        builder = builder.source_info(source_info);
+      }
+
+      builder.await.map_napi_err()
+    })
   }
 
   #[napi]
   pub fn liveliness(&self) -> Liveliness {
-    todo!()
-
-    // self.inner.clone().into()
+    self.inner.clone().into()
   }
 
   #[napi]
   pub async fn declare_keyexpr(&self, key_expr: KeyExprArg<'_>) -> napi::Result<KeyExpr> {
-    todo!()
+    let expr = KeyExpr::try_from(key_expr)?;
+    let keyexpr = self.inner.declare_keyexpr(expr).await.map_napi_err()?;
 
-    // let key_expr = KeyExpr::try_from(key_expr)?;
-    // let declared = self.inner.declare_keyexpr(key_expr).await.map_napi_err()?;
-
-    // Ok(declared.into())
+    Ok(keyexpr.into())
   }
 
   #[napi]
@@ -218,99 +322,90 @@ impl Session {
     key_expr: KeyExprArg<'_>,
     options: Option<QuerierOptions>,
   ) -> napi::Result<Querier> {
-    // let QuerierOptions {
-    //   target,
-    //   consolidation,
-    //   congestion_control,
-    //   priority,
-    //   express,
-    //   allowed_destination,
-    //   timeout,
-    //   accept_replies,
-    // } = options.unwrap_or_default();
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let mut builder = self.inner.declare_querier(expr);
+    let QuerierOptions {
+      target,
+      consolidation,
+      congestion_control,
+      priority,
+      express,
+      allowed_destination,
+      timeout,
+      accept_replies,
+    } = options.unwrap_or_default();
+    let expr = KeyExpr::try_from(key_expr)?;
+    let mut builder = self.inner.declare_querier(expr);
 
-    // if let Some(target) = target {
-    //   builder = builder.target(target.into());
-    // }
+    if let Some(target) = target {
+      builder = builder.target(target.into());
+    }
 
-    // if let Some(consolidation) = consolidation {
-    //   builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
-    // }
+    if let Some(consolidation) = consolidation {
+      builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
+    }
 
-    // if let Some(congestion_control) = congestion_control {
-    //   builder = builder.congestion_control(congestion_control.into());
-    // }
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into());
+    }
 
-    // if let Some(priority) = priority {
-    //   builder = builder.priority(priority.into());
-    // }
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into());
+    }
 
-    // if let Some(express) = express {
-    //   builder = builder.express(express);
-    // }
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
 
-    // if let Some(allowed_destination) = allowed_destination {
-    //   builder = builder.allowed_destination(allowed_destination.into());
-    // }
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into());
+    }
 
-    // if let Some(timeout) = timeout {
-    //   builder = builder.timeout(Duration::try_from_secs_f64(timeout / 1000.0).map_napi_err()?);
-    // }
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(Duration::try_from_secs_f64(timeout / 1000.0).map_napi_err()?);
+    }
 
-    // if let Some(accept_replies) = accept_replies {
-    //   builder = builder.accept_replies(accept_replies.into());
-    // }
+    if let Some(accept_replies) = accept_replies {
+      builder = builder.accept_replies(accept_replies.into());
+    }
 
-    // let zquerier = builder.await.map_napi_err()?;
+    let zquerier = builder.await.map_napi_err()?;
 
-    // Ok(zquerier.into())
-
-    todo!()
+    Ok(zquerier.into())
   }
 
   #[napi]
-  pub fn declare_queryable<'env>(
+  pub async fn declare_queryable(
     &self,
-    env: &'env Env,
     key_expr: KeyExprArg<'_>,
-    options: Option<QueryableOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Queryable>> {
-    todo!()
+    options: Option<QueryableOptions>,
+  ) -> napi::Result<Queryable> {
+    let QueryableOptions {
+      allowed_origin,
+      complete,
+      capacity,
+    } = options.unwrap_or_default();
+    let expr = KeyExpr::try_from(key_expr)?;
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let mut builder = self.inner.declare_queryable(expr).with((cb, ()));
 
-    // let QueryableOptions {
-    //   channel,
-    //   allowed_origin,
-    //   complete,
-    // } = options.unwrap_or_default();
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let session = self.inner.clone();
+    if let Some(origin) = allowed_origin {
+      builder = builder.allowed_origin(origin.into());
+    };
 
-    // env.spawn_future(async move {
-    //   let mut builder = session.declare_queryable(expr).with(zenoh_channel);
+    if let Some(complete) = complete {
+      builder = builder.complete(complete);
+    }
 
-    //   if let Some(origin) = allowed_origin {
-    //     builder = builder.allowed_origin(origin.into());
-    //   };
+    let queryable = builder.await.map_napi_err()?;
 
-    //   if let Some(complete) = complete {
-    //     builder = builder.complete(complete);
-    //   }
-
-    //   let inner = builder.await.map_napi_err()?;
-
-    //   Ok(Queryable::new(inner, receiver))
-    // })
+    Ok(Queryable::new(queryable, receiver))
   }
 
   #[napi]
-  pub fn declare_subscriber<'env>(
+  pub async fn declare_subscriber(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
-    options: Option<SubscriberOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Subscriber>> {
+    key_expr: KeyExprArg<'_>,
+    options: Option<SubscriberOptions>,
+  ) -> napi::Result<Subscriber> {
     let key_expr = KeyExpr::try_from(key_expr)?;
     let SubscriberOptions {
       allowed_origin,
@@ -319,21 +414,47 @@ impl Session {
       recovery,
       subscriber_detection,
       subscriber_detection_metadata,
-      channel,
+      capacity,
     } = options.unwrap_or_default();
-    let session = self.inner.clone();
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let mut builder = self
+      .inner
+      .declare_subscriber(key_expr)
+      .advanced()
+      .with((cb, ()));
 
-    // env.spawn_future(async move {
-    //   let subscriber = session
-    //     .declare_subscriber(key_expr)
-    //     .advanced()
-    //     .with(zenoh_channel)
-    //     .await
-    //     .map_napi_err()?;
-    //   Ok(subscriber.into())
-    // });
+    if let Some(allowed_origin) = allowed_origin {
+      builder = builder.allowed_origin(allowed_origin.into());
+    }
 
-    todo!()
+    if let Some(history) = history {
+      builder = builder.history(history.into());
+    }
+
+    if let Some(recovery) = recovery {
+      let recovery: zenoh_ext::RecoveryConfig = match recovery {
+        Either::A(periodic) => periodic.into(),
+        Either::B(heartbeat) => heartbeat.into(),
+      };
+      builder = builder.recovery(recovery);
+    }
+
+    if let Some(query_timeout_ms) = query_timeout_ms {
+      let timeout = Duration::try_from_secs_f64(query_timeout_ms / 1000.0).map_napi_err()?;
+      builder = builder.query_timeout(timeout);
+    }
+
+    if subscriber_detection == Some(true) {
+      builder = builder.subscriber_detection();
+    }
+
+    if let Some(subscriber_detection_metadata) = subscriber_detection_metadata {
+      builder = builder.subscriber_detection_metadata(subscriber_detection_metadata);
+    }
+
+    let subscriber = builder.await.map_napi_err()?;
+
+    Ok(Subscriber::new(subscriber, receiver))
   }
 
   #[napi]
@@ -355,16 +476,50 @@ impl Session {
       reliability,
       sample_miss_detection,
     } = options.unwrap_or_default();
-    // let mut builder = self.inner.declare_publisher(expr).advanced();
+    let mut builder = self.inner.declare_publisher(expr).advanced();
 
-    // if let Some(sample_miss_detection) = options.and_then(|options| options.sample_miss_detection) {
-    //   builder = builder.sample_miss_detection(sample_miss_detection.into());
-    // }
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding);
+    }
 
-    // let zpublisher = builder.await.map_napi_err()?;
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into());
+    }
 
-    // Ok(Publisher::from(zpublisher))
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into());
+    }
 
-    todo!()
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
+
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into());
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into());
+    }
+
+    if let Some(cache) = cache {
+      builder = builder.cache(cache.into());
+    }
+
+    if publisher_detection == Some(true) {
+      builder = builder.publisher_detection();
+    }
+
+    if let Some(publisher_detection_metadata) = publisher_detection_metadata {
+      builder = builder.publisher_detection_metadata(publisher_detection_metadata);
+    }
+
+    if let Some(sample_miss_detection) = sample_miss_detection {
+      builder = builder.sample_miss_detection(sample_miss_detection.into());
+    }
+
+    let publisher = builder.await.map_napi_err()?;
+
+    Ok(publisher.into())
   }
 }

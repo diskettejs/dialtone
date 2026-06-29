@@ -2,9 +2,11 @@
 
 mod bytes;
 mod cancellation;
+mod channels;
 mod config;
 mod encoding;
 mod error;
+mod handlers;
 mod info;
 mod key_expr;
 mod liveliness;
@@ -23,6 +25,3 @@ mod selector;
 mod session;
 mod subscriber;
 mod time;
-
-mod channels;
-mod temp_scratchpad;

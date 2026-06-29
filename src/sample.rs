@@ -39,6 +39,12 @@ impl Sample {
   }
 }
 
+impl From<zsample::Sample> for Sample {
+  fn from(zsample: zsample::Sample) -> Self {
+    Sample::new(zsample)
+  }
+}
+
 #[napi]
 impl Sample {
   #[napi(getter)]

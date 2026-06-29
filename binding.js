@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, KeyExpr, Link, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, KeyExpr, Link, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, TimeRange, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -614,6 +614,7 @@ export { Publisher }
 export { Querier }
 export { Query }
 export { Queryable }
+export { Replies }
 export { Reply }
 export { ReplyError }
 export { RingChannel }
@@ -626,6 +627,7 @@ export { SessionConfig }
 export { SessionInfo }
 export { SourceInfo }
 export { Subscriber }
+export { TimeRange }
 export { Timestamp }
 export { Transport }
 export { WhatAmIMatcher }

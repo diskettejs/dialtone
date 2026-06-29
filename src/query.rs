@@ -1,7 +1,13 @@
+use std::{alloc::System, time::SystemTime};
+
+use chrono::Utc;
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
-  bytes as zbytes, internal::traits::*, query as zquery, sample as zsample, time as ztime,
+  bytes as zbytes,
+  internal::traits::*,
+  query::{self as zquery},
+  sample as zsample, time as ztime,
 };
 
 use crate::{
@@ -287,5 +293,31 @@ impl From<zquery::ConsolidationMode> for ConsolidationMode {
       zquery::ConsolidationMode::Monotonic => Self::Monotonic,
       zquery::ConsolidationMode::Latest => Self::Latest,
     }
+  }
+}
+
+#[napi]
+pub struct TimeRange {
+  inner: zquery::TimeRange,
+}
+
+impl From<zquery::TimeRange> for TimeRange {
+  fn from(inner: zquery::TimeRange) -> Self {
+    Self { inner }
+  }
+}
+
+#[napi]
+impl TimeRange {
+  pub fn resolve_at(&self, now: chrono::DateTime<Utc>) -> TimeRange {
+    // self.inner.resolve_at(now.into())
+    todo!()
+  }
+
+  pub fn resolve(self) -> TimeRange {
+    todo!()
+  }
+  pub fn contains(&self, instant: SystemTime) -> bool {
+    todo!()
   }
 }

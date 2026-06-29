@@ -40,14 +40,15 @@ pub struct PublisherOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SubscriberOptions<'a> {
+pub struct SubscriberOptions {
   pub allowed_origin: Option<Locality>,
   pub history: Option<HistoryConfig>,
   pub recovery: Option<Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
   pub subscriber_detection: Option<bool>,
   pub subscriber_detection_metadata: Option<String>,
   pub query_timeout_ms: Option<f64>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -64,6 +65,7 @@ pub struct PutOptions<'a> {
   pub source_info: Option<ClassInstance<'a, SourceInfo>>,
 }
 
+#[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct DeleteOptions<'a> {
   pub congestion_control: Option<CongestionControl>,
@@ -120,6 +122,19 @@ pub struct HeartbeatRecovery {
   pub mode: HeartbeatMode,
 }
 
+impl From<PeriodicQueriesRecovery> for zenoh_ext::RecoveryConfig {
+  fn from(value: PeriodicQueriesRecovery) -> Self {
+    zenoh_ext::RecoveryConfig::<false>::default()
+      .periodic_queries(Duration::from_millis(value.period_ms as u64))
+  }
+}
+
+impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
+  fn from(_value: HeartbeatRecovery) -> Self {
+    zenoh_ext::RecoveryConfig::<false>::default().heartbeat()
+  }
+}
+
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct ScoutOptions<'a> {
@@ -128,21 +143,24 @@ pub struct ScoutOptions<'a> {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct MatchingListenerOptions<'a> {
-  pub channel: Option<ChannelArg<'a>>,
+pub struct MatchingListenerOptions {
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SampleMissListenerOptions<'a> {
-  pub channel: Option<ChannelArg<'a>>,
+pub struct SampleMissListenerOptions {
+  // pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct LivelinessSubscriberOptions<'a> {
+pub struct LivelinessSubscriberOptions {
   pub history: Option<bool>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -150,7 +168,8 @@ pub struct LivelinessSubscriberOptions<'a> {
 pub struct LivelinessGetOptions<'a> {
   pub timeout: Option<f64>,
   pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[napi(object, object_to_js = false)]
@@ -255,15 +274,17 @@ pub struct QuerierGetOptions<'a> {
   pub attachment: Option<Uint8Array>,
   pub source_info: Option<ClassInstance<'a, SourceInfo>>,
   pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct QueryableOptions<'a> {
+pub struct QueryableOptions {
   pub complete: Option<bool>,
   pub allowed_origin: Option<Locality>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -295,5 +316,6 @@ pub struct GetOptions<'a> {
   pub attachment: Option<Uint8Array>,
   pub source_info: Option<ClassInstance<'a, SourceInfo>>,
   pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
-  pub channel: Option<ChannelArg<'a>>,
+  pub capacity: Option<u32>,
+  // pub channel: Option<ChannelArg<'a>>,
 }

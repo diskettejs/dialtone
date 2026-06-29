@@ -2,12 +2,16 @@ use std::time::Duration;
 
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
+use zenoh::handlers::IntoHandler;
 use zenoh::{
-  cancellation as zcancellation, key_expr as zkey_expr, liveliness as zliveliness,
-  pubsub as zpubsub, query as zquery, sample as zsample, session as zsession,
+  cancellation as zcancellation, handlers as zhandlers, key_expr as zkey_expr,
+  liveliness as zliveliness, pubsub as zpubsub, query as zquery, sample as zsample,
+  session as zsession,
 };
 
-use crate::{config::*, error::*, key_expr::*, options::*};
+use crate::{
+  channels::*, config::*, error::*, handlers::Replies, key_expr::*, options::*, sample::Sample,
+};
 
 #[napi]
 pub struct Liveliness {
@@ -24,40 +28,37 @@ impl From<zenoh::Session> for Liveliness {
 impl Liveliness {
   #[napi]
   pub async fn declare_token(&self, key_expr: KeyExprArg<'_>) -> napi::Result<LivelinessToken> {
-    todo!()
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let session = self.inner.get()?;
-    // let token = session
-    //   .liveliness()
-    //   .declare_token(expr)
-    //   .await
-    //   .map_napi_err()?;
+    let expr = KeyExpr::try_from(key_expr)?;
+    let token = self
+      .inner
+      .liveliness()
+      .declare_token(expr)
+      .await
+      .map_napi_err()?;
 
-    // Ok(token.into())
+    Ok(token.into())
   }
 
   #[napi]
-  pub fn declare_subscriber<'env>(
+  pub async fn declare_subscriber(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
-    options: Option<LivelinessSubscriberOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, LivelinessSubscriber>> {
-    todo!()
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let LivelinessSubscriberOptions { channel, history } = options.unwrap_or_default();
-    // let session = self.inner.get()?.clone();
+    key_expr: KeyExprArg<'_>,
+    options: Option<LivelinessSubscriberOptions>,
+  ) -> napi::Result<LivelinessSubscriber> {
+    let expr = KeyExpr::try_from(key_expr)?;
+    let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    // env.spawn_future(async move {
-    //   let inner = session
-    //     .liveliness()
-    //     .declare_subscriber(expr)
-    //     .with(zenoh_channel)
-    //     .history(history.unwrap_or(false))
-    //     .await
-    //     .map_napi_err()?;
-    //   Ok(LivelinessSubscriber::new(inner, receiver))
-    // })
+    let subscriber = self
+      .inner
+      .liveliness()
+      .declare_subscriber(expr)
+      .with((cb, ()))
+      .history(history.unwrap_or(false))
+      .await
+      .map_napi_err()?;
+
+    Ok(LivelinessSubscriber::new(subscriber, receiver))
   }
 
   #[napi]
@@ -66,44 +67,47 @@ impl Liveliness {
     env: &'env Env,
     key_expr: KeyExprArg,
     options: Option<LivelinessGetOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Either<(), ()>>> {
-    todo!()
+  ) -> napi::Result<PromiseRaw<'env, Replies>> {
+    let expr = KeyExpr::try_from(key_expr)?;
+    let LivelinessGetOptions {
+      timeout,
+      cancellation_token,
+      capacity,
+    } = options.unwrap_or_default();
 
-    // let expr = KeyExpr::try_from(key_expr)?;
-    // let LivelinessGetOptions {
-    //   timeout,
-    //   cancellation_token,
-    //   channel,
-    // } = options.unwrap_or_default();
-    // let timeout = timeout
-    //   .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
-    //   .transpose()?;
-    // let cancellation_token =
-    //   cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
-    // let session = self.inner.get()?.clone();
+    let timeout = timeout
+      .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
+      .transpose()?;
+    let cancellation_token =
+      cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
+    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let session = self.inner.clone();
 
-    // env.spawn_future(async move {
-    //   let mut builder = session.liveliness().get(expr).with(callback);
-    //   if let Some(timeout) = timeout {
-    //     builder = builder.timeout(timeout);
-    //   }
-    //   if let Some(cancellation_token) = cancellation_token {
-    //     builder = builder.cancellation_token(cancellation_token);
-    //   }
-    //   builder.await.map_napi_err()?;
-    //   Ok(receiver.handler())
-    // })
+    env.spawn_future(async move {
+      let mut builder = session.liveliness().get(expr).with(cb);
+
+      if let Some(timeout) = timeout {
+        builder = builder.timeout(timeout);
+      }
+
+      if let Some(cancellation_token) = cancellation_token {
+        builder = builder.cancellation_token(cancellation_token);
+      }
+
+      builder.await.map_napi_err()?;
+      Ok(receiver.into())
+    })
   }
 }
 
 #[napi]
 pub struct LivelinessToken {
-  inner: zliveliness::LivelinessToken,
+  inner: Option<zliveliness::LivelinessToken>,
 }
 
 impl From<zliveliness::LivelinessToken> for LivelinessToken {
   fn from(inner: zliveliness::LivelinessToken) -> Self {
-    Self { inner }
+    Self { inner: Some(inner) }
   }
 }
 
@@ -111,18 +115,34 @@ impl From<zliveliness::LivelinessToken> for LivelinessToken {
 impl LivelinessToken {
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    todo!()
+    let token = self
+      .inner
+      .take()
+      .ok_or_else(|| napi::Error::from_reason("liveliness token has already been undeclared"))?;
+
+    env.spawn_future(async move { token.undeclare().await.map_napi_err() })
   }
 }
 
 #[napi]
 pub struct LivelinessSubscriber {
-  inner: zpubsub::Subscriber<()>,
+  id: zsession::EntityGlobalId,
+  key_expr: zkey_expr::KeyExpr<'static>,
+  inner: Option<zpubsub::Subscriber<()>>,
+  receiver: crate::handlers::FifoChannelHandler<zsample::Sample>,
 }
 
 impl LivelinessSubscriber {
-  pub(crate) fn new(inner: zpubsub::Subscriber<()>) -> Self {
-    Self { inner }
+  pub fn new(
+    inner: zpubsub::Subscriber<()>,
+    receiver: zhandlers::FifoChannelHandler<zsample::Sample>,
+  ) -> Self {
+    Self {
+      id: inner.id(),
+      key_expr: inner.key_expr().clone(),
+      inner: Some(inner),
+      receiver: receiver.into(),
+    }
   }
 }
 
@@ -130,21 +150,75 @@ impl LivelinessSubscriber {
 impl LivelinessSubscriber {
   #[napi(getter)]
   pub fn key_expr(&self) -> KeyExpr {
-    self.inner.key_expr().clone().into()
+    self.key_expr.clone().into()
   }
 
   #[napi(getter)]
   pub fn id(&self) -> EntityGlobalId {
-    self.inner.id().into()
+    self.id.into()
   }
 
-  #[napi(getter)]
-  pub fn handler(&self) -> Either<(), ()> {
-    todo!()
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<Sample> {
+    self.receiver.recv::<Sample>().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
+    self.receiver.try_recv::<Sample>()
+  }
+
+  #[napi]
+  pub fn drain(&self) -> Vec<Sample> {
+    self.receiver.drain::<Sample>()
+  }
+
+  #[napi]
+  pub fn is_disconnected(&self) -> bool {
+    self.receiver.is_disconnected()
+  }
+
+  #[napi]
+  pub fn is_empty(&self) -> bool {
+    self.receiver.is_empty()
+  }
+
+  #[napi]
+  pub fn is_full(&self) -> bool {
+    self.receiver.is_full()
+  }
+
+  #[napi]
+  pub fn len(&self) -> u32 {
+    self.receiver.len()
+  }
+
+  #[napi]
+  pub fn capacity(&self) -> Option<u32> {
+    self.receiver.capacity()
+  }
+
+  #[napi]
+  pub fn sender_count(&self) -> u32 {
+    self.receiver.sender_count()
+  }
+
+  #[napi]
+  pub fn receiver_count(&self) -> u32 {
+    self.receiver.receiver_count()
+  }
+
+  #[napi]
+  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Sample>> {
+    self.receiver.stream::<Sample>(env)
   }
 
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    todo!()
+    let subscriber = self.inner.take().ok_or_else(|| {
+      napi::Error::from_reason("liveliness subscriber has already been undeclared")
+    })?;
+
+    env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
   }
 }

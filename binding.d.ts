@@ -143,13 +143,23 @@ export declare class Link {
 export declare class Liveliness {
   declareToken(keyExpr: KeyExprArg): Promise<LivelinessToken>
   declareSubscriber(keyExpr: KeyExprArg, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
-  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<undefined>
+  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<Replies>
 }
 
 export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
-  get handler(): void
+  recv(): Promise<Sample>
+  tryRecv(): Sample | null
+  drain(): Array<Sample>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<Sample>
   undeclare(): Promise<undefined>
 }
 
@@ -167,7 +177,17 @@ export declare class Locator {
 }
 
 export declare class MatchingListener {
-  get handler(): void
+  recv(): Promise<MatchingStatus>
+  tryRecv(): MatchingStatus | null
+  drain(): Array<MatchingStatus>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<MatchingStatus>
   undeclare(): Promise<undefined>
 }
 
@@ -220,7 +240,7 @@ export declare class Querier {
   get congestionControl(): CongestionControl
   get priority(): Priority
   get acceptReplies(): ReplyKeyExpr
-  get(options?: QuerierGetOptions | undefined | null): Promise<undefined>
+  get(options?: QuerierGetOptions | undefined | null): Promise<Replies>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
   undeclare(): Promise<undefined>
@@ -243,8 +263,32 @@ export declare class Query {
 export declare class Queryable {
   get id(): EntityGlobalId
   get keyExpr(): KeyExpr
-  get handler(): void
+  recv(): Promise<Query>
+  tryRecv(): Query | null
+  drain(): Array<Query>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<Query>
   undeclare(): Promise<undefined>
+}
+
+export declare class Replies {
+  recv(): Promise<Reply>
+  tryRecv(): Reply | null
+  drain(): Array<Reply>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<Reply>
 }
 
 export declare class Reply {
@@ -277,13 +321,33 @@ export declare class Sample {
 }
 
 export declare class SampleMissListener {
-  get handler(): void
+  recv(): Promise<Miss>
+  tryRecv(): Miss | null
+  drain(): Array<Miss>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<Miss>
   undeclare(): Promise<undefined>
 }
 
 export declare class Scout {
-  static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
-  get handler(): void
+  static scout(what: WhatAmIMatcher, config: Config): Promise<Scout>
+  recv(): Promise<Hello>
+  tryRecv(): Hello | null
+  drain(): Array<Hello>
+  isDisconnected(): boolean
+  isEmpty(): boolean
+  isFull(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
+  stream(): ReadableStream<Hello>
   stop(): void
 }
 
@@ -304,7 +368,7 @@ export declare class Session {
   config(): SessionConfig
   close(): Promise<void>
   put(keyExpr: KeyExprArg, payload: PayloadArg, options?: PutOptions | undefined | null): Promise<undefined>
-  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<undefined>
+  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Replies>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<undefined>
   liveliness(): Liveliness
   declareKeyexpr(keyExpr: KeyExprArg): Promise<KeyExpr>
@@ -339,10 +403,24 @@ export declare class SourceInfo {
 export declare class Subscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
-  get handler(): void
+  recv(): Promise<Sample>
+  tryRecv(): Sample | null
+  drain(): Array<Sample>
+  stream(): ReadableStream<Sample>
+  isEmpty(): boolean
+  isFull(): boolean
+  isDisconnected(): boolean
+  len(): number
+  capacity(): number | null
+  senderCount(): number
+  receiverCount(): number
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): Promise<undefined>
+}
+
+export declare class TimeRange {
+
 }
 
 export declare class Timestamp {
@@ -419,7 +497,7 @@ export interface GetOptions {
   attachment?: Uint8Array
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export interface HeartbeatConfig {
@@ -450,12 +528,12 @@ export interface LinkPriorities {
 export interface LivelinessGetOptions {
   timeout?: number
   cancellationToken?: CancellationToken
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export interface LivelinessSubscriberOptions {
   history?: boolean
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export type Locality =  'SessionLocal'|
@@ -463,7 +541,7 @@ export type Locality =  'SessionLocal'|
 'Any';
 
 export interface MatchingListenerOptions {
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export interface MissDetectionConfig {
@@ -531,7 +609,7 @@ export interface QuerierGetOptions {
   attachment?: Uint8Array
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export interface QuerierOptions {
@@ -548,7 +626,7 @@ export interface QuerierOptions {
 export interface QueryableOptions {
   complete?: boolean
   allowedOrigin?: Locality
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export type QueryTarget =  'BestMatching'|
@@ -590,7 +668,7 @@ export type SampleKind =  'Put'|
 'Delete';
 
 export interface SampleMissListenerOptions {
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export interface ScoutOptions {
@@ -612,7 +690,7 @@ export interface SubscriberOptions {
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number
-  channel?: ChannelArg
+  capacity?: number
 }
 
 export type WhatAmI =  'Router'|
