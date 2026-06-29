@@ -3,7 +3,6 @@ use std::time::Duration;
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{cancellation as zcancellation, query as zquery, sample as zsample};
-use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
   bytes::*, config::*, error::*, info::*, key_expr::*, liveliness::*, options::*, publisher::*,
@@ -219,8 +218,6 @@ impl Session {
     key_expr: KeyExprArg<'_>,
     options: Option<QuerierOptions>,
   ) -> napi::Result<Querier> {
-    todo!()
-
     // let QuerierOptions {
     //   target,
     //   consolidation,
@@ -269,6 +266,8 @@ impl Session {
     // let zquerier = builder.await.map_napi_err()?;
 
     // Ok(zquerier.into())
+
+    todo!()
   }
 
   #[napi]

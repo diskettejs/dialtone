@@ -1,10 +1,11 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
-  key_expr as zkey_expr, liveliness as zliveliness, sample as zsample, session as zsession,
+  handlers as zhandlers, key_expr as zkey_expr, liveliness as zliveliness, sample as zsample,
+  session as zsession,
 };
 
-use crate::{config::*, error::*, key_expr::*, liveliness::*, miss::*, options::*};
+use crate::{channels::*, config::*, error::*, key_expr::*, liveliness::*, miss::*, options::*};
 
 #[napi]
 pub struct Subscriber {
@@ -37,6 +38,8 @@ impl Subscriber {
 
   #[napi(getter)]
   pub fn handler(&self) -> Either<(), ()> {
+    // TODO: need to figure out a way to keep the handler as a reference and be solely owned by inner
+    self.inner.handler();
     todo!()
   }
 
