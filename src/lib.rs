@@ -20,6 +20,7 @@ mod queryable;
 mod sample;
 mod scout;
 mod selector;
+mod serialization;
 mod session;
 mod subscriber;
 mod time;

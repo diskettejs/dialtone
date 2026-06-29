@@ -28,6 +28,39 @@ export declare class Config {
   remove(key: string): void
 }
 
+export declare class Deserializer {
+  constructor(bytes: Bytes)
+  done(): boolean
+  i8(): number
+  i16(): number
+  i32(): number
+  i64(): bigint
+  i128(): bigint
+  u8(): number
+  u16(): number
+  u32(): number
+  u64(): bigint
+  u128(): bigint
+  f32(): number
+  f64(): number
+  varInt(): bigint
+  bool(): boolean
+  string(): string
+  bytes(): Bytes
+  uint8Array(): Uint8Array
+  int8Array(): Int8Array
+  uint16Array(): Uint16Array
+  int16Array(): Int16Array
+  uint32Array(): Uint32Array
+  int32Array(): Int32Array
+  float32Array(): Float32Array
+  float64Array(): Float64Array
+  bigInt64Array(): BigInt64Array
+  bigUint64Array(): BigUint64Array
+  stringArray(): Array<string>
+  boolArray(): Array<boolean>
+}
+
 export declare class Encoding {
   static default(): Encoding
   static from(value: string): Encoding
@@ -359,6 +392,39 @@ export declare class Selector {
   get keyExpr(): KeyExpr
   get parameters(): Parameters
   split(): SelectorParts
+}
+
+export declare class Serializer {
+  constructor()
+  i8(value: number): void
+  i16(value: number): void
+  i32(value: number): void
+  i64(value: bigint): void
+  i128(value: bigint): void
+  u8(value: number): void
+  u16(value: number): void
+  u32(value: number): void
+  u64(value: bigint): void
+  u128(value: bigint): void
+  f32(value: number): void
+  f64(value: number): void
+  varInt(value: bigint): void
+  bool(value: boolean): void
+  string(value: string): void
+  bytes(value: Bytes): void
+  uint8Array(value: Uint8Array): void
+  int8Array(value: Int8Array): void
+  uint16Array(value: Uint16Array): void
+  int16Array(value: Int16Array): void
+  uint32Array(value: Uint32Array): void
+  int32Array(value: Int32Array): void
+  float32Array(value: Float32Array): void
+  float64Array(value: Float64Array): void
+  bigInt64Array(value: BigInt64Array): void
+  bigUint64Array(value: BigUint64Array): void
+  stringArray(value: Array<string>): void
+  boolArray(value: Array<boolean>): void
+  finish(): Bytes
 }
 
 export declare class Session {
