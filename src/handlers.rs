@@ -81,17 +81,17 @@ impl From<zhandlers::FifoChannelHandler<zquery::Reply>> for Replies {
 
 #[napi]
 impl Replies {
-  #[napi]
+  #[napi(ts_return_type = "Promise<ReplyResult>")]
   pub async fn recv(&self) -> napi::Result<Reply> {
     self.inner.recv::<Reply>().await
   }
 
-  #[napi]
+  #[napi(ts_return_type = "ReplyResult | null")]
   pub fn try_recv(&self) -> napi::Result<Option<Reply>> {
     self.inner.try_recv::<Reply>()
   }
 
-  #[napi]
+  #[napi(ts_return_type = "Array<ReplyResult>")]
   pub fn drain(&self) -> Vec<Reply> {
     self.inner.drain::<Reply>()
   }
@@ -131,7 +131,7 @@ impl Replies {
     self.inner.receiver_count()
   }
 
-  #[napi]
+  #[napi(ts_return_type = "ReadableStream<ReplyResult>")]
   pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Reply>> {
     self.inner.stream::<Reply>(env)
   }

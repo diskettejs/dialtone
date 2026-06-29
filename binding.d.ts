@@ -314,9 +314,9 @@ export declare class Queryable {
 }
 
 export declare class Replies {
-  recv(): Promise<Reply>
-  tryRecv(): Reply | null
-  drain(): Array<Reply>
+  recv(): Promise<ReplyResult>
+  tryRecv(): ReplyResult | null
+  drain(): Array<ReplyResult>
   isDisconnected(): boolean
   isEmpty(): boolean
   isFull(): boolean
@@ -324,11 +324,12 @@ export declare class Replies {
   capacity(): number | null
   senderCount(): number
   receiverCount(): number
-  stream(): ReadableStream<Reply>
+  stream(): ReadableStream<ReplyResult>
 }
 
 export declare class Reply {
-  result(): Sample | ReplyError
+  get sample(): Sample | null
+  get error(): ReplyError | null
   get replierId(): EntityGlobalId | null
 }
 
@@ -718,6 +719,12 @@ export interface ReplyErrOptions {
   encoding?: string
 }
 
+export interface ReplyErrored {
+  sample?: null
+  error: ReplyError
+  replierId: EntityGlobalId | null
+}
+
 export type ReplyKeyExpr =  'Any'|
 'MatchingQuery';
 
@@ -727,6 +734,15 @@ export interface ReplyOptions {
   timestamp?: Timestamp
   attachment?: Uint8Array
   sourceInfo?: SourceInfo
+}
+
+export type ReplyResult =
+  ReplySample | ReplyErrored
+
+export interface ReplySample {
+  sample: Sample
+  error?: null
+  replierId: EntityGlobalId | null
 }
 
 export type SampleKind =  'Put'|

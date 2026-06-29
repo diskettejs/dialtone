@@ -218,12 +218,14 @@ impl From<zquery::Reply> for Reply {
 
 #[napi]
 impl Reply {
-  #[napi]
-  pub fn result(&self) -> Either<Sample, ReplyError> {
-    match self.inner.result() {
-      Ok(s) => Either::A(Sample::new(s.clone())),
-      Err(e) => Either::B(e.clone().into()),
-    }
+  #[napi(getter)]
+  pub fn sample(&self) -> Option<Sample> {
+    self.inner.result().ok().map(|s| Sample::new(s.clone()))
+  }
+
+  #[napi(getter)]
+  pub fn error(&self) -> Option<ReplyError> {
+    self.inner.result().err().map(|e| e.clone().into())
   }
 
   #[napi(getter)]
@@ -231,6 +233,30 @@ impl Reply {
     self.inner.replier_id().map(EntityGlobalId::from)
   }
 }
+
+#[allow(dead_code)]
+#[napi(object)]
+pub struct ReplySample<'env> {
+  pub sample: ClassInstance<'env, Sample>,
+  #[napi(ts_type = "null")]
+  pub error: Option<ClassInstance<'env, ReplyError>>,
+  #[napi(ts_type = "EntityGlobalId | null")]
+  pub replier_id: ClassInstance<'env, EntityGlobalId>,
+}
+
+#[allow(dead_code)]
+#[napi(object)]
+pub struct ReplyErrored<'env> {
+  #[napi(ts_type = "null")]
+  pub sample: Option<ClassInstance<'env, Sample>>,
+  pub error: ClassInstance<'env, ReplyError>,
+  #[napi(ts_type = "EntityGlobalId | null")]
+  pub replier_id: ClassInstance<'env, EntityGlobalId>,
+}
+
+#[allow(dead_code)]
+#[napi]
+pub type ReplyResult<'env> = Either<ReplySample<'env>, ReplyErrored<'env>>;
 
 #[napi]
 pub struct ReplyError {
