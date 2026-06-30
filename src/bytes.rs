@@ -49,12 +49,6 @@ impl From<&Bytes> for zbytes::ZBytes {
   }
 }
 
-impl Bytes {
-  pub(crate) fn as_zbytes(&self) -> &zbytes::ZBytes {
-    &self.inner
-  }
-}
-
 #[napi]
 impl Bytes {
   #[napi]

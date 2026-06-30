@@ -1,5 +1,4 @@
 export * from './binding.js'
-export * from './codec.js'
 
 import * as binding from './binding.js'
 
