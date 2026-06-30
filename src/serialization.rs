@@ -20,6 +20,26 @@ impl Serializer {
   }
 }
 
+fn range_err(ty: &str) -> napi::Error {
+  napi::Error::from_reason(format!("BigInt value out of range for {ty}"))
+}
+
+fn bigint_to_i128(value: &BigInt) -> Option<i128> {
+  if value.words.len() > 2 {
+    return None;
+  }
+  let mag = (value.words[0] as u128) | ((value.words.get(1).copied().unwrap_or(0) as u128) << 64);
+  if value.sign_bit {
+    if mag == i128::MIN.unsigned_abs() {
+      Some(i128::MIN)
+    } else {
+      (mag <= i128::MAX as u128).then(|| -(mag as i128))
+    }
+  } else {
+    (mag <= i128::MAX as u128).then_some(mag as i128)
+  }
+}
+
 #[napi]
 impl Serializer {
   #[napi(constructor)]
@@ -49,14 +69,17 @@ impl Serializer {
 
   #[napi]
   pub fn i64(&mut self, value: BigInt) -> napi::Result<()> {
-    let (n, _) = value.get_i64();
+    let (n, lossless) = value.get_i64();
+    if !lossless {
+      return Err(range_err("i64"));
+    }
     self.writer()?.serialize(n);
     Ok(())
   }
 
   #[napi]
   pub fn i128(&mut self, value: BigInt) -> napi::Result<()> {
-    let (n, _) = value.get_i128();
+    let n = bigint_to_i128(&value).ok_or_else(|| range_err("i128"))?;
     self.writer()?.serialize(n);
     Ok(())
   }
@@ -81,21 +104,21 @@ impl Serializer {
 
   #[napi]
   pub fn u64(&mut self, value: BigInt) -> napi::Result<()> {
-    let (_, n, _) = value.get_u64();
+    let (signed, n, lossless) = value.get_u64();
+    if signed || !lossless {
+      return Err(range_err("u64"));
+    }
     self.writer()?.serialize(n);
     Ok(())
   }
 
   #[napi]
   pub fn u128(&mut self, value: BigInt) -> napi::Result<()> {
-    let (_, n, _) = value.get_u128();
+    let (signed, n, lossless) = value.get_u128();
+    if signed || !lossless {
+      return Err(range_err("u128"));
+    }
     self.writer()?.serialize(n);
-    Ok(())
-  }
-
-  #[napi]
-  pub fn f32(&mut self, value: f64) -> napi::Result<()> {
-    self.writer()?.serialize(value as f32);
     Ok(())
   }
 
@@ -107,8 +130,12 @@ impl Serializer {
 
   #[napi]
   pub fn var_int(&mut self, value: BigInt) -> napi::Result<()> {
-    let (_, n, _) = value.get_u64();
-    self.writer()?.serialize(ext::VarInt(n as usize));
+    let (signed, n, lossless) = value.get_u64();
+    if signed || !lossless {
+      return Err(range_err("varint"));
+    }
+    let n = usize::try_from(n).map_err(|_| range_err("varint"))?;
+    self.writer()?.serialize(ext::VarInt(n));
     Ok(())
   }
 
@@ -294,15 +321,6 @@ impl Deserializer {
       .inner
       .deserialize::<u128>()
       .map(BigInt::from)
-      .map_napi_err()
-  }
-
-  #[napi]
-  pub fn f32(&mut self) -> napi::Result<f64> {
-    self
-      .inner
-      .deserialize::<f32>()
-      .map(|n| n as f64)
       .map_napi_err()
   }
 

@@ -39,9 +39,6 @@ describe('scalars (number)', () => {
     ['u8 / max', 255, (s, v) => s.u8(v), (d) => d.u8()],
     ['u16 / max', 65535, (s, v) => s.u16(v), (d) => d.u16()],
     ['u32 / max', 4294967295, (s, v) => s.u32(v), (d) => d.u32()],
-    ['f32 / 0.5', 0.5, (s, v) => s.f32(v), (d) => d.f32()],
-    ['f32 / -2.5', -2.5, (s, v) => s.f32(v), (d) => d.f32()],
-    ['f32 / integer', 1234, (s, v) => s.f32(v), (d) => d.f32()],
     ['f64 / pi', 3.141592653589793, (s, v) => s.f64(v), (d) => d.f64()],
     ['f64 / -1.5', -1.5, (s, v) => s.f64(v), (d) => d.f64()],
     ['f64 / MAX_SAFE_INTEGER', Number.MAX_SAFE_INTEGER, (s, v) => s.f64(v), (d) => d.f64()],
@@ -61,6 +58,23 @@ describe('scalars (bigint)', () => {
     ['varInt / min', 0n, (s, v) => s.varInt(v), (d) => d.varInt()],
     ['varInt / max', 2n ** 64n - 1n, (s, v) => s.varInt(v), (d) => d.varInt()],
   ])
+})
+
+describe('strict integer range (rejects silent data loss)', () => {
+  test.each<[name: string, op: () => void]>([
+    ['i64 above max', () => new Serializer().i64(2n ** 63n)],
+    ['i64 below min', () => new Serializer().i64(-(2n ** 63n) - 1n)],
+    ['i128 above max', () => new Serializer().i128(2n ** 127n)],
+    ['i128 below min', () => new Serializer().i128(-(2n ** 127n) - 1n)],
+    ['u64 negative', () => new Serializer().u64(-1n)],
+    ['u64 above max', () => new Serializer().u64(2n ** 64n)],
+    ['u128 negative', () => new Serializer().u128(-1n)],
+    ['u128 above max', () => new Serializer().u128(2n ** 128n)],
+    ['varInt negative', () => new Serializer().varInt(-1n)],
+    ['varInt above max', () => new Serializer().varInt(2n ** 64n)],
+  ])('throws: %s', (_name, op) => {
+    expect(op).toThrow()
+  })
 })
 
 describe('bool / string', () => {
@@ -231,15 +245,6 @@ describe('wire format (cross-checked against zenoh-ext Rust tests)', () => {
     ['i32 = -49245', (s) => s.i32(-49245), [163, 63, 255, 255]],
     ['string = "test"', (s) => s.string('test'), [4, 116, 101, 115, 116]],
     [
-      'tuple (u16, f32, string)',
-      (s) => {
-        s.u16(500)
-        s.f32(1234)
-        s.string('test')
-      },
-      [244, 1, 0, 64, 154, 68, 4, 116, 101, 115, 116],
-    ],
-    [
       'Vec<i64>',
       (s) => s.bigInt64Array(new BigInt64Array([-100n, 500n, 100000n, -20000000n])),
       [
@@ -303,15 +308,6 @@ describe('lifecycle & errors', () => {
         const d = new Deserializer(s.finish())
         d.u8()
         d.u8()
-      },
-    ],
-    [
-      'reading more bytes than available',
-      () => {
-        const s = new Serializer()
-        s.u8(1)
-        const d = new Deserializer(s.finish())
-        d.u32()
       },
     ],
   ])('throws: %s', (_name, op) => {

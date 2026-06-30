@@ -41,7 +41,6 @@ export declare class Deserializer {
   u32(): number
   u64(): bigint
   u128(): bigint
-  f32(): number
   f64(): number
   varInt(): bigint
   bool(): boolean
@@ -407,7 +406,6 @@ export declare class Serializer {
   u32(value: number): void
   u64(value: bigint): void
   u128(value: bigint): void
-  f32(value: number): void
   f64(value: number): void
   varInt(value: bigint): void
   bool(value: boolean): void

@@ -590,10 +590,11 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, KeyExpr, Link, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Deserializer, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, KeyExpr, Link, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Serializer, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
+export { Deserializer }
 export { Encoding }
 export { EndPoint }
 export { EntityGlobalId }
@@ -622,6 +623,7 @@ export { Sample }
 export { SampleMissListener }
 export { Scout }
 export { Selector }
+export { Serializer }
 export { Session }
 export { SessionConfig }
 export { SessionInfo }
