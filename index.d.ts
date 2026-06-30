@@ -1,4 +1,5 @@
 export * from './binding.js'
+export * from './config.js'
 
 import * as binding from './binding.js'
 

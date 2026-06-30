@@ -52,3 +52,4 @@ Scout.prototype[Symbol.dispose] = function () {
 }
 
 export * from './binding.js'
+export * from './config.js'

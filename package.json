@@ -4,6 +4,8 @@
   "files": [
     "binding.d.ts",
     "binding.js",
+    "config.d.ts",
+    "config.js",
     "index.d.ts",
     "index.js"
   ],
