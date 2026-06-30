@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { defineConfig, type ZenohConfig } from '../config.js'
+import { defineConfig, type ZenohConfig } from '../index.js'
 
 // `defineConfig(x)` is `Config.fromJson5(JSON.stringify(x))`. Zenoh validates
 // eagerly at that point — it parses the JSON5, rejects unknown keys

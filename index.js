@@ -1,4 +1,5 @@
 import {
+  Config,
   LivelinessSubscriber,
   LivelinessToken,
   MatchingListener,
@@ -51,5 +52,8 @@ Scout.prototype[Symbol.dispose] = function () {
   return this.stop()
 }
 
+export function defineConfig(config = {}) {
+  return Config.fromJson5(JSON.stringify(config))
+}
+
 export * from './binding.js'
-export * from './config.js'
