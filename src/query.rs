@@ -7,7 +7,7 @@ use zenoh::{
 };
 
 use crate::{
-  bytes::*, config::*, encoding::*, error::*, key_expr::*, macros::wrapper, options::*, qos::*,
+  bytes::*, config::*, encoding::*, error::*, key_expr::*, macros::*, options::*, qos::*,
   sample::*, selector::*,
 };
 
@@ -172,29 +172,7 @@ impl Query {
   }
 }
 
-#[napi(string_enum)]
-pub enum ReplyKeyExpr {
-  Any,
-  MatchingQuery,
-}
-
-impl From<ReplyKeyExpr> for zquery::ReplyKeyExpr {
-  fn from(value: ReplyKeyExpr) -> Self {
-    match value {
-      ReplyKeyExpr::Any => Self::Any,
-      ReplyKeyExpr::MatchingQuery => Self::MatchingQuery,
-    }
-  }
-}
-
-impl From<zquery::ReplyKeyExpr> for ReplyKeyExpr {
-  fn from(value: zquery::ReplyKeyExpr) -> Self {
-    match value {
-      zquery::ReplyKeyExpr::Any => Self::Any,
-      zquery::ReplyKeyExpr::MatchingQuery => Self::MatchingQuery,
-    }
-  }
-}
+enum_mapper!(zquery::ReplyKeyExpr: Any, MatchingQuery);
 
 wrapper!(zquery::Reply);
 
@@ -320,59 +298,6 @@ impl Parameters {
   }
 }
 
-#[napi(string_enum)]
-pub enum QueryTarget {
-  BestMatching,
-  All,
-  AllComplete,
-}
+enum_mapper!(zquery::QueryTarget: BestMatching, All, AllComplete);
 
-impl From<QueryTarget> for zquery::QueryTarget {
-  fn from(value: QueryTarget) -> Self {
-    match value {
-      QueryTarget::BestMatching => Self::BestMatching,
-      QueryTarget::All => Self::All,
-      QueryTarget::AllComplete => Self::AllComplete,
-    }
-  }
-}
-
-impl From<zquery::QueryTarget> for QueryTarget {
-  fn from(value: zquery::QueryTarget) -> Self {
-    match value {
-      zquery::QueryTarget::BestMatching => Self::BestMatching,
-      zquery::QueryTarget::All => Self::All,
-      zquery::QueryTarget::AllComplete => Self::AllComplete,
-    }
-  }
-}
-
-#[napi(string_enum)]
-pub enum ConsolidationMode {
-  Auto,
-  None,
-  Monotonic,
-  Latest,
-}
-
-impl From<ConsolidationMode> for zquery::ConsolidationMode {
-  fn from(value: ConsolidationMode) -> Self {
-    match value {
-      ConsolidationMode::Auto => Self::Auto,
-      ConsolidationMode::None => Self::None,
-      ConsolidationMode::Monotonic => Self::Monotonic,
-      ConsolidationMode::Latest => Self::Latest,
-    }
-  }
-}
-
-impl From<zquery::ConsolidationMode> for ConsolidationMode {
-  fn from(value: zquery::ConsolidationMode) -> Self {
-    match value {
-      zquery::ConsolidationMode::Auto => Self::Auto,
-      zquery::ConsolidationMode::None => Self::None,
-      zquery::ConsolidationMode::Monotonic => Self::Monotonic,
-      zquery::ConsolidationMode::Latest => Self::Latest,
-    }
-  }
-}
+enum_mapper!(zquery::ConsolidationMode: Auto, None, Monotonic, Latest);

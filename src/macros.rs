@@ -66,6 +66,42 @@ macro_rules! wrapper {
 }
 pub(crate) use wrapper;
 
+/// Generates `#[napi(string_enum)] pub enum $Name { variants }` plus both `From` conversions
+/// between it and the mirrored `$path` enum. Variant names must match exactly on both sides.
+///
+/// enum_mapper!(zqos::CongestionControl: Drop, Block, BlockFirst);
+macro_rules! enum_mapper {
+    ($($seg:ident)::+ : $($variant:ident),+ $(,)?) => {
+        $crate::macros::enum_mapper!(@peel $($seg)::+ ; $($seg)::+ ; $($variant),+);
+    };
+    (@peel $head:ident :: $($tail:ident)::+ ; $full:path ; $($variant:ident),+) => {
+        $crate::macros::enum_mapper!(@peel $($tail)::+ ; $full ; $($variant),+);
+    };
+    (@peel $last:ident ; $full:path ; $($variant:ident),+) => {
+        #[napi(string_enum)]
+        pub enum $last {
+            $($variant,)+
+        }
+
+        impl From<$last> for $full {
+            fn from(value: $last) -> Self {
+                match value {
+                    $($last::$variant => Self::$variant,)+
+                }
+            }
+        }
+
+        impl From<$full> for $last {
+            fn from(value: $full) -> Self {
+                match value {
+                    $(<$full>::$variant => Self::$variant,)+
+                }
+            }
+        }
+    };
+}
+pub(crate) use enum_mapper;
+
 /// Generates a standalone `#[napi] impl $Struct { ... }` with the 11
 /// `crate::handlers::FifoChannelHandler<T>`-forwarding methods. Coexists with a
 /// hand-written impl block for the same struct via napi-rs's additive, TypeId-keyed

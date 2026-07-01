@@ -1,34 +1,9 @@
 use napi_derive::napi;
 use zenoh::config as zconfig;
 
-use crate::{error::*, info::*, macros::wrapper};
+use crate::{error::*, info::*, macros::*};
 
-#[napi(string_enum)]
-pub enum WhatAmI {
-  Router,
-  Peer,
-  Client,
-}
-
-impl From<WhatAmI> for zconfig::WhatAmI {
-  fn from(value: WhatAmI) -> Self {
-    match value {
-      WhatAmI::Router => Self::Router,
-      WhatAmI::Peer => Self::Peer,
-      WhatAmI::Client => Self::Client,
-    }
-  }
-}
-
-impl From<zconfig::WhatAmI> for WhatAmI {
-  fn from(value: zconfig::WhatAmI) -> Self {
-    match value {
-      zconfig::WhatAmI::Router => Self::Router,
-      zconfig::WhatAmI::Peer => Self::Peer,
-      zconfig::WhatAmI::Client => Self::Client,
-    }
-  }
-}
+enum_mapper!(zconfig::WhatAmI: Router, Peer, Client);
 
 wrapper!(zconfig::WhatAmIMatcher);
 

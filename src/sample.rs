@@ -1,31 +1,9 @@
 use napi_derive::napi;
 use zenoh::sample as zsample;
 
-use crate::{bytes::*, config::*, encoding::*, key_expr::*, macros::wrapper, qos::*, time::*};
+use crate::{bytes::*, config::*, encoding::*, key_expr::*, macros::*, qos::*, time::*};
 
-#[napi(string_enum)]
-pub enum SampleKind {
-  Put,
-  Delete,
-}
-
-impl From<zsample::SampleKind> for SampleKind {
-  fn from(kind: zsample::SampleKind) -> Self {
-    match kind {
-      zsample::SampleKind::Put => SampleKind::Put,
-      zsample::SampleKind::Delete => SampleKind::Delete,
-    }
-  }
-}
-
-impl From<SampleKind> for zsample::SampleKind {
-  fn from(kind: SampleKind) -> Self {
-    match kind {
-      SampleKind::Put => zsample::SampleKind::Put,
-      SampleKind::Delete => zsample::SampleKind::Delete,
-    }
-  }
-}
+enum_mapper!(zsample::SampleKind: Put, Delete);
 
 #[napi]
 pub struct Sample {
