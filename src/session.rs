@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{
   cancellation as zcancellation, handlers::IntoHandler, query as zquery, sample as zsample,
@@ -61,13 +61,12 @@ impl Session {
   }
 
   #[napi]
-  pub fn put<'env>(
+  pub async fn put(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
+    key_expr: KeyExprArg<'_>,
     payload: PayloadArg,
     options: Option<PutOptions>,
-  ) -> napi::Result<PromiseRaw<'env, ()>> {
+  ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
     let PutOptions {
@@ -87,56 +86,53 @@ impl Session {
     let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
     let session = self.inner.clone();
 
-    env.spawn_future(async move {
-      let mut builder = session.put(expr, payload);
+    let mut builder = session.put(expr, payload);
 
-      if let Some(encoding) = encoding {
-        builder = builder.encoding(encoding);
-      }
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding);
+    }
 
-      if let Some(congestion_control) = congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into());
+    }
 
-      if let Some(priority) = priority {
-        builder = builder.priority(priority.into());
-      }
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into());
+    }
 
-      if let Some(express) = express {
-        builder = builder.express(express);
-      }
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
 
-      if let Some(reliability) = reliability {
-        builder = builder.reliability(reliability.into());
-      }
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into());
+    }
 
-      if let Some(allowed_destination) = allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into());
+    }
 
-      if let Some(timestamp) = timestamp {
-        builder = builder.timestamp(timestamp);
-      }
+    if let Some(timestamp) = timestamp {
+      builder = builder.timestamp(timestamp);
+    }
 
-      if let Some(attachment) = attachment {
-        builder = builder.attachment(attachment);
-      }
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment);
+    }
 
-      if let Some(source_info) = source_info {
-        builder = builder.source_info(source_info);
-      }
+    if let Some(source_info) = source_info {
+      builder = builder.source_info(source_info);
+    }
 
-      builder.await.map_napi_err()
-    })
+    builder.await.map_napi_err()
   }
 
   #[napi]
-  pub fn get<'env>(
+  pub async fn get(
     &self,
-    env: &'env Env,
     selector: SelectorArg<'_>,
     options: Option<GetOptions>,
-  ) -> napi::Result<PromiseRaw<'env, Replies>> {
+  ) -> napi::Result<Replies> {
     let GetOptions {
       parameters,
       target,
@@ -171,69 +167,66 @@ impl Session {
       cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
     let session = self.inner.clone();
 
-    env.spawn_future(async move {
-      let mut builder = session.get(selector).with(cb);
+    let mut builder = session.get(selector).with(cb);
 
-      if let Some(target) = target {
-        builder = builder.target(target.into());
-      }
+    if let Some(target) = target {
+      builder = builder.target(target.into());
+    }
 
-      if let Some(consolidation) = consolidation {
-        builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
-      }
+    if let Some(consolidation) = consolidation {
+      builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
+    }
 
-      if let Some(congestion_control) = congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into());
+    }
 
-      if let Some(priority) = priority {
-        builder = builder.priority(priority.into());
-      }
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into());
+    }
 
-      if let Some(express) = express {
-        builder = builder.express(express);
-      }
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
 
-      if let Some(allowed_destination) = allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into());
+    }
 
-      if let Some(timeout) = timeout {
-        builder = builder.timeout(timeout);
-      }
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(timeout);
+    }
 
-      if let Some(payload) = payload {
-        builder = builder.payload(payload);
-      }
+    if let Some(payload) = payload {
+      builder = builder.payload(payload);
+    }
 
-      if let Some(encoding) = encoding {
-        builder = builder.encoding(encoding);
-      }
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding);
+    }
 
-      if let Some(attachment) = attachment {
-        builder = builder.attachment(attachment);
-      }
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment);
+    }
 
-      if let Some(source_info) = source_info {
-        builder = builder.source_info(source_info);
-      }
+    if let Some(source_info) = source_info {
+      builder = builder.source_info(source_info);
+    }
 
-      if let Some(cancellation_token) = cancellation_token {
-        builder = builder.cancellation_token(cancellation_token);
-      }
+    if let Some(cancellation_token) = cancellation_token {
+      builder = builder.cancellation_token(cancellation_token);
+    }
 
-      builder.await.map_napi_err()?;
-      Ok(receiver.into())
-    })
+    builder.await.map_napi_err()?;
+    Ok(receiver.into())
   }
 
   #[napi]
-  pub fn delete<'env>(
+  pub async fn delete(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
+    key_expr: KeyExprArg<'_>,
     options: Option<DeleteOptions>,
-  ) -> napi::Result<PromiseRaw<'env, ()>> {
+  ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let DeleteOptions {
       congestion_control,
@@ -251,43 +244,41 @@ impl Session {
     let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
     let session = self.inner.clone();
 
-    env.spawn_future(async move {
-      let mut builder = session.delete(expr);
+    let mut builder = session.delete(expr);
 
-      if let Some(congestion_control) = congestion_control {
-        builder = builder.congestion_control(congestion_control.into());
-      }
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into());
+    }
 
-      if let Some(priority) = priority {
-        builder = builder.priority(priority.into());
-      }
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into());
+    }
 
-      if let Some(express) = express {
-        builder = builder.express(express);
-      }
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
 
-      if let Some(reliability) = reliability {
-        builder = builder.reliability(reliability.into());
-      }
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into());
+    }
 
-      if let Some(allowed_destination) = allowed_destination {
-        builder = builder.allowed_destination(allowed_destination.into());
-      }
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into());
+    }
 
-      if let Some(timestamp) = timestamp {
-        builder = builder.timestamp(timestamp);
-      }
+    if let Some(timestamp) = timestamp {
+      builder = builder.timestamp(timestamp);
+    }
 
-      if let Some(attachment) = attachment {
-        builder = builder.attachment(attachment);
-      }
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment);
+    }
 
-      if let Some(source_info) = source_info {
-        builder = builder.source_info(source_info);
-      }
+    if let Some(source_info) = source_info {
+      builder = builder.source_info(source_info);
+    }
 
-      builder.await.map_napi_err()
-    })
+    builder.await.map_napi_err()
   }
 
   #[napi]

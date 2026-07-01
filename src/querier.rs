@@ -61,11 +61,7 @@ impl Querier {
   }
 
   #[napi]
-  pub fn get<'env>(
-    &self,
-    env: &'env Env,
-    options: Option<QuerierGetOptions>,
-  ) -> napi::Result<PromiseRaw<'env, Replies>> {
+  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<Replies> {
     let querier = self
       .inner
       .as_ref()
@@ -117,9 +113,9 @@ impl Querier {
       builder = builder.cancellation_token(cancellation_token);
     }
 
-    builder.wait().map_napi_err()?;
+    builder.await.map_napi_err()?;
 
-    env.spawn_future(async move { Ok(receiver.into()) })
+    Ok(receiver.into())
   }
 
   #[napi]

@@ -227,8 +227,8 @@ export declare class Publisher {
   get encoding(): Encoding
   get congestionControl(): CongestionControl
   get priority(): Priority
-  put(payload: PayloadArg, options?: PublisherPutOptions | undefined | null): Promise<undefined>
-  delete(options?: PublisherDeleteOptions | undefined | null): Promise<undefined>
+  put(payload: PayloadArg, options?: PublisherPutOptions | undefined | null): Promise<void>
+  delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
   undeclare(): Promise<undefined>
@@ -258,9 +258,9 @@ export declare class Query {
   get express(): boolean
   get parameters(): Parameters
   get acceptReplies(): ReplyKeyExpr
-  reply(keyExpr: KeyExprArg, payload: PayloadArg, options?: ReplyOptions | undefined | null): Promise<undefined>
+  reply(keyExpr: KeyExprArg, payload: PayloadArg, options?: ReplyOptions | undefined | null): Promise<void>
   replyErr(payload: PayloadArg, options?: ReplyErrOptions | undefined | null): Promise<void>
-  replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<undefined>
+  replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
 }
 
 export declare class Queryable {
@@ -371,9 +371,9 @@ export declare class Session {
   info(): SessionInfo
   config(): SessionConfig
   close(): Promise<void>
-  put(keyExpr: KeyExprArg, payload: PayloadArg, options?: PutOptions | undefined | null): Promise<undefined>
+  put(keyExpr: KeyExprArg, payload: PayloadArg, options?: PutOptions | undefined | null): Promise<void>
   get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Replies>
-  delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<undefined>
+  delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
   declareKeyexpr(keyExpr: KeyExprArg): Promise<KeyExpr>
   declareQuerier(keyExpr: KeyExprArg, options?: QuerierOptions | undefined | null): Promise<Querier>

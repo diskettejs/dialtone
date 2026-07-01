@@ -71,13 +71,12 @@ impl Query {
   }
 
   #[napi]
-  pub fn reply<'env>(
+  pub async fn reply(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
+    key_expr: KeyExprArg<'_>,
     payload: PayloadArg,
     options: Option<ReplyOptions>,
-  ) -> napi::Result<PromiseRaw<'env, ()>> {
+  ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
     let query = self.inner.clone();
@@ -94,25 +93,23 @@ impl Query {
     let attachment = attachment.map(IntoZBytes::into_zbytes);
     let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
 
-    env.spawn_future(async move {
-      let mut builder = query.reply(expr, payload);
-      if let Some(encoding) = encoding {
-        builder = builder.encoding(encoding);
-      }
-      if let Some(express) = express {
-        builder = builder.express(express);
-      }
-      if let Some(timestamp) = timestamp {
-        builder = builder.timestamp(timestamp);
-      }
-      if let Some(attachment) = attachment {
-        builder = builder.attachment(attachment);
-      }
-      if let Some(source_info) = source_info {
-        builder = builder.source_info(source_info);
-      }
-      builder.await.map_napi_err()
-    })
+    let mut builder = query.reply(expr, payload);
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding);
+    }
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
+    if let Some(timestamp) = timestamp {
+      builder = builder.timestamp(timestamp);
+    }
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment);
+    }
+    if let Some(source_info) = source_info {
+      builder = builder.source_info(source_info);
+    }
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -134,12 +131,11 @@ impl Query {
   }
 
   #[napi]
-  pub fn reply_del<'env>(
+  pub async fn reply_del(
     &self,
-    env: &'env Env,
     key_expr: KeyExprArg<'_>,
     options: Option<ReplyDelOptions>,
-  ) -> napi::Result<PromiseRaw<'env, ()>> {
+  ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let query = self.inner.clone();
 
@@ -153,22 +149,20 @@ impl Query {
     let attachment = attachment.map(IntoZBytes::into_zbytes);
     let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
 
-    env.spawn_future(async move {
-      let mut builder = query.reply_del(expr);
-      if let Some(express) = express {
-        builder = builder.express(express);
-      }
-      if let Some(timestamp) = timestamp {
-        builder = builder.timestamp(timestamp);
-      }
-      if let Some(attachment) = attachment {
-        builder = builder.attachment(attachment);
-      }
-      if let Some(source_info) = source_info {
-        builder = builder.source_info(source_info);
-      }
-      builder.await.map_napi_err()
-    })
+    let mut builder = query.reply_del(expr);
+    if let Some(express) = express {
+      builder = builder.express(express);
+    }
+    if let Some(timestamp) = timestamp {
+      builder = builder.timestamp(timestamp);
+    }
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment);
+    }
+    if let Some(source_info) = source_info {
+      builder = builder.source_info(source_info);
+    }
+    builder.await.map_napi_err()
   }
 }
 
