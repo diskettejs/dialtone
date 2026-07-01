@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { Session, type GetOptions, type QueryTarget } from '../index.js'
-import { commonOptions, configFromArgs } from './common.ts'
+import { bytesToString, commonOptions, configFromArgs } from './common.ts'
 
 const QUERY_TARGETS: Record<string, QueryTarget> = {
   BEST_MATCHING: 'BestMatching',
@@ -37,10 +37,10 @@ async function main() {
   for await (const reply of replies.stream()) {
     if (reply.error) {
       // Refer to z_bytes.ts to see how to deserialize different types of message.
-      console.log(`>> Received (ERROR: '${reply.error.payload.toString()}')`)
+      console.log(`>> Received (ERROR: '${bytesToString(reply.error.payload)}')`)
     } else {
       const { sample } = reply
-      console.log(`>> Received ('${sample.keyExpr}': '${sample.payload.toString()}')`)
+      console.log(`>> Received ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`)
     }
   }
 }

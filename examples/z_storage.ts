@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { KeyExpr, Session, type Sample } from '../index.js'
-import { commonOptions, configFromArgs } from './common.ts'
+import { bytesToString, commonOptions, configFromArgs } from './common.ts'
 
 async function main() {
   const { values } = parseArgs({
@@ -29,7 +29,9 @@ async function main() {
   const store = (async () => {
     for await (const sample of subscriber.stream()) {
       const key = sample.keyExpr.toString()
-      console.log(`>> [Subscriber] Received ${sample.kind} ('${key}': '${sample.payload.toString()}')`)
+      console.log(
+        `>> [Subscriber] Received ${sample.kind} ('${key}': '${bytesToString(sample.payload)}')`,
+      )
       if (sample.kind === 'Delete') stored.delete(key)
       else stored.set(key, sample)
     }

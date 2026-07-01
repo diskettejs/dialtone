@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { Session } from '../index.js'
-import { commonOptions, configFromArgs } from './common.ts'
+import { bytesToString, commonOptions, configFromArgs } from './common.ts'
 
 async function main() {
   const { values } = parseArgs({
@@ -20,8 +20,8 @@ async function main() {
   // Dialtone surfaces samples as an async iterator (no callbacks).
   for await (const sample of subscriber.stream()) {
     // Refer to z_bytes.ts to see how to deserialize different types of message.
-    let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload.toString()}')`
-    if (sample.attachment) line += ` (${sample.attachment.toString()})`
+    let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
+    if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`
     console.log(line)
   }
 }

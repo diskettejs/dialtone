@@ -1,5 +1,5 @@
 import { type ParseArgsOptionsConfig } from 'node:util'
-import { Config } from '../index.js'
+import { type Bytes, Config } from '../index.js'
 
 /**
  * CLI options shared by every example, mirroring Zenoh's `CommonArgs`
@@ -58,4 +58,18 @@ export function configFromArgs(values: CommonValues): Config {
   }
 
   return config
+}
+
+/**
+ * Decodes a `Bytes` payload as a UTF-8 string, mirroring the Zenoh examples'
+ * `payload.try_to_string().unwrap_or_else(|e| e.to_string().into())`: a
+ * non-UTF-8 payload yields the decode error's text instead of throwing, so a
+ * bad sample never aborts a receive loop.
+ */
+export function bytesToString(bytes: Bytes): string {
+  try {
+    return bytes.tryToString()
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err)
+  }
 }

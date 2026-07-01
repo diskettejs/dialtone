@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import { parseArgs } from 'node:util'
 import { Parameters, Session, type QuerierGetOptions, type QueryTarget } from '../index.js'
-import { commonOptions, configFromArgs } from './common.ts'
+import { bytesToString, commonOptions, configFromArgs } from './common.ts'
 
 const QUERY_TARGETS: Record<string, QueryTarget> = {
   BEST_MATCHING: 'BestMatching',
@@ -65,9 +65,11 @@ async function main() {
     const replies = await querier.get(options)
     for await (const reply of replies.stream()) {
       if (reply.error) {
-        console.log(`>> Received (ERROR: '${reply.error.payload.toString()}')`)
+        console.log(`>> Received (ERROR: '${bytesToString(reply.error.payload)}')`)
       } else {
-        console.log(`>> Received ('${reply.sample.keyExpr}': '${reply.sample.payload.toString()}')`)
+        console.log(
+          `>> Received ('${reply.sample.keyExpr}': '${bytesToString(reply.sample.payload)}')`,
+        )
       }
     }
   }

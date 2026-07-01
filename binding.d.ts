@@ -7,7 +7,13 @@ export declare class Bytes {
   get isEmpty(): boolean
   get len(): number
   toBytes(): Uint8Array
-  toString(): string
+  /**
+   * Decodes the payload as a UTF-8 string.
+   *
+   * @throws If the payload contains non-UTF-8 bytes. Zenoh does not guarantee
+   * UTF-8, so this can fail; use {@link Bytes.toBytes} for arbitrary bytes.
+   */
+  tryToString(): string
 }
 
 export declare class CancellationToken {

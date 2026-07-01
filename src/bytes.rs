@@ -63,8 +63,12 @@ impl Bytes {
     Uint8Array::from(self.inner.to_bytes().into_owned())
   }
 
+  /// Decodes the payload as a UTF-8 string.
+  ///
+  /// @throws If the payload contains non-UTF-8 bytes. Zenoh does not guarantee
+  /// UTF-8, so this can fail; use {@link Bytes.toBytes} for arbitrary bytes.
   #[napi]
-  pub fn to_string(&self) -> napi::Result<String> {
+  pub fn try_to_string(&self) -> napi::Result<String> {
     self
       .inner
       .try_to_string()
