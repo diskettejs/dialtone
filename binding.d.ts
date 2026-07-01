@@ -227,7 +227,7 @@ export declare class Publisher {
   get encoding(): Encoding
   get congestionControl(): CongestionControl
   get priority(): Priority
-  put(payload: PayloadArg, options?: PublisherPutOptions | undefined | null): Promise<void>
+  put(payload: Payload, options?: PublisherPutOptions | undefined | null): Promise<void>
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
@@ -258,8 +258,8 @@ export declare class Query {
   get express(): boolean
   get parameters(): Parameters
   get acceptReplies(): ReplyKeyExpr
-  reply(keyExpr: KeyExprArg, payload: PayloadArg, options?: ReplyOptions | undefined | null): Promise<void>
-  replyErr(payload: PayloadArg, options?: ReplyErrOptions | undefined | null): Promise<void>
+  reply(keyExpr: KeyExprArg, payload: Payload, options?: ReplyOptions | undefined | null): Promise<void>
+  replyErr(payload: Payload, options?: ReplyErrOptions | undefined | null): Promise<void>
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
 }
 
@@ -371,7 +371,7 @@ export declare class Session {
   info(): SessionInfo
   config(): SessionConfig
   close(): Promise<void>
-  put(keyExpr: KeyExprArg, payload: PayloadArg, options?: PutOptions | undefined | null): Promise<void>
+  put(keyExpr: KeyExprArg, payload: Payload, options?: PutOptions | undefined | null): Promise<void>
   get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Replies>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
@@ -472,7 +472,7 @@ export interface DeleteOptions {
   reliability?: Reliability
   allowedDestination?: Locality
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
 }
 
@@ -492,9 +492,9 @@ export interface GetOptions {
   express?: boolean
   allowedDestination?: Locality
   timeout?: number
-  payload?: Uint8Array
+  payload?: Payload
   encoding?: string
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
   capacity?: number
@@ -548,7 +548,7 @@ export interface MissDetectionConfig {
   heartbeat?: HeartbeatConfig
 }
 
-export type PayloadArg =
+export type Payload =
   string | Uint8Array
 
 export type PeriodicQueriesMode =  'PeriodicQueries';
@@ -568,7 +568,7 @@ export type Priority =  'RealTime'|
 
 export interface PublisherDeleteOptions {
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
 }
 
 export interface PublisherOptions {
@@ -587,7 +587,7 @@ export interface PublisherOptions {
 export interface PublisherPutOptions {
   encoding?: string
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
 }
 
 export interface PutOptions {
@@ -598,15 +598,15 @@ export interface PutOptions {
   reliability?: Reliability
   allowedDestination?: Locality
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
 }
 
 export interface QuerierGetOptions {
   parameters?: Parameters
-  payload?: Uint8Array
+  payload?: Payload
   encoding?: string
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
   capacity?: number
@@ -645,7 +645,7 @@ export interface RepliesConfig {
 export interface ReplyDelOptions {
   express?: boolean
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
 }
 
@@ -666,7 +666,7 @@ export interface ReplyOptions {
   encoding?: string
   express?: boolean
   timestamp?: Timestamp
-  attachment?: Uint8Array
+  attachment?: Payload
   sourceInfo?: SourceInfo
 }
 

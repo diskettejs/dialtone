@@ -1,13 +1,12 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
-  Wait, bytes as zbytes, cancellation as zcancellation, handlers::IntoHandler,
-  key_expr as zkey_expr, qos as zqos, query as zquery, sample as zsample,
+  Wait, handlers::IntoHandler, key_expr as zkey_expr, qos as zqos, query as zquery,
   session as zsession,
 };
 
 use crate::{
-  bytes::*, channels::FifoChannel, config::*, error::*, handlers::Replies, key_expr::*,
+  channels::FifoChannel, config::*, error::*, handlers::Replies, key_expr::*, macros::build,
   matching::*, options::*, qos::*, query::*,
 };
 
@@ -77,43 +76,19 @@ impl Querier {
       capacity,
     } = options.unwrap_or_default();
 
-    let parameters = parameters.map(|p| zquery::Parameters::from(p.as_ref()));
-    let payload = payload.map(IntoZBytes::into_zbytes);
-    let encoding = encoding.map(zbytes::Encoding::from);
-    let attachment = attachment.map(IntoZBytes::into_zbytes);
-    let source_info = source_info.map(|si| zsample::SourceInfo::from(si.as_ref()));
-    let cancellation_token =
-      cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
-
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let mut builder = querier.get().with(cb);
-
-    if let Some(parameters) = parameters {
-      builder = builder.parameters(parameters);
-    }
-
-    if let Some(payload) = payload {
-      builder = builder.payload(payload);
-    }
-
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-
-    if let Some(cancellation_token) = cancellation_token {
-      builder = builder.cancellation_token(cancellation_token);
-    }
-
-    builder.await.map_napi_err()?;
+    build!(
+      querier.get().with(cb),
+      parameters,
+      payload,
+      encoding,
+      attachment,
+      source_info,
+      cancellation_token,
+    )
+    .await
+    .map_napi_err()?;
 
     Ok(receiver.into())
   }

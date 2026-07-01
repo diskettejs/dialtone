@@ -6,8 +6,8 @@ use zenoh::{
 };
 
 use crate::{
-  channels::*, config::*, error::*, key_expr::*, liveliness::*, macros::channel_forward, miss::*,
-  options::*, sample::*,
+  channels::*, config::*, error::*, key_expr::*, liveliness::*, macros::{build, channel_forward},
+  miss::*, options::*, sample::*,
 };
 
 #[napi]
@@ -76,13 +76,10 @@ impl Subscriber {
   ) -> napi::Result<LivelinessSubscriber> {
     let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
-    let mut builder = self.get()?.detect_publishers().with((cb, ()));
 
-    if let Some(history) = history {
-      builder = builder.history(history);
-    }
-
-    let subscriber = builder.await.map_napi_err()?;
+    let subscriber = build!(self.get()?.detect_publishers().with((cb, ())), history)
+      .await
+      .map_napi_err()?;
 
     Ok(LivelinessSubscriber::new(subscriber, receiver))
   }

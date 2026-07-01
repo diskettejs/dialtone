@@ -1,10 +1,6 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{
-  bytes as zbytes,
-  query::{self as zquery},
-  sample as zsample, time as ztime,
-};
+use zenoh::query::{self as zquery};
 
 use crate::{
   bytes::*, config::*, encoding::*, error::*, key_expr::*, macros::*, options::*, qos::*,
@@ -74,7 +70,7 @@ impl Query {
   pub async fn reply(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: PayloadArg,
+    payload: Payload,
     options: Option<ReplyOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
@@ -88,46 +84,31 @@ impl Query {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-    let encoding = encoding.map(zbytes::Encoding::from);
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(IntoZBytes::into_zbytes);
-    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
 
-    let mut builder = query.reply(expr, payload);
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-    builder.await.map_napi_err()
+    build!(
+      query.reply(expr, payload),
+      encoding,
+      express,
+      timestamp,
+      attachment,
+      source_info,
+    )
+    .await
+    .map_napi_err()
   }
 
   #[napi]
   pub async fn reply_err(
     &self,
-    payload: PayloadArg,
+    payload: Payload,
     options: Option<ReplyErrOptions>,
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();
-
     let ReplyErrOptions { encoding } = options.unwrap_or_default();
-    let encoding = encoding.map(zbytes::Encoding::from);
 
-    let mut builder = self.inner.reply_err(payload);
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-    builder.await.map_napi_err()
+    build!(self.inner.reply_err(payload), encoding)
+      .await
+      .map_napi_err()
   }
 
   #[napi]
@@ -145,24 +126,16 @@ impl Query {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(IntoZBytes::into_zbytes);
-    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
 
-    let mut builder = query.reply_del(expr);
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-    builder.await.map_napi_err()
+    build!(
+      query.reply_del(expr),
+      express,
+      timestamp,
+      attachment,
+      source_info,
+    )
+    .await
+    .map_napi_err()
   }
 }
 

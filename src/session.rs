@@ -1,17 +1,11 @@
-use std::time::Duration;
-
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{
-  cancellation as zcancellation, handlers::IntoHandler, query as zquery, sample as zsample,
-  time as ztime,
-};
+use zenoh::handlers::IntoHandler;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
   bytes::*, channels::*, config::*, error::*, handlers::*, info::*, key_expr::*, liveliness::*,
-  macros::wrapper, options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*,
-  time::*,
+  macros::{build, wrapper}, options::*, publisher::*, querier::*, queryable::*, selector::*,
+  subscriber::*, time::*,
 };
 
 wrapper!(zenoh::Session);
@@ -64,7 +58,7 @@ impl Session {
   pub async fn put(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: PayloadArg,
+    payload: Payload,
     options: Option<PutOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
@@ -80,51 +74,22 @@ impl Session {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(|attachment| attachment.into_zbytes());
-    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
     let session = self.inner.clone();
 
-    let mut builder = session.put(expr, payload);
-
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-
-    if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into());
-    }
-
-    if let Some(priority) = priority {
-      builder = builder.priority(priority.into());
-    }
-
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-
-    if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into());
-    }
-
-    if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into());
-    }
-
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-
-    builder.await.map_napi_err()
+    build!(
+      session.put(expr, payload),
+      encoding,
+      congestion_control,
+      priority,
+      express,
+      reliability,
+      allowed_destination,
+      timestamp,
+      attachment,
+      source_info,
+    )
+    .await
+    .map_napi_err()
   }
 
   #[napi]
@@ -151,73 +116,28 @@ impl Session {
     } = options.unwrap_or_default();
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let mut selector = zquery::Selector::from(Selector::try_from(selector)?);
-    if let Some(parameters) = parameters {
-      let key_expr = selector.key_expr().clone().into_owned();
-      selector = zquery::Selector::owned(key_expr, zquery::Parameters::from(&*parameters));
-    }
-
-    let timeout = timeout
-      .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
-      .transpose()?;
-    let payload = payload.map(|payload| payload.into_zbytes());
-    let attachment = attachment.map(|attachment| attachment.into_zbytes());
-    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
-    let cancellation_token =
-      cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
+    let selector = Selector::resolve(selector, parameters)?;
+    let timeout = duration_ms(timeout)?;
     let session = self.inner.clone();
 
-    let mut builder = session.get(selector).with(cb);
+    build!(
+      session.get(selector).with(cb),
+      target,
+      consolidation,
+      congestion_control,
+      priority,
+      express,
+      allowed_destination,
+      timeout,
+      payload,
+      encoding,
+      attachment,
+      source_info,
+      cancellation_token,
+    )
+    .await
+    .map_napi_err()?;
 
-    if let Some(target) = target {
-      builder = builder.target(target.into());
-    }
-
-    if let Some(consolidation) = consolidation {
-      builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
-    }
-
-    if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into());
-    }
-
-    if let Some(priority) = priority {
-      builder = builder.priority(priority.into());
-    }
-
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-
-    if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into());
-    }
-
-    if let Some(timeout) = timeout {
-      builder = builder.timeout(timeout);
-    }
-
-    if let Some(payload) = payload {
-      builder = builder.payload(payload);
-    }
-
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-
-    if let Some(cancellation_token) = cancellation_token {
-      builder = builder.cancellation_token(cancellation_token);
-    }
-
-    builder.await.map_napi_err()?;
     Ok(receiver.into())
   }
 
@@ -238,47 +158,21 @@ impl Session {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(|attachment| attachment.into_zbytes());
-    let source_info = source_info.map(|source_info| zsample::SourceInfo::from(&*source_info));
     let session = self.inner.clone();
 
-    let mut builder = session.delete(expr);
-
-    if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into());
-    }
-
-    if let Some(priority) = priority {
-      builder = builder.priority(priority.into());
-    }
-
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-
-    if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into());
-    }
-
-    if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into());
-    }
-
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    if let Some(source_info) = source_info {
-      builder = builder.source_info(source_info);
-    }
-
-    builder.await.map_napi_err()
+    build!(
+      session.delete(expr),
+      congestion_control,
+      priority,
+      express,
+      reliability,
+      allowed_destination,
+      timestamp,
+      attachment,
+      source_info,
+    )
+    .await
+    .map_napi_err()
   }
 
   #[napi]
@@ -311,41 +205,21 @@ impl Session {
       accept_replies,
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
-    let mut builder = self.inner.declare_querier(expr);
+    let timeout = duration_ms(timeout)?;
 
-    if let Some(target) = target {
-      builder = builder.target(target.into());
-    }
-
-    if let Some(consolidation) = consolidation {
-      builder = builder.consolidation(zquery::ConsolidationMode::from(consolidation));
-    }
-
-    if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into());
-    }
-
-    if let Some(priority) = priority {
-      builder = builder.priority(priority.into());
-    }
-
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-
-    if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into());
-    }
-
-    if let Some(timeout) = timeout {
-      builder = builder.timeout(Duration::try_from_secs_f64(timeout / 1000.0).map_napi_err()?);
-    }
-
-    if let Some(accept_replies) = accept_replies {
-      builder = builder.accept_replies(accept_replies.into());
-    }
-
-    let zquerier = builder.await.map_napi_err()?;
+    let zquerier = build!(
+      self.inner.declare_querier(expr),
+      target,
+      consolidation,
+      congestion_control,
+      priority,
+      express,
+      allowed_destination,
+      timeout,
+      accept_replies,
+    )
+    .await
+    .map_napi_err()?;
 
     Ok(zquerier.into())
   }
@@ -363,17 +237,14 @@ impl Session {
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
-    let mut builder = self.inner.declare_queryable(expr).with((cb, ()));
 
-    if let Some(origin) = allowed_origin {
-      builder = builder.allowed_origin(origin.into());
-    };
-
-    if let Some(complete) = complete {
-      builder = builder.complete(complete);
-    }
-
-    let queryable = builder.await.map_napi_err()?;
+    let queryable = build!(
+      self.inner.declare_queryable(expr).with((cb, ())),
+      allowed_origin,
+      complete,
+    )
+    .await
+    .map_napi_err()?;
 
     Ok(Queryable::new(queryable, receiver))
   }
@@ -395,39 +266,23 @@ impl Session {
       capacity,
     } = options.unwrap_or_default();
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
-    let mut builder = self
-      .inner
-      .declare_subscriber(key_expr)
-      .advanced()
-      .with((cb, ()));
+    let query_timeout = duration_ms(query_timeout_ms)?;
 
-    if let Some(allowed_origin) = allowed_origin {
-      builder = builder.allowed_origin(allowed_origin.into());
-    }
-
-    if let Some(history) = history {
-      builder = builder.history(history.into());
-    }
-
-    if let Some(recovery) = recovery {
-      let recovery: zenoh_ext::RecoveryConfig = match recovery {
-        Either::A(periodic) => periodic.into(),
-        Either::B(heartbeat) => heartbeat.into(),
-      };
-      builder = builder.recovery(recovery);
-    }
-
-    if let Some(query_timeout_ms) = query_timeout_ms {
-      let timeout = Duration::try_from_secs_f64(query_timeout_ms / 1000.0).map_napi_err()?;
-      builder = builder.query_timeout(timeout);
-    }
+    let mut builder = build!(
+      self
+        .inner
+        .declare_subscriber(key_expr)
+        .advanced()
+        .with((cb, ())),
+      allowed_origin,
+      history,
+      recovery,
+      query_timeout,
+      subscriber_detection_metadata,
+    );
 
     if subscriber_detection == Some(true) {
       builder = builder.subscriber_detection();
-    }
-
-    if let Some(subscriber_detection_metadata) = subscriber_detection_metadata {
-      builder = builder.subscriber_detection_metadata(subscriber_detection_metadata);
     }
 
     let subscriber = builder.await.map_napi_err()?;
@@ -454,46 +309,22 @@ impl Session {
       reliability,
       sample_miss_detection,
     } = options.unwrap_or_default();
-    let mut builder = self.inner.declare_publisher(expr).advanced();
 
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-
-    if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into());
-    }
-
-    if let Some(priority) = priority {
-      builder = builder.priority(priority.into());
-    }
-
-    if let Some(express) = express {
-      builder = builder.express(express);
-    }
-
-    if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into());
-    }
-
-    if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into());
-    }
-
-    if let Some(cache) = cache {
-      builder = builder.cache(cache.into());
-    }
+    let mut builder = build!(
+      self.inner.declare_publisher(expr).advanced(),
+      encoding,
+      congestion_control,
+      priority,
+      express,
+      reliability,
+      allowed_destination,
+      cache,
+      publisher_detection_metadata,
+      sample_miss_detection,
+    );
 
     if publisher_detection == Some(true) {
       builder = builder.publisher_detection();
-    }
-
-    if let Some(publisher_detection_metadata) = publisher_detection_metadata {
-      builder = builder.publisher_detection_metadata(publisher_detection_metadata);
-    }
-
-    if let Some(sample_miss_detection) = sample_miss_detection {
-      builder = builder.sample_miss_detection(sample_miss_detection.into());
     }
 
     let publisher = builder.await.map_napi_err()?;

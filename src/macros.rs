@@ -98,9 +98,36 @@ macro_rules! enum_mapper {
                 }
             }
         }
+
+        impl $crate::options::IntoZenoh for $last {
+            type Into = $full;
+            fn into_zenoh(self) -> $full {
+                self.into()
+            }
+        }
     };
 }
 pub(crate) use enum_mapper;
+
+/// Applies optional builder setters in one shot (ported from zenoh-python's `build!`).
+/// Each `$value` is an `Option<T: IntoZenoh>` local whose name matches the builder setter;
+/// present values are converted via `IntoZenoh` and applied, `None`s are skipped, and the
+/// finished builder is returned. Conversions run synchronously as the builder is assembled,
+/// so calling `build!(..).await` consumes every input before the first await point.
+///
+/// build!(session.put(expr, payload), encoding, priority, timestamp);
+macro_rules! build {
+    ($builder:expr $(, $value:ident)* $(,)?) => {{
+        let mut builder = $builder;
+        $(
+            if let Some(value) = $value.map($crate::options::IntoZenoh::into_zenoh) {
+                builder = builder.$value(value);
+            }
+        )*
+        builder
+    }};
+}
+pub(crate) use build;
 
 /// Generates a standalone `#[napi] impl $Struct { ... }` with the 11
 /// `crate::handlers::FifoChannelHandler<T>`-forwarding methods. Coexists with a

@@ -2,16 +2,16 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::bytes as zbytes;
 
-use crate::{error::*, macros::wrapper};
+use crate::{error::*, macros::wrapper, options::IntoZenoh};
 
 #[napi]
-pub type PayloadArg = napi::Either<String, Uint8Array>;
+pub type Payload = napi::Either<String, Uint8Array>;
 
 pub(crate) trait IntoZBytes {
   fn into_zbytes(self) -> zbytes::ZBytes;
 }
 
-impl IntoZBytes for PayloadArg {
+impl IntoZBytes for Payload {
   fn into_zbytes(self) -> zbytes::ZBytes {
     match self {
       napi::Either::A(s) => zbytes::ZBytes::from(s),
@@ -20,15 +20,10 @@ impl IntoZBytes for PayloadArg {
   }
 }
 
-impl IntoZBytes for Uint8Array {
-  fn into_zbytes(self) -> zbytes::ZBytes {
-    zbytes::ZBytes::from(self.to_vec())
-  }
-}
-
-impl IntoZBytes for &Uint8Array {
-  fn into_zbytes(self) -> zbytes::ZBytes {
-    zbytes::ZBytes::from(self.to_vec())
+impl IntoZenoh for Payload {
+  type Into = zenoh::bytes::ZBytes;
+  fn into_zenoh(self) -> zenoh::bytes::ZBytes {
+    self.into_zbytes()
   }
 }
 

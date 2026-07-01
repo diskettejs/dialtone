@@ -1,11 +1,9 @@
-use std::time::Duration;
-
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
 use zenoh::{
-  cancellation as zcancellation, handlers as zhandlers, key_expr as zkey_expr,
-  liveliness as zliveliness, pubsub as zpubsub, sample as zsample, session as zsession,
+  handlers as zhandlers, key_expr as zkey_expr, liveliness as zliveliness, pubsub as zpubsub,
+  sample as zsample, session as zsession,
 };
 
 use crate::{
@@ -14,7 +12,7 @@ use crate::{
   error::*,
   handlers::Replies,
   key_expr::*,
-  macros::{channel_forward, wrapper},
+  macros::{build, channel_forward, wrapper},
   options::*,
   sample::Sample,
 };
@@ -71,25 +69,18 @@ impl Liveliness {
       capacity,
     } = options.unwrap_or_default();
 
-    let timeout = timeout
-      .map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
-      .transpose()?;
-    let cancellation_token =
-      cancellation_token.map(|ct| zcancellation::CancellationToken::from(&*ct));
+    let timeout = duration_ms(timeout)?;
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
     let session = self.inner.clone();
 
-    let mut builder = session.liveliness().get(expr).with(cb);
+    build!(
+      session.liveliness().get(expr).with(cb),
+      timeout,
+      cancellation_token,
+    )
+    .await
+    .map_napi_err()?;
 
-    if let Some(timeout) = timeout {
-      builder = builder.timeout(timeout);
-    }
-
-    if let Some(cancellation_token) = cancellation_token {
-      builder = builder.cancellation_token(cancellation_token);
-    }
-
-    builder.await.map_napi_err()?;
     Ok(receiver.into())
   }
 }

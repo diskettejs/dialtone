@@ -1,15 +1,88 @@
 use std::time::Duration;
 
-use napi::{Either, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{
-  cancellation::*, channels::*, instance::Instance, qos::*, query::*, sample::*, time::*,
+  bytes::*, cancellation::*, channels::*, error::*, instance::*, qos::*, query::*, sample::*,
+  time::*,
 };
+
+/// Uniform napi-type -> zenoh-type conversion for option fields, so builder setters can be
+/// applied generically by the `build!` macro. Mirrors zenoh-python's `IntoRust`.
+pub(crate) trait IntoZenoh {
+  type Into;
+  fn into_zenoh(self) -> Self::Into;
+}
+
+/// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
+/// `duration_ms` has already produced and that pass back through `build!`.
+macro_rules! identity {
+  ($($ty:ty),* $(,)?) => {$(
+    impl IntoZenoh for $ty {
+      type Into = $ty;
+      fn into_zenoh(self) -> $ty {
+        self
+      }
+    }
+  )*};
+}
+identity!(bool, String, Duration);
+
+/// Conversions that defer to an existing `From`/`Into`.
+/// - `T => U` converts `self` directly (`self.into()`), for structs with a `From<T> for U`.
+/// - `Instance: T => U` converts a borrow of the unwrapped instance (`U::from(self.as_ref())`),
+///   for zenoh types whose `From` is implemented on the napi wrapper by reference.
+macro_rules! via_from {
+  ($($ty:ty => $into:ty),* $(,)?) => {$(
+    impl IntoZenoh for $ty {
+      type Into = $into;
+      fn into_zenoh(self) -> $into {
+        self.into()
+      }
+    }
+  )*};
+  (Instance: $($ty:ty => $into:ty),* $(,)?) => {$(
+    impl IntoZenoh for Instance<$ty> {
+      type Into = $into;
+      fn into_zenoh(self) -> $into {
+        <$into>::from(self.as_ref())
+      }
+    }
+  )*};
+}
+via_from!(
+  HistoryConfig => zenoh_ext::HistoryConfig,
+  CacheConfig => zenoh_ext::CacheConfig,
+  MissDetectionConfig => zenoh_ext::MissDetectionConfig,
+);
+via_from!(Instance:
+  Timestamp => zenoh::time::Timestamp,
+  SourceInfo => zenoh::sample::SourceInfo,
+  CancellationToken => zenoh::cancellation::CancellationToken,
+  Parameters => zenoh::query::Parameters<'static>,
+);
+
+impl IntoZenoh for napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery> {
+  type Into = zenoh_ext::RecoveryConfig;
+  fn into_zenoh(self) -> zenoh_ext::RecoveryConfig {
+    match self {
+      napi::Either::A(periodic) => periodic.into(),
+      napi::Either::B(heartbeat) => heartbeat.into(),
+    }
+  }
+}
+
+/// Converts a JS millisecond timeout into a `Duration`, surfacing invalid values as errors.
+pub(crate) fn duration_ms(ms: Option<f64>) -> napi::Result<Option<Duration>> {
+  ms.map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
+    .transpose()
+}
 
 #[allow(dead_code)]
 #[napi]
-pub type ChannelArg<'a> = Either<ClassInstance<'a, FifoChannel>, ClassInstance<'a, RingChannel>>;
+pub type ChannelArg<'a> =
+  napi::Either<ClassInstance<'a, FifoChannel>, ClassInstance<'a, RingChannel>>;
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
@@ -17,7 +90,7 @@ pub struct PublisherPutOptions {
   pub encoding: Option<String>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
 }
 
 #[derive(Default)]
@@ -25,7 +98,7 @@ pub struct PublisherPutOptions {
 pub struct PublisherDeleteOptions {
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
 }
 
 #[derive(Default)]
@@ -48,7 +121,7 @@ pub struct PublisherOptions {
 pub struct SubscriberOptions {
   pub allowed_origin: Option<Locality>,
   pub history: Option<HistoryConfig>,
-  pub recovery: Option<Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
+  pub recovery: Option<napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
   pub subscriber_detection: Option<bool>,
   pub subscriber_detection_metadata: Option<String>,
   pub query_timeout_ms: Option<f64>,
@@ -67,7 +140,7 @@ pub struct PutOptions {
   pub allowed_destination: Option<Locality>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -82,7 +155,7 @@ pub struct DeleteOptions {
   pub allowed_destination: Option<Locality>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -258,7 +331,7 @@ pub struct ReplyOptions {
   pub express: Option<bool>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -275,7 +348,7 @@ pub struct ReplyDelOptions {
   pub express: Option<bool>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -285,9 +358,9 @@ pub struct ReplyDelOptions {
 pub struct QuerierGetOptions {
   #[napi(ts_type = "Parameters")]
   pub parameters: Option<Instance<Parameters>>,
-  pub payload: Option<Uint8Array>,
+  pub payload: Option<Payload>,
   pub encoding: Option<String>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
@@ -330,9 +403,9 @@ pub struct GetOptions {
   pub express: Option<bool>,
   pub allowed_destination: Option<Locality>,
   pub timeout: Option<f64>,
-  pub payload: Option<Uint8Array>,
+  pub payload: Option<Payload>,
   pub encoding: Option<String>,
-  pub attachment: Option<Uint8Array>,
+  pub attachment: Option<Payload>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]

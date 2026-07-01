@@ -3,14 +3,12 @@ use std::sync::Arc;
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
-  bytes as zbytes,
-  handlers::IntoHandler,
-  key_expr as zkey_expr, qos as zqos, session as zsession, time as ztime,
+  bytes as zbytes, handlers::IntoHandler, key_expr as zkey_expr, qos as zqos, session as zsession,
 };
 
 use crate::{
-  bytes::*, channels::FifoChannel, config::*, encoding::*, error::*, key_expr::*, matching::*,
-  options::*, qos::*,
+  bytes::*, channels::FifoChannel, config::*, encoding::*, error::*, key_expr::*, macros::build,
+  matching::*, options::*, qos::*,
 };
 
 #[napi]
@@ -83,7 +81,7 @@ impl Publisher {
   #[napi]
   pub async fn put(
     &self,
-    payload: PayloadArg,
+    payload: Payload,
     options: Option<PublisherPutOptions>,
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();
@@ -92,26 +90,11 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let encoding = encoding.map(zbytes::Encoding::from);
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(IntoZBytes::into_zbytes);
     let publisher = self.arc()?;
 
-    let mut builder = publisher.put(payload);
-
-    if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding);
-    }
-
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    builder.await.map_napi_err()
+    build!(publisher.put(payload), encoding, timestamp, attachment)
+      .await
+      .map_napi_err()
   }
 
   #[napi]
@@ -120,21 +103,11 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let timestamp = timestamp.map(|ts| ztime::Timestamp::from(ts.as_ref()));
-    let attachment = attachment.map(IntoZBytes::into_zbytes);
     let publisher = self.arc()?;
 
-    let mut builder = publisher.delete();
-
-    if let Some(timestamp) = timestamp {
-      builder = builder.timestamp(timestamp);
-    }
-
-    if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment);
-    }
-
-    builder.await.map_napi_err()
+    build!(publisher.delete(), timestamp, attachment)
+      .await
+      .map_napi_err()
   }
 
   #[napi]

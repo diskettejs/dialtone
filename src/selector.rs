@@ -2,9 +2,25 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{key_expr as zkey_expr, query as zquery};
 
-use crate::{error::*, key_expr::*, macros::wrapper, query::*};
+use crate::{error::*, instance::Instance, key_expr::*, macros::wrapper, options::IntoZenoh, query::*};
 
 wrapper!(zquery::Selector<'static>);
+
+impl Selector {
+  /// Builds the effective `zenoh` selector from a selector argument and an optional parameters
+  /// override, mirroring how the session get merges parameters onto the selector's key expression.
+  pub(crate) fn resolve(
+    selector: SelectorArg<'_>,
+    parameters: Option<Instance<Parameters>>,
+  ) -> napi::Result<zquery::Selector<'static>> {
+    let mut selector = zquery::Selector::from(Selector::try_from(selector)?);
+    if let Some(parameters) = parameters {
+      let key_expr = selector.key_expr().clone().into_owned();
+      selector = zquery::Selector::owned(key_expr, parameters.into_zenoh());
+    }
+    Ok(selector)
+  }
+}
 
 #[napi(object)]
 pub struct SelectorParts {
