@@ -4,7 +4,14 @@ use zenoh::handlers::fifo as zfifo;
 use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
 use crate::options::ScoutOptions;
-use crate::{channels::FifoChannel, config::*, error::*, info::*, protocol::*};
+use crate::{
+  channels::FifoChannel,
+  config::*,
+  error::*,
+  info::*,
+  macros::{channel_forward, wrapper},
+  protocol::*,
+};
 
 #[napi]
 pub struct Scout {
@@ -50,61 +57,6 @@ impl Scout {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Hello> {
-    self.receiver.recv::<Hello>().await
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Hello>> {
-    self.receiver.try_recv::<Hello>()
-  }
-
-  #[napi]
-  pub fn drain(&self) -> Vec<Hello> {
-    self.receiver.drain::<Hello>()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.receiver.is_disconnected()
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.receiver.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.receiver.is_full()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.receiver.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.receiver.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.receiver.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.receiver.receiver_count()
-  }
-
-  #[napi]
-  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Hello>> {
-    self.receiver.stream::<Hello>(env)
-  }
-
-  #[napi]
   pub fn stop(&mut self) -> napi::Result<()> {
     let scout = self
       .inner
@@ -116,16 +68,9 @@ impl Scout {
   }
 }
 
-#[napi]
-pub struct Hello {
-  inner: zscouting::Hello,
-}
+channel_forward!(Scout, receiver, Hello);
 
-impl From<zscouting::Hello> for Hello {
-  fn from(inner: zscouting::Hello) -> Self {
-    Self { inner }
-  }
-}
+wrapper!(zscouting::Hello);
 
 #[napi]
 impl Hello {

@@ -5,24 +5,21 @@ use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
 use zenoh::{
   cancellation as zcancellation, handlers as zhandlers, key_expr as zkey_expr,
-  liveliness as zliveliness, pubsub as zpubsub, sample as zsample,
-  session as zsession,
+  liveliness as zliveliness, pubsub as zpubsub, sample as zsample, session as zsession,
 };
 
 use crate::{
-  channels::*, config::*, error::*, handlers::Replies, key_expr::*, options::*, sample::Sample,
+  channels::*,
+  config::*,
+  error::*,
+  handlers::Replies,
+  key_expr::*,
+  macros::{channel_forward, wrapper},
+  options::*,
+  sample::Sample,
 };
 
-#[napi]
-pub struct Liveliness {
-  inner: zenoh::Session,
-}
-
-impl From<zenoh::Session> for Liveliness {
-  fn from(session: zenoh::Session) -> Self {
-    Self { inner: session }
-  }
-}
+wrapper!(zenoh::Session as Liveliness);
 
 #[napi]
 impl Liveliness {
@@ -159,61 +156,6 @@ impl LivelinessSubscriber {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Sample> {
-    self.receiver.recv::<Sample>().await
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
-    self.receiver.try_recv::<Sample>()
-  }
-
-  #[napi]
-  pub fn drain(&self) -> Vec<Sample> {
-    self.receiver.drain::<Sample>()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.receiver.is_disconnected()
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.receiver.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.receiver.is_full()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.receiver.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.receiver.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.receiver.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.receiver.receiver_count()
-  }
-
-  #[napi]
-  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Sample>> {
-    self.receiver.stream::<Sample>(env)
-  }
-
-  #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
     let subscriber = self.inner.take().ok_or_else(|| {
       napi::Error::from_reason("liveliness subscriber has already been undeclared")
@@ -222,3 +164,5 @@ impl LivelinessSubscriber {
     env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
   }
 }
+
+channel_forward!(LivelinessSubscriber, receiver, Sample);

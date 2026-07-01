@@ -2,22 +2,9 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::time as ztime;
 
-#[napi]
-pub struct Timestamp {
-  inner: ztime::Timestamp,
-}
+use crate::macros::wrapper;
 
-impl From<ztime::Timestamp> for Timestamp {
-  fn from(inner: ztime::Timestamp) -> Self {
-    Self { inner }
-  }
-}
-
-impl From<&Timestamp> for ztime::Timestamp {
-  fn from(value: &Timestamp) -> Self {
-    value.inner
-  }
-}
+wrapper!(ztime::Timestamp);
 
 #[napi]
 impl Timestamp {

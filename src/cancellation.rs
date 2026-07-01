@@ -1,18 +1,9 @@
 use napi_derive::napi;
 use zenoh::cancellation as zcancellation;
 
-use crate::error::*;
+use crate::{error::*, macros::wrapper};
 
-#[napi]
-pub struct CancellationToken {
-  inner: zcancellation::CancellationToken,
-}
-
-impl From<&CancellationToken> for zcancellation::CancellationToken {
-  fn from(value: &CancellationToken) -> Self {
-    value.inner.clone()
-  }
-}
+wrapper!(zcancellation::CancellationToken);
 
 #[napi]
 impl CancellationToken {

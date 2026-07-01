@@ -1,3 +1,4 @@
+#![allow(dead_code, unused)]
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::bytes::ZBytes;

@@ -2,7 +2,10 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{handlers as zhandlers, key_expr as zkey_expr, query as zquery, session as zsession};
 
-use crate::{config::EntityGlobalId, error::MapNapiErr, key_expr::KeyExpr, query::Query};
+use crate::{
+  config::EntityGlobalId, error::MapNapiErr, key_expr::KeyExpr, macros::channel_forward,
+  query::Query,
+};
 
 type ZQueryable = zquery::Queryable<()>;
 
@@ -41,61 +44,6 @@ impl Queryable {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Query> {
-    self.receiver.recv::<Query>().await
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Query>> {
-    self.receiver.try_recv::<Query>()
-  }
-
-  #[napi]
-  pub fn drain(&self) -> Vec<Query> {
-    self.receiver.drain::<Query>()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.receiver.is_disconnected()
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.receiver.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.receiver.is_full()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.receiver.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.receiver.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.receiver.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.receiver.receiver_count()
-  }
-
-  #[napi]
-  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Query>> {
-    self.receiver.stream::<Query>(env)
-  }
-
-  #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
     let queryable = self
       .inner
@@ -105,3 +53,5 @@ impl Queryable {
     env.spawn_future(async move { queryable.undeclare().await.map_napi_err() })
   }
 }
+
+channel_forward!(Queryable, receiver, Query);

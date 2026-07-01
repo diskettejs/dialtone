@@ -6,7 +6,8 @@ use zenoh::{
 };
 
 use crate::{
-  channels::*, config::*, error::*, key_expr::*, liveliness::*, miss::*, options::*, sample::*,
+  channels::*, config::*, error::*, key_expr::*, liveliness::*, macros::channel_forward, miss::*,
+  options::*, sample::*,
 };
 
 #[napi]
@@ -48,61 +49,6 @@ impl Subscriber {
   #[napi(getter)]
   pub fn id(&self) -> EntityGlobalId {
     self.id.into()
-  }
-
-  #[napi]
-  pub async fn recv(&self) -> napi::Result<Sample> {
-    self.receiver.recv::<Sample>().await
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
-    self.receiver.try_recv::<Sample>()
-  }
-
-  #[napi]
-  pub fn drain(&self) -> Vec<Sample> {
-    self.receiver.drain::<Sample>()
-  }
-
-  #[napi]
-  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Sample>> {
-    self.receiver.stream::<Sample>(env)
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.receiver.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.receiver.is_full()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.receiver.is_disconnected()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.receiver.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.receiver.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.receiver.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.receiver.receiver_count()
   }
 
   #[napi]
@@ -151,3 +97,5 @@ impl Subscriber {
     env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
   }
 }
+
+channel_forward!(Subscriber, receiver, Sample);

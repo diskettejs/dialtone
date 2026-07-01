@@ -3,7 +3,7 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{handlers as zhandlers, query as zquery};
 
-use crate::{error::MapNapiErr, query::Reply};
+use crate::{error::MapNapiErr, macros::channel_forward, query::Reply};
 
 pub struct FifoChannelHandler<T> {
   inner: zhandlers::FifoChannelHandler<T>,
@@ -79,60 +79,4 @@ impl From<zhandlers::FifoChannelHandler<zquery::Reply>> for Replies {
   }
 }
 
-#[napi]
-impl Replies {
-  #[napi(ts_return_type = "Promise<ReplyResult>")]
-  pub async fn recv(&self) -> napi::Result<Reply> {
-    self.inner.recv::<Reply>().await
-  }
-
-  #[napi(ts_return_type = "ReplyResult | null")]
-  pub fn try_recv(&self) -> napi::Result<Option<Reply>> {
-    self.inner.try_recv::<Reply>()
-  }
-
-  #[napi(ts_return_type = "Array<ReplyResult>")]
-  pub fn drain(&self) -> Vec<Reply> {
-    self.inner.drain::<Reply>()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.inner.is_disconnected()
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.inner.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.inner.is_full()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.inner.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.inner.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.inner.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.inner.receiver_count()
-  }
-
-  #[napi(ts_return_type = "ReadableStream<ReplyResult>")]
-  pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, Reply>> {
-    self.inner.stream::<Reply>(env)
-  }
-}
+channel_forward!(Replies, inner, Reply);

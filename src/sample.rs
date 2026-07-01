@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::sample as zsample;
 
-use crate::{bytes::*, config::*, encoding::*, key_expr::*, qos::*, time::*};
+use crate::{bytes::*, config::*, encoding::*, key_expr::*, macros::wrapper, qos::*, time::*};
 
 #[napi(string_enum)]
 pub enum SampleKind {
@@ -103,22 +103,7 @@ impl Sample {
   }
 }
 
-#[napi]
-pub struct SourceInfo {
-  inner: zsample::SourceInfo,
-}
-
-impl From<zsample::SourceInfo> for SourceInfo {
-  fn from(inner: zsample::SourceInfo) -> Self {
-    Self { inner }
-  }
-}
-
-impl From<&SourceInfo> for zsample::SourceInfo {
-  fn from(value: &SourceInfo) -> Self {
-    value.inner.clone()
-  }
-}
+wrapper!(zsample::SourceInfo);
 
 #[napi]
 impl SourceInfo {

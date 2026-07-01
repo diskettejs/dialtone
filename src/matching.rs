@@ -2,18 +2,12 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{handlers as zhandlers, matching as zmatching};
 
-use crate::error::*;
+use crate::{
+  error::*,
+  macros::{channel_forward, wrapper},
+};
 
-#[napi]
-pub struct MatchingStatus {
-  inner: zmatching::MatchingStatus,
-}
-
-impl From<zmatching::MatchingStatus> for MatchingStatus {
-  fn from(inner: zmatching::MatchingStatus) -> Self {
-    Self { inner }
-  }
-}
+wrapper!(zmatching::MatchingStatus);
 
 #[napi]
 impl MatchingStatus {
@@ -44,64 +38,6 @@ impl MatchingListener {
 #[napi]
 impl MatchingListener {
   #[napi]
-  pub async fn recv(&self) -> napi::Result<MatchingStatus> {
-    self.receiver.recv::<MatchingStatus>().await
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<MatchingStatus>> {
-    self.receiver.try_recv::<MatchingStatus>()
-  }
-
-  #[napi]
-  pub fn drain(&self) -> Vec<MatchingStatus> {
-    self.receiver.drain::<MatchingStatus>()
-  }
-
-  #[napi]
-  pub fn is_disconnected(&self) -> bool {
-    self.receiver.is_disconnected()
-  }
-
-  #[napi]
-  pub fn is_empty(&self) -> bool {
-    self.receiver.is_empty()
-  }
-
-  #[napi]
-  pub fn is_full(&self) -> bool {
-    self.receiver.is_full()
-  }
-
-  #[napi]
-  pub fn len(&self) -> u32 {
-    self.receiver.len()
-  }
-
-  #[napi]
-  pub fn capacity(&self) -> Option<u32> {
-    self.receiver.capacity()
-  }
-
-  #[napi]
-  pub fn sender_count(&self) -> u32 {
-    self.receiver.sender_count()
-  }
-
-  #[napi]
-  pub fn receiver_count(&self) -> u32 {
-    self.receiver.receiver_count()
-  }
-
-  #[napi]
-  pub fn stream<'env>(
-    &self,
-    env: &'env Env,
-  ) -> napi::Result<ReadableStream<'env, MatchingStatus>> {
-    self.receiver.stream::<MatchingStatus>(env)
-  }
-
-  #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
     let listener = self
       .inner
@@ -111,3 +47,5 @@ impl MatchingListener {
     env.spawn_future(async move { listener.undeclare().await.map_napi_err() })
   }
 }
+
+channel_forward!(MatchingListener, receiver, MatchingStatus);

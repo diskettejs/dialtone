@@ -8,6 +8,7 @@ mod handlers;
 mod info;
 mod key_expr;
 mod liveliness;
+mod macros;
 mod matching;
 mod miss;
 mod options;

@@ -1,16 +1,9 @@
 use napi_derive::napi;
 use zenoh::bytes as zbytes;
 
-#[napi]
-pub struct Encoding {
-  inner: zbytes::Encoding,
-}
+use crate::macros::wrapper;
 
-impl From<zbytes::Encoding> for Encoding {
-  fn from(inner: zbytes::Encoding) -> Self {
-    Encoding { inner }
-  }
-}
+wrapper!(zbytes::Encoding);
 
 #[napi]
 impl Encoding {

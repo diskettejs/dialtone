@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::{config as zconfig, session as zsession};
 
-use crate::{error::*, protocol::*, qos::*};
+use crate::{error::*, macros::wrapper, protocol::*, qos::*};
 
 #[napi]
 pub struct SessionInfo {
@@ -52,16 +52,7 @@ impl SessionInfo {
   }
 }
 
-#[napi]
-pub struct Transport {
-  inner: zsession::Transport,
-}
-
-impl From<zsession::Transport> for Transport {
-  fn from(inner: zsession::Transport) -> Self {
-    Transport { inner }
-  }
-}
+wrapper!(zsession::Transport);
 
 #[napi]
 impl Transport {
@@ -92,16 +83,7 @@ pub struct LinkPriorities {
   pub max: u8,
 }
 
-#[napi]
-pub struct Link {
-  inner: zsession::Link,
-}
-
-impl From<zsession::Link> for Link {
-  fn from(inner: zsession::Link) -> Self {
-    Link { inner }
-  }
-}
+wrapper!(zsession::Link);
 
 #[napi]
 impl Link {
@@ -159,16 +141,7 @@ impl Link {
   }
 }
 
-#[napi]
-pub struct Locator {
-  inner: zconfig::Locator,
-}
-
-impl From<zconfig::Locator> for Locator {
-  fn from(inner: zconfig::Locator) -> Self {
-    Self { inner }
-  }
-}
+wrapper!(zconfig::Locator);
 
 #[napi]
 impl Locator {

@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::config as zconfig;
 
-use crate::{error::*, info::*};
+use crate::{error::*, info::*, macros::wrapper};
 
 #[napi(string_enum)]
 pub enum WhatAmI {
@@ -30,22 +30,7 @@ impl From<zconfig::WhatAmI> for WhatAmI {
   }
 }
 
-#[napi]
-pub struct WhatAmIMatcher {
-  inner: zconfig::WhatAmIMatcher,
-}
-
-impl From<zconfig::WhatAmIMatcher> for WhatAmIMatcher {
-  fn from(inner: zconfig::WhatAmIMatcher) -> Self {
-    Self { inner }
-  }
-}
-
-impl From<&WhatAmIMatcher> for zconfig::WhatAmIMatcher {
-  fn from(value: &WhatAmIMatcher) -> Self {
-    value.inner
-  }
-}
+wrapper!(zconfig::WhatAmIMatcher);
 
 #[napi]
 impl WhatAmIMatcher {
@@ -85,16 +70,7 @@ impl WhatAmIMatcher {
   }
 }
 
-#[napi]
-pub struct Metadata {
-  inner: zconfig::EndPoint,
-}
-
-impl From<zconfig::EndPoint> for Metadata {
-  fn from(inner: zconfig::EndPoint) -> Self {
-    Self { inner }
-  }
-}
+wrapper!(zconfig::EndPoint as Metadata);
 
 #[napi]
 impl Metadata {
@@ -129,16 +105,7 @@ impl Metadata {
   }
 }
 
-#[napi]
-pub struct EndPoint {
-  inner: zconfig::EndPoint,
-}
-
-impl From<zconfig::EndPoint> for EndPoint {
-  fn from(inner: zconfig::EndPoint) -> Self {
-    EndPoint { inner }
-  }
-}
+wrapper!(zconfig::EndPoint);
 
 #[napi(object)]
 pub struct EndPointParts {

@@ -2,24 +2,9 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{config as zconfig, session as zsession};
 
-use crate::error::*;
+use crate::{error::*, macros::wrapper};
 
-#[napi]
-pub struct EntityGlobalId {
-  inner: zsession::EntityGlobalId,
-}
-
-impl From<zsession::EntityGlobalId> for EntityGlobalId {
-  fn from(inner: zsession::EntityGlobalId) -> Self {
-    Self { inner }
-  }
-}
-
-impl From<&EntityGlobalId> for zsession::EntityGlobalId {
-  fn from(value: &EntityGlobalId) -> Self {
-    value.inner
-  }
-}
+wrapper!(zsession::EntityGlobalId);
 
 #[napi]
 impl EntityGlobalId {
@@ -34,16 +19,7 @@ impl EntityGlobalId {
   }
 }
 
-#[napi]
-pub struct Config {
-  inner: zconfig::Config,
-}
-
-impl From<&Config> for zconfig::Config {
-  fn from(value: &Config) -> Self {
-    value.inner.clone()
-  }
-}
+wrapper!(zconfig::Config);
 
 #[napi]
 impl Config {

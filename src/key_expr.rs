@@ -1,25 +1,9 @@
 use napi_derive::napi;
 use zenoh::key_expr as zkey_expr;
 
-use crate::error::*;
+use crate::{error::*, macros::wrapper};
 
-#[derive(Clone)]
-#[napi]
-pub struct KeyExpr {
-  inner: zkey_expr::KeyExpr<'static>,
-}
-
-impl From<zkey_expr::KeyExpr<'static>> for KeyExpr {
-  fn from(inner: zkey_expr::KeyExpr<'static>) -> Self {
-    Self { inner }
-  }
-}
-
-impl<'a> From<KeyExpr> for zkey_expr::KeyExpr<'a> {
-  fn from(value: KeyExpr) -> Self {
-    value.inner
-  }
-}
+wrapper!(zkey_expr::KeyExpr<'static>: Clone);
 
 #[napi]
 pub type KeyExprArg<'a> = napi::Either<String, &'a KeyExpr>;

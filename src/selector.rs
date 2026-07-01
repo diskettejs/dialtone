@@ -2,18 +2,9 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{key_expr as zkey_expr, query as zquery};
 
-use crate::{error::*, key_expr::*, query::*};
+use crate::{error::*, key_expr::*, macros::wrapper, query::*};
 
-#[napi]
-pub struct Selector {
-  inner: zquery::Selector<'static>,
-}
-
-impl From<zquery::Selector<'static>> for Selector {
-  fn from(inner: zquery::Selector<'static>) -> Self {
-    Self { inner }
-  }
-}
+wrapper!(zquery::Selector<'static>);
 
 #[napi(object)]
 pub struct SelectorParts {
@@ -50,18 +41,6 @@ impl Selector {
       key_expr: self.inner.key_expr().as_str().to_string(),
       parameters: self.inner.parameters().as_str().to_string(),
     }
-  }
-}
-
-impl From<&Selector> for zquery::Selector<'static> {
-  fn from(value: &Selector) -> Self {
-    value.inner.clone()
-  }
-}
-
-impl From<Selector> for zquery::Selector<'static> {
-  fn from(value: Selector) -> Self {
-    value.inner
   }
 }
 

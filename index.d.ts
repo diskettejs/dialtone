@@ -33,6 +33,12 @@ declare module './binding.js' {
   interface Queryable {
     [Symbol.asyncDispose](): Promise<void>
   }
+  interface Replies {
+    recv(): Promise<binding.ReplyResult>
+    tryRecv(): binding.ReplyResult | null
+    drain(): Array<binding.ReplyResult>
+    stream(): ReadableStream<binding.ReplyResult>
+  }
 }
 
 /** Node operating mode. Maps to Zenoh's `mode` key. */

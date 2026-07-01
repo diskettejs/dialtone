@@ -28,38 +28,6 @@ export declare class Config {
   remove(key: string): void
 }
 
-export declare class Deserializer {
-  constructor(bytes: Bytes)
-  done(): boolean
-  i8(): number
-  i16(): number
-  i32(): number
-  i64(): bigint
-  i128(): bigint
-  u8(): number
-  u16(): number
-  u32(): number
-  u64(): bigint
-  u128(): bigint
-  f64(): number
-  varInt(): bigint
-  bool(): boolean
-  string(): string
-  bytes(): Bytes
-  uint8Array(): Uint8Array
-  int8Array(): Int8Array
-  uint16Array(): Uint16Array
-  int16Array(): Int16Array
-  uint32Array(): Uint32Array
-  int32Array(): Int32Array
-  float32Array(): Float32Array
-  float64Array(): Float64Array
-  bigInt64Array(): BigInt64Array
-  bigUint64Array(): BigUint64Array
-  stringArray(): Array<string>
-  boolArray(): Array<boolean>
-}
-
 export declare class Encoding {
   static default(): Encoding
   static from(value: string): Encoding
@@ -181,6 +149,7 @@ export declare class Liveliness {
 export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
+  undeclare(): Promise<undefined>
   recv(): Promise<Sample>
   tryRecv(): Sample | null
   drain(): Array<Sample>
@@ -192,7 +161,6 @@ export declare class LivelinessSubscriber {
   senderCount(): number
   receiverCount(): number
   stream(): ReadableStream<Sample>
-  undeclare(): Promise<undefined>
 }
 
 export declare class LivelinessToken {
@@ -209,6 +177,7 @@ export declare class Locator {
 }
 
 export declare class MatchingListener {
+  undeclare(): Promise<undefined>
   recv(): Promise<MatchingStatus>
   tryRecv(): MatchingStatus | null
   drain(): Array<MatchingStatus>
@@ -220,7 +189,6 @@ export declare class MatchingListener {
   senderCount(): number
   receiverCount(): number
   stream(): ReadableStream<MatchingStatus>
-  undeclare(): Promise<undefined>
 }
 
 export declare class MatchingStatus {
@@ -298,6 +266,7 @@ export declare class Query {
 export declare class Queryable {
   get id(): EntityGlobalId
   get keyExpr(): KeyExpr
+  undeclare(): Promise<undefined>
   recv(): Promise<Query>
   tryRecv(): Query | null
   drain(): Array<Query>
@@ -309,13 +278,12 @@ export declare class Queryable {
   senderCount(): number
   receiverCount(): number
   stream(): ReadableStream<Query>
-  undeclare(): Promise<undefined>
 }
 
 export declare class Replies {
-  recv(): Promise<ReplyResult>
-  tryRecv(): ReplyResult | null
-  drain(): Array<ReplyResult>
+  recv(): Promise<Reply>
+  tryRecv(): Reply | null
+  drain(): Array<Reply>
   isDisconnected(): boolean
   isEmpty(): boolean
   isFull(): boolean
@@ -323,7 +291,7 @@ export declare class Replies {
   capacity(): number | null
   senderCount(): number
   receiverCount(): number
-  stream(): ReadableStream<ReplyResult>
+  stream(): ReadableStream<Reply>
 }
 
 export declare class Reply {
@@ -357,6 +325,7 @@ export declare class Sample {
 }
 
 export declare class SampleMissListener {
+  undeclare(): Promise<undefined>
   recv(): Promise<Miss>
   tryRecv(): Miss | null
   drain(): Array<Miss>
@@ -368,11 +337,11 @@ export declare class SampleMissListener {
   senderCount(): number
   receiverCount(): number
   stream(): ReadableStream<Miss>
-  undeclare(): Promise<undefined>
 }
 
 export declare class Scout {
   static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
+  stop(): void
   recv(): Promise<Hello>
   tryRecv(): Hello | null
   drain(): Array<Hello>
@@ -384,7 +353,6 @@ export declare class Scout {
   senderCount(): number
   receiverCount(): number
   stream(): ReadableStream<Hello>
-  stop(): void
 }
 
 export declare class Selector {
@@ -392,38 +360,6 @@ export declare class Selector {
   get keyExpr(): KeyExpr
   get parameters(): Parameters
   split(): SelectorParts
-}
-
-export declare class Serializer {
-  constructor()
-  i8(value: number): void
-  i16(value: number): void
-  i32(value: number): void
-  i64(value: bigint): void
-  i128(value: bigint): void
-  u8(value: number): void
-  u16(value: number): void
-  u32(value: number): void
-  u64(value: bigint): void
-  u128(value: bigint): void
-  f64(value: number): void
-  varInt(value: bigint): void
-  bool(value: boolean): void
-  string(value: string): void
-  bytes(value: Bytes): void
-  uint8Array(value: Uint8Array): void
-  int8Array(value: Int8Array): void
-  uint16Array(value: Uint16Array): void
-  int16Array(value: Int16Array): void
-  uint32Array(value: Uint32Array): void
-  int32Array(value: Int32Array): void
-  float32Array(value: Float32Array): void
-  float64Array(value: Float64Array): void
-  bigInt64Array(value: BigInt64Array): void
-  bigUint64Array(value: BigUint64Array): void
-  stringArray(value: Array<string>): void
-  boolArray(value: Array<boolean>): void
-  finish(): Bytes
 }
 
 export declare class Session {
@@ -471,20 +407,20 @@ export declare class SourceInfo {
 export declare class Subscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
+  sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
+  detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
+  undeclare(): Promise<undefined>
   recv(): Promise<Sample>
   tryRecv(): Sample | null
   drain(): Array<Sample>
-  stream(): ReadableStream<Sample>
+  isDisconnected(): boolean
   isEmpty(): boolean
   isFull(): boolean
-  isDisconnected(): boolean
   len(): number
   capacity(): number | null
   senderCount(): number
   receiverCount(): number
-  sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
-  detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
-  undeclare(): Promise<undefined>
+  stream(): ReadableStream<Sample>
 }
 
 export declare class Timestamp {

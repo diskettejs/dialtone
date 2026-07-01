@@ -7,20 +7,11 @@ use zenoh::{
 };
 
 use crate::{
-  bytes::*, config::*, encoding::*, error::*, key_expr::*, options::*, qos::*, sample::*,
-  selector::*,
+  bytes::*, config::*, encoding::*, error::*, key_expr::*, macros::wrapper, options::*, qos::*,
+  sample::*, selector::*,
 };
 
-#[napi]
-pub struct Query {
-  inner: zquery::Query,
-}
-
-impl From<zquery::Query> for Query {
-  fn from(inner: zquery::Query) -> Self {
-    Query { inner }
-  }
-}
+wrapper!(zquery::Query);
 
 #[napi]
 impl Query {
@@ -205,16 +196,7 @@ impl From<zquery::ReplyKeyExpr> for ReplyKeyExpr {
   }
 }
 
-#[napi]
-pub struct Reply {
-  inner: zquery::Reply,
-}
-
-impl From<zquery::Reply> for Reply {
-  fn from(inner: zquery::Reply) -> Self {
-    Reply { inner }
-  }
-}
+wrapper!(zquery::Reply);
 
 #[napi]
 impl Reply {
@@ -258,16 +240,7 @@ pub struct ReplyErrored<'env> {
 #[napi]
 pub type ReplyResult<'env> = Either<ReplySample<'env>, ReplyErrored<'env>>;
 
-#[napi]
-pub struct ReplyError {
-  inner: zquery::ReplyError,
-}
-
-impl From<zquery::ReplyError> for ReplyError {
-  fn from(inner: zquery::ReplyError) -> Self {
-    ReplyError { inner }
-  }
-}
+wrapper!(zquery::ReplyError);
 
 #[napi]
 impl ReplyError {
@@ -282,22 +255,7 @@ impl ReplyError {
   }
 }
 
-#[napi]
-pub struct Parameters {
-  inner: zquery::Parameters<'static>,
-}
-
-impl From<zquery::Parameters<'static>> for Parameters {
-  fn from(inner: zquery::Parameters<'static>) -> Self {
-    Parameters { inner }
-  }
-}
-
-impl From<&Parameters> for zquery::Parameters<'static> {
-  fn from(value: &Parameters) -> Self {
-    value.inner.clone()
-  }
-}
+wrapper!(zquery::Parameters<'static>);
 
 #[napi]
 impl Parameters {

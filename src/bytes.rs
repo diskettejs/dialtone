@@ -2,7 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::bytes as zbytes;
 
-use crate::error::*;
+use crate::{error::*, macros::wrapper};
 
 #[napi]
 pub type PayloadArg = napi::Either<String, Uint8Array>;
@@ -32,22 +32,7 @@ impl IntoZBytes for &Uint8Array {
   }
 }
 
-#[napi]
-pub struct Bytes {
-  inner: zbytes::ZBytes,
-}
-
-impl From<zbytes::ZBytes> for Bytes {
-  fn from(inner: zbytes::ZBytes) -> Self {
-    Self { inner }
-  }
-}
-
-impl From<&Bytes> for zbytes::ZBytes {
-  fn from(value: &Bytes) -> Self {
-    value.inner.clone()
-  }
-}
+wrapper!(zbytes::ZBytes as Bytes);
 
 #[napi]
 impl Bytes {

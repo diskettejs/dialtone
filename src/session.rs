@@ -10,19 +10,11 @@ use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
   bytes::*, channels::*, config::*, error::*, handlers::*, info::*, key_expr::*, liveliness::*,
-  options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*, time::*,
+  macros::wrapper, options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*,
+  time::*,
 };
 
-#[napi]
-pub struct Session {
-  inner: zenoh::Session,
-}
-
-impl From<zenoh::Session> for Session {
-  fn from(inner: zenoh::Session) -> Self {
-    Session { inner }
-  }
-}
+wrapper!(zenoh::Session);
 
 #[napi]
 impl Session {
