@@ -6,6 +6,7 @@ mod encoding;
 mod error;
 mod handlers;
 mod info;
+mod instance;
 mod key_expr;
 mod liveliness;
 mod macros;

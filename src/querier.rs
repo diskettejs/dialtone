@@ -64,7 +64,7 @@ impl Querier {
   pub fn get<'env>(
     &self,
     env: &'env Env,
-    options: Option<QuerierGetOptions<'_>>,
+    options: Option<QuerierGetOptions>,
   ) -> napi::Result<PromiseRaw<'env, Replies>> {
     let querier = self
       .inner

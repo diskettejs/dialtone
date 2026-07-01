@@ -66,7 +66,7 @@ impl Session {
     env: &'env Env,
     key_expr: KeyExprArg,
     payload: PayloadArg,
-    options: Option<PutOptions<'_>>,
+    options: Option<PutOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
@@ -135,7 +135,7 @@ impl Session {
     &self,
     env: &'env Env,
     selector: SelectorArg<'_>,
-    options: Option<GetOptions<'_>>,
+    options: Option<GetOptions>,
   ) -> napi::Result<PromiseRaw<'env, Replies>> {
     let GetOptions {
       parameters,
@@ -232,7 +232,7 @@ impl Session {
     &self,
     env: &'env Env,
     key_expr: KeyExprArg,
-    options: Option<DeleteOptions<'_>>,
+    options: Option<DeleteOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let expr = KeyExpr::try_from(key_expr)?;
     let DeleteOptions {

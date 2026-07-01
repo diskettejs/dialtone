@@ -85,7 +85,7 @@ impl Publisher {
     &self,
     env: &'env Env,
     payload: PayloadArg,
-    options: Option<PublisherPutOptions<'_>>,
+    options: Option<PublisherPutOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let payload = payload.into_zbytes();
     let PublisherPutOptions {
@@ -121,7 +121,7 @@ impl Publisher {
   pub fn delete<'env>(
     &self,
     env: &'env Env,
-    options: Option<PublisherDeleteOptions<'_>>,
+    options: Option<PublisherDeleteOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let PublisherDeleteOptions {
       timestamp,

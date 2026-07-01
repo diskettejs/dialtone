@@ -3,7 +3,9 @@ use std::time::Duration;
 use napi::{Either, bindgen_prelude::*};
 use napi_derive::napi;
 
-use crate::{cancellation::*, channels::*, qos::*, query::*, sample::*, time::*};
+use crate::{
+  cancellation::*, channels::*, instance::Instance, qos::*, query::*, sample::*, time::*,
+};
 
 #[allow(dead_code)]
 #[napi]
@@ -11,16 +13,18 @@ pub type ChannelArg<'a> = Either<ClassInstance<'a, FifoChannel>, ClassInstance<'
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct PublisherPutOptions<'a> {
+pub struct PublisherPutOptions {
   pub encoding: Option<String>,
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct PublisherDeleteOptions<'a> {
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+pub struct PublisherDeleteOptions {
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
 }
 
@@ -54,29 +58,33 @@ pub struct SubscriberOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct PutOptions<'a> {
+pub struct PutOptions {
   pub encoding: Option<String>,
   pub congestion_control: Option<CongestionControl>,
   pub priority: Option<Priority>,
   pub express: Option<bool>,
   pub reliability: Option<Reliability>,
   pub allowed_destination: Option<Locality>,
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct DeleteOptions<'a> {
+pub struct DeleteOptions {
   pub congestion_control: Option<CongestionControl>,
   pub priority: Option<Priority>,
   pub express: Option<bool>,
   pub reliability: Option<Reliability>,
   pub allowed_destination: Option<Locality>,
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
 }
 
 #[napi(object, object_to_js = false)]
@@ -167,9 +175,10 @@ pub struct LivelinessSubscriberOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct LivelinessGetOptions<'a> {
+pub struct LivelinessGetOptions {
   pub timeout: Option<f64>,
-  pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
+  #[napi(ts_type = "CancellationToken")]
+  pub cancellation_token: Option<Instance<CancellationToken>>,
   pub capacity: Option<u32>,
   // pub channel: Option<ChannelArg<'a>>,
 }
@@ -244,12 +253,14 @@ impl From<RepliesConfig> for zenoh_ext::RepliesConfig {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct ReplyOptions<'a> {
+pub struct ReplyOptions {
   pub encoding: Option<String>,
   pub express: Option<bool>,
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
 }
 
 #[derive(Default)]
@@ -260,22 +271,27 @@ pub struct ReplyErrOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct ReplyDelOptions<'a> {
+pub struct ReplyDelOptions {
   pub express: Option<bool>,
-  pub timestamp: Option<ClassInstance<'a, Timestamp>>,
+  #[napi(ts_type = "Timestamp")]
+  pub timestamp: Option<Instance<Timestamp>>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct QuerierGetOptions<'a> {
-  pub parameters: Option<ClassInstance<'a, Parameters>>,
+pub struct QuerierGetOptions {
+  #[napi(ts_type = "Parameters")]
+  pub parameters: Option<Instance<Parameters>>,
   pub payload: Option<Uint8Array>,
   pub encoding: Option<String>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
-  pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
+  #[napi(ts_type = "CancellationToken")]
+  pub cancellation_token: Option<Instance<CancellationToken>>,
   pub capacity: Option<u32>,
   // pub channel: Option<ChannelArg<'a>>,
 }
@@ -304,8 +320,9 @@ pub struct QuerierOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct GetOptions<'a> {
-  pub parameters: Option<ClassInstance<'a, Parameters>>,
+pub struct GetOptions {
+  #[napi(ts_type = "Parameters")]
+  pub parameters: Option<Instance<Parameters>>,
   pub target: Option<QueryTarget>,
   pub consolidation: Option<ConsolidationMode>,
   pub congestion_control: Option<CongestionControl>,
@@ -316,8 +333,10 @@ pub struct GetOptions<'a> {
   pub payload: Option<Uint8Array>,
   pub encoding: Option<String>,
   pub attachment: Option<Uint8Array>,
-  pub source_info: Option<ClassInstance<'a, SourceInfo>>,
-  pub cancellation_token: Option<ClassInstance<'a, CancellationToken>>,
+  #[napi(ts_type = "SourceInfo")]
+  pub source_info: Option<Instance<SourceInfo>>,
+  #[napi(ts_type = "CancellationToken")]
+  pub cancellation_token: Option<Instance<CancellationToken>>,
   pub capacity: Option<u32>,
   // pub channel: Option<ChannelArg<'a>>,
 }

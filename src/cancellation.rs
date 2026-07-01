@@ -3,7 +3,7 @@ use zenoh::cancellation as zcancellation;
 
 use crate::{error::*, macros::wrapper};
 
-wrapper!(zcancellation::CancellationToken);
+wrapper!(zcancellation::CancellationToken: Clone);
 
 #[napi]
 impl CancellationToken {

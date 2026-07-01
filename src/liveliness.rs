@@ -59,12 +59,11 @@ impl Liveliness {
   }
 
   #[napi]
-  pub fn get<'env>(
+  pub async fn get(
     &self,
-    env: &'env Env,
-    key_expr: KeyExprArg,
-    options: Option<LivelinessGetOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Replies>> {
+    key_expr: KeyExprArg<'_>,
+    options: Option<LivelinessGetOptions>,
+  ) -> napi::Result<Replies> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
@@ -80,20 +79,18 @@ impl Liveliness {
     let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
     let session = self.inner.clone();
 
-    env.spawn_future(async move {
-      let mut builder = session.liveliness().get(expr).with(cb);
+    let mut builder = session.liveliness().get(expr).with(cb);
 
-      if let Some(timeout) = timeout {
-        builder = builder.timeout(timeout);
-      }
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(timeout);
+    }
 
-      if let Some(cancellation_token) = cancellation_token {
-        builder = builder.cancellation_token(cancellation_token);
-      }
+    if let Some(cancellation_token) = cancellation_token {
+      builder = builder.cancellation_token(cancellation_token);
+    }
 
-      builder.await.map_napi_err()?;
-      Ok(receiver.into())
-    })
+    builder.await.map_napi_err()?;
+    Ok(receiver.into())
   }
 }
 

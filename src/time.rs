@@ -4,7 +4,7 @@ use zenoh::time as ztime;
 
 use crate::macros::wrapper;
 
-wrapper!(ztime::Timestamp);
+wrapper!(ztime::Timestamp: Clone);
 
 #[napi]
 impl Timestamp {

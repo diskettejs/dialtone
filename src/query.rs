@@ -76,7 +76,7 @@ impl Query {
     env: &'env Env,
     key_expr: KeyExprArg,
     payload: PayloadArg,
-    options: Option<ReplyOptions<'_>>,
+    options: Option<ReplyOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
@@ -138,7 +138,7 @@ impl Query {
     &self,
     env: &'env Env,
     key_expr: KeyExprArg<'_>,
-    options: Option<ReplyDelOptions<'_>>,
+    options: Option<ReplyDelOptions>,
   ) -> napi::Result<PromiseRaw<'env, ()>> {
     let expr = KeyExpr::try_from(key_expr)?;
     let query = self.inner.clone();
@@ -233,7 +233,7 @@ impl ReplyError {
   }
 }
 
-wrapper!(zquery::Parameters<'static>);
+wrapper!(zquery::Parameters<'static>: Clone);
 
 #[napi]
 impl Parameters {

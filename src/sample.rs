@@ -81,7 +81,7 @@ impl Sample {
   }
 }
 
-wrapper!(zsample::SourceInfo);
+wrapper!(zsample::SourceInfo: Clone);
 
 #[napi]
 impl SourceInfo {
