@@ -29,6 +29,12 @@ impl IntoZenoh for Payload {
 
 wrapper!(zbytes::ZBytes as Bytes);
 
+impl AsRef<zbytes::ZBytes> for Bytes {
+  fn as_ref(&self) -> &zbytes::ZBytes {
+    &self.inner
+  }
+}
+
 #[napi]
 impl Bytes {
   #[napi]

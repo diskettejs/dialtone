@@ -717,3 +717,34 @@ export interface SubscriberOptions {
 export type WhatAmI =  'Router'|
 'Peer'|
 'Client';
+
+export declare namespace zd {
+  /**
+   * An immutable schema value: build once with the `zd.*` builders, then call
+   * `serialize`/`deserialize` as many times as needed. No lifecycle.
+   */
+  export class Schema {
+    serialize(data: unknown): Bytes
+    deserialize(bytes: Bytes): unknown
+  }
+  export function array(item: Schema): Schema
+  export function bool(): Schema
+  export function bytes(): Schema
+  export function deserialize(schema: Schema, bytes: Bytes): unknown
+  export function f32(): Schema
+  export function f64(): Schema
+  export function i16(): Schema
+  export function i32(): Schema
+  export function i64(): Schema
+  export function i8(): Schema
+  export function map(key: Schema, value: Schema): Schema
+  export function object(fields: object): Schema
+  export function serialize(schema: Schema, data: unknown): Bytes
+  export function set(item: Schema): Schema
+  export function string(): Schema
+  export function tuple(items: Array<Schema>): Schema
+  export function u16(): Schema
+  export function u32(): Schema
+  export function u64(): Schema
+  export function u8(): Schema
+}
