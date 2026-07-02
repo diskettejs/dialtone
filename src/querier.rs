@@ -47,10 +47,10 @@ impl Querier {
       attachment,
       source_info,
       cancellation_token,
-      capacity,
     } = options.unwrap_or_default();
 
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, receiver) = FifoChannel::new(256).into_handler();
 
     build!(
       querier.get().with(cb),
@@ -83,8 +83,9 @@ impl Querier {
   ) -> napi::Result<PromiseRaw<'env, MatchingListener>> {
     let querier = self.get_ref()?;
 
-    let MatchingListenerOptions { capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let MatchingListenerOptions {} = options.unwrap_or_default();
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
     let _listener = querier.matching_listener().with(cb).wait().map_napi_err()?;
 
     todo!("WIP migration to new generic channel system")

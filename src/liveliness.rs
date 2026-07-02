@@ -32,8 +32,10 @@ impl Liveliness {
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let LivelinessSubscriberOptions { history } = options.unwrap_or_default();
+
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let _subscriber = self
       .inner
@@ -58,11 +60,10 @@ impl Liveliness {
     let LivelinessGetOptions {
       timeout,
       cancellation_token,
-      capacity,
     } = options.unwrap_or_default();
 
     let timeout = duration_ms(timeout)?;
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, receiver) = FifoChannel::new(256).into_handler();
     let session = self.inner.clone();
 
     build!(

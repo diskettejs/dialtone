@@ -79,8 +79,10 @@ impl Publisher {
     &self,
     options: Option<MatchingListenerOptions>,
   ) -> napi::Result<MatchingListener> {
-    let MatchingListenerOptions { capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let MatchingListenerOptions {} = options.unwrap_or_default();
+
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let _listener = self
       .get_ref()?

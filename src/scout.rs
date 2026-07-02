@@ -24,8 +24,10 @@ impl Scout {
   ) -> napi::Result<Scout> {
     let what: zconfig::WhatAmIMatcher = what.into();
     let config: zconfig::Config = config.into();
-    let ScoutOptions { capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let ScoutOptions {} = options.unwrap_or_default();
+
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let builder = zscouting::scout(what, config).with((cb, ()));
     let _scout = builder.await;

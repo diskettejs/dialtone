@@ -9,12 +9,6 @@ pub struct FifoChannel {
   inner: zhandlers::FifoChannel,
 }
 
-impl FifoChannel {
-  pub fn with_capacity(capacity: Option<u32>) -> Self {
-    capacity.map_or_else(Self::default, Self::new)
-  }
-}
-
 #[napi]
 impl FifoChannel {
   #[napi(constructor)]

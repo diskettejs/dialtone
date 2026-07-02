@@ -111,9 +111,10 @@ impl Session {
       attachment,
       source_info,
       cancellation_token,
-      capacity,
     } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, receiver) = FifoChannel::new(256).into_handler();
 
     let selector = Selector::resolve(selector, parameters)?;
     let timeout = duration_ms(timeout)?;
@@ -233,10 +234,11 @@ impl Session {
     let QueryableOptions {
       allowed_origin,
       complete,
-      capacity,
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let _queryable = build!(
       self.inner.declare_queryable(expr).with((cb, ())),
@@ -264,9 +266,9 @@ impl Session {
       recovery,
       subscriber_detection,
       subscriber_detection_metadata,
-      capacity,
     } = options.unwrap_or_default();
-    let hanlder = FifoChannel::with_capacity(capacity);
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let hanlder = FifoChannel::new(256);
     let query_timeout = duration_ms(query_timeout_ms)?;
 
     let mut builder = build!(

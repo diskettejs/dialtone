@@ -72,11 +72,6 @@ pub(crate) fn duration_ms(ms: Option<f64>) -> napi::Result<Option<Duration>> {
     .transpose()
 }
 
-#[allow(dead_code)]
-#[napi]
-pub type ChannelArg<'a> =
-  napi::Either<ClassInstance<'a, FifoChannel>, ClassInstance<'a, RingChannel>>;
-
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct PublisherPutOptions {
@@ -118,8 +113,6 @@ pub struct SubscriberOptions {
   pub subscriber_detection: Option<bool>,
   pub subscriber_detection_metadata: Option<String>,
   pub query_timeout_ms: Option<f64>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -213,30 +206,21 @@ impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct ScoutOptions {
-  pub capacity: Option<u32>,
   // pub channel: Option<ChannelArg>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct MatchingListenerOptions {
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
-}
+pub struct MatchingListenerOptions {}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SampleMissListenerOptions {
-  // pub channel: Option<ChannelArg<'a>>,
-  pub capacity: Option<u32>,
-}
+pub struct SampleMissListenerOptions {}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct LivelinessSubscriberOptions {
   pub history: Option<bool>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -245,8 +229,6 @@ pub struct LivelinessGetOptions {
   pub timeout: Option<f64>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[napi(object, object_to_js = false)]
@@ -358,8 +340,6 @@ pub struct QuerierGetOptions {
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -367,8 +347,6 @@ pub struct QuerierGetOptions {
 pub struct QueryableOptions {
   pub complete: Option<bool>,
   pub allowed_origin: Option<Locality>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }
 
 #[derive(Default)]
@@ -403,6 +381,4 @@ pub struct GetOptions {
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
-  pub capacity: Option<u32>,
-  // pub channel: Option<ChannelArg<'a>>,
 }

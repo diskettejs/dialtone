@@ -33,8 +33,9 @@ impl Subscriber {
     &self,
     options: Option<SampleMissListenerOptions>,
   ) -> napi::Result<SampleMissListener> {
-    let SampleMissListenerOptions { capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let SampleMissListenerOptions {} = options.unwrap_or_default();
+    // NOTE: temp hardcoded because of ongoing channel handlers rework
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let _sample_listener = self
       .get_ref()?
@@ -43,7 +44,7 @@ impl Subscriber {
       .await
       .map_napi_err()?;
 
-    // Ok(SampleMissListener::new(sample_listener, receiver))
+    // Ok(SampleMissListener::new(sample_listener))
     todo!("WIP migration to new generic channel system")
   }
 
@@ -58,8 +59,8 @@ impl Subscriber {
     &self,
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
-    let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let LivelinessSubscriberOptions { history } = options.unwrap_or_default();
+    let (cb, _receiver) = FifoChannel::new(256).into_handler();
 
     let _subscriber = build!(self.get_ref()?.detect_publishers().with((cb, ())), history)
       .await
