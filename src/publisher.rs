@@ -1,6 +1,6 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::handlers::IntoHandler;
+use zenoh::{Wait, handlers::IntoHandler};
 
 use crate::{
   bytes::*, channels::FifoChannel, config::*, encoding::*, error::*, key_expr::*, macros::build,
@@ -94,9 +94,7 @@ impl Publisher {
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let publisher = self.take()?;
-
-    env.spawn_future(async move { publisher.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }

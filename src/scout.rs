@@ -1,4 +1,4 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
@@ -17,26 +17,20 @@ option_wrapper!(
 #[allow(clippy::self_named_constructors)]
 impl Scout {
   #[napi]
-  pub fn scout<'env>(
-    env: &'env Env,
+  pub async fn scout(
     what: &WhatAmIMatcher,
     config: &Config,
     options: Option<ScoutOptions>,
-  ) -> napi::Result<PromiseRaw<'env, Scout>> {
+  ) -> napi::Result<Scout> {
     let what: zconfig::WhatAmIMatcher = what.into();
     let config: zconfig::Config = config.into();
     let ScoutOptions { capacity } = options.unwrap_or_default();
     let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    env.spawn_future(async move {
-      let _scout = zscouting::scout(what, config)
-        .with((cb, ()))
-        .await
-        .map_napi_err()?;
+    let builder = zscouting::scout(what, config).with((cb, ()));
+    let _scout = builder.await;
 
-      // Ok(Scout::new(scout, receiver))
-      todo!("WIP migration to new generic channel system")
-    })
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi(getter)]

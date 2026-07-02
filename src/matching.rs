@@ -1,6 +1,6 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::matching as zmatching;
+use zenoh::{Wait, matching as zmatching};
 
 use crate::{error::*, handlers::HandlerImpl, macros::*};
 
@@ -27,9 +27,7 @@ impl MatchingListener {
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let listener = self.take()?;
-
-    env.spawn_future(async move { listener.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }

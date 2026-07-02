@@ -287,7 +287,6 @@ fn write(node: &SchemaNode, val: Unknown, ser: &mut ext::ZSerializer) -> napi::R
 }
 
 /// Decode one node into a JS value. Leaves materialize through the safe
-/// `ToNapiValue::into_unknown`; composites build with the safe `Object`/`Array`
 /// constructors and hand an `Unknown` back up for the parent to place.
 fn read<'env>(
   node: &SchemaNode,

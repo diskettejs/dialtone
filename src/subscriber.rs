@@ -1,6 +1,7 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
+  Wait,
   handlers::{self as zhandlers, IntoHandler},
   sample as zsample,
 };
@@ -69,9 +70,7 @@ impl Subscriber {
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let subscriber = self.take()?;
-
-    env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }

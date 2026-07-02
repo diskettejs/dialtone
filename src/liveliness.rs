@@ -1,7 +1,7 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
-use zenoh::{liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
+use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
 use crate::{
   channels::*, config::*, error::*, handlers::HandlerImpl, key_expr::*, macros::*, options::*,
@@ -83,10 +83,8 @@ option_wrapper!(zliveliness::LivelinessToken, "Undeclared liveliness token");
 #[napi]
 impl LivelinessToken {
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let token = self.take()?;
-
-    env.spawn_future(async move { token.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
 
@@ -113,9 +111,7 @@ impl LivelinessSubscriber {
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let subscriber = self.take()?;
-
-    env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }

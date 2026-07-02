@@ -7,31 +7,31 @@ declare module './binding.js' {
     [Symbol.asyncDispose](): Promise<void>
   }
   interface Subscriber {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface Publisher {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface MatchingListener {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface SampleMissListener {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface Scout {
     [Symbol.dispose](): void
   }
   interface LivelinessToken {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface LivelinessSubscriber {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface Querier {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
   interface Queryable {
-    [Symbol.asyncDispose](): Promise<void>
+    [Symbol.dispose](): void
   }
 }
 

@@ -87,14 +87,11 @@ impl Querier {
     let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
     let _listener = querier.matching_listener().with(cb).wait().map_napi_err()?;
 
-    // env.spawn_future(async move { Ok(MatchingListener::new(listener, receiver)) })
     todo!("WIP migration to new generic channel system")
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let querier = self.take()?;
-
-    env.spawn_future(async move { querier.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }

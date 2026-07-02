@@ -156,11 +156,11 @@ export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
   get handler(): void
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class LivelinessToken {
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Locator {
@@ -174,7 +174,7 @@ export declare class Locator {
 
 export declare class MatchingListener {
   get handler(): void
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class MatchingStatus {
@@ -217,7 +217,7 @@ export declare class Publisher {
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Querier {
@@ -229,7 +229,7 @@ export declare class Querier {
   get(options?: QuerierGetOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Query {
@@ -254,7 +254,7 @@ export declare class Queryable {
   get id(): EntityGlobalId
   get keyExpr(): KeyExpr
   get handler(): void
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Reply {
@@ -289,7 +289,7 @@ export declare class Sample {
 
 export declare class SampleMissListener {
   get handler(): void
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Scout {
@@ -353,7 +353,7 @@ export declare class Subscriber {
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
   get handler(): void
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
-  undeclare(): Promise<undefined>
+  undeclare(): void
 }
 
 export declare class Timestamp {

@@ -1,6 +1,6 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::query as zquery;
+use zenoh::{Wait, query as zquery};
 
 use crate::{
   config::EntityGlobalId, error::MapNapiErr, handlers::HandlerImpl, key_expr::KeyExpr,
@@ -30,9 +30,7 @@ impl Queryable {
   }
 
   #[napi]
-  pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let queryable = self.take()?;
-
-    env.spawn_future(async move { queryable.undeclare().await.map_napi_err() })
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
