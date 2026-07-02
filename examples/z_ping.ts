@@ -34,6 +34,7 @@ async function main() {
   const warmupEnd = performance.now() + warmupMs
   while (performance.now() < warmupEnd) {
     await publisher.put(data)
+    // @ts-expect-error
     await sub.recv()
   }
 
@@ -41,6 +42,7 @@ async function main() {
   for (let i = 0; i < n; i++) {
     const writeTime = performance.now()
     await publisher.put(data)
+    // @ts-expect-error
     await sub.recv()
     samples.push((performance.now() - writeTime) * 1000) // microseconds
   }

@@ -2,53 +2,29 @@ use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::{
   handlers::{self as zhandlers, IntoHandler},
-  key_expr as zkey_expr, sample as zsample, session as zsession,
+  sample as zsample,
 };
 
 use crate::{
-  channels::*, config::*, error::*, key_expr::*, liveliness::*, macros::{build, channel_forward},
+  channels::*, config::*, error::*, handlers::HandlerImpl, key_expr::*, liveliness::*, macros::*,
   miss::*, options::*, sample::*,
 };
 
-#[napi]
-pub struct Subscriber {
-  id: zsession::EntityGlobalId,
-  key_expr: zkey_expr::KeyExpr<'static>,
-  inner: Option<zenoh_ext::AdvancedSubscriber<()>>,
-  receiver: crate::handlers::FifoChannelHandler<zsample::Sample>,
-}
-
-impl Subscriber {
-  pub(crate) fn new(
-    inner: zenoh_ext::AdvancedSubscriber<()>,
-    receiver: zhandlers::FifoChannelHandler<zsample::Sample>,
-  ) -> Self {
-    Self {
-      id: inner.id(),
-      key_expr: inner.key_expr().clone(),
-      inner: Some(inner),
-      receiver: receiver.into(),
-    }
-  }
-
-  fn get(&self) -> napi::Result<&zenoh_ext::AdvancedSubscriber<()>> {
-    self
-      .inner
-      .as_ref()
-      .ok_or_else(|| napi::Error::from_reason("subscriber has already been undeclared"))
-  }
-}
+option_wrapper!(
+  zenoh_ext::AdvancedSubscriber<HandlerImpl<zsample::Sample>> as Subscriber,
+  "Undeclared subscriber"
+);
 
 #[napi]
 impl Subscriber {
   #[napi(getter)]
-  pub fn key_expr(&self) -> KeyExpr {
-    self.key_expr.clone().into()
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
-  pub fn id(&self) -> EntityGlobalId {
-    self.id.into()
+  pub fn id(&self) -> napi::Result<EntityGlobalId> {
+    Ok(self.get_ref()?.id().into())
   }
 
   #[napi]
@@ -57,16 +33,23 @@ impl Subscriber {
     options: Option<SampleMissListenerOptions>,
   ) -> napi::Result<SampleMissListener> {
     let SampleMissListenerOptions { capacity } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let sample_listener = self
-      .get()?
+    let _sample_listener = self
+      .get_ref()?
       .sample_miss_listener()
       .with((cb, ()))
       .await
       .map_napi_err()?;
 
-    Ok(SampleMissListener::new(sample_listener, receiver))
+    // Ok(SampleMissListener::new(sample_listener, receiver))
+    todo!("WIP migration to new generic channel system")
+  }
+
+  #[napi(getter)]
+  pub fn handler(&self) -> napi::Result<()> {
+    // Ok(self.get_ref()?.handler())
+    todo!()
   }
 
   #[napi]
@@ -75,24 +58,20 @@ impl Subscriber {
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
     let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let subscriber = build!(self.get()?.detect_publishers().with((cb, ())), history)
+    let _subscriber = build!(self.get_ref()?.detect_publishers().with((cb, ())), history)
       .await
       .map_napi_err()?;
 
-    Ok(LivelinessSubscriber::new(subscriber, receiver))
+    // Ok(LivelinessSubscriber::new(subscriber, receiver))
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let subscriber = self
-      .inner
-      .take()
-      .ok_or_else(|| napi::Error::from_reason("subscriber has already been undeclared"))?;
+    let subscriber = self.take()?;
 
     env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
   }
 }
-
-channel_forward!(Subscriber, receiver, Sample);

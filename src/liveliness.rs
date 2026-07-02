@@ -1,20 +1,11 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
-use zenoh::{
-  handlers as zhandlers, key_expr as zkey_expr, liveliness as zliveliness, pubsub as zpubsub,
-  sample as zsample, session as zsession,
-};
+use zenoh::{liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
 use crate::{
-  channels::*,
-  config::*,
-  error::*,
-  handlers::Replies,
-  key_expr::*,
-  macros::{build, channel_forward, wrapper},
-  options::*,
-  sample::Sample,
+  channels::*, config::*, error::*, handlers::HandlerImpl, key_expr::*, macros::*, options::*,
+  sample::*,
 };
 
 wrapper!(zenoh::Session as Liveliness);
@@ -42,9 +33,9 @@ impl Liveliness {
   ) -> napi::Result<LivelinessSubscriber> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessSubscriberOptions { history, capacity } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let subscriber = self
+    let _subscriber = self
       .inner
       .liveliness()
       .declare_subscriber(expr)
@@ -53,7 +44,8 @@ impl Liveliness {
       .await
       .map_napi_err()?;
 
-    Ok(LivelinessSubscriber::new(subscriber, receiver))
+    // Ok(LivelinessSubscriber::new(subscriber, receiver))
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi]
@@ -61,7 +53,7 @@ impl Liveliness {
     &self,
     key_expr: KeyExprArg<'_>,
     options: Option<LivelinessGetOptions>,
-  ) -> napi::Result<Replies> {
+  ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
@@ -81,76 +73,49 @@ impl Liveliness {
     .await
     .map_napi_err()?;
 
-    Ok(receiver.into())
+    // Ok(receiver.into())
+    todo!("migration to new channel handlers")
   }
 }
 
-#[napi]
-pub struct LivelinessToken {
-  inner: Option<zliveliness::LivelinessToken>,
-}
-
-impl From<zliveliness::LivelinessToken> for LivelinessToken {
-  fn from(inner: zliveliness::LivelinessToken) -> Self {
-    Self { inner: Some(inner) }
-  }
-}
+option_wrapper!(zliveliness::LivelinessToken, "Undeclared liveliness token");
 
 #[napi]
 impl LivelinessToken {
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let token = self
-      .inner
-      .take()
-      .ok_or_else(|| napi::Error::from_reason("liveliness token has already been undeclared"))?;
+    let token = self.take()?;
 
     env.spawn_future(async move { token.undeclare().await.map_napi_err() })
   }
 }
 
-#[napi]
-pub struct LivelinessSubscriber {
-  id: zsession::EntityGlobalId,
-  key_expr: zkey_expr::KeyExpr<'static>,
-  inner: Option<zpubsub::Subscriber<()>>,
-  receiver: crate::handlers::FifoChannelHandler<zsample::Sample>,
-}
-
-impl LivelinessSubscriber {
-  pub fn new(
-    inner: zpubsub::Subscriber<()>,
-    receiver: zhandlers::FifoChannelHandler<zsample::Sample>,
-  ) -> Self {
-    Self {
-      id: inner.id(),
-      key_expr: inner.key_expr().clone(),
-      inner: Some(inner),
-      receiver: receiver.into(),
-    }
-  }
-}
+option_wrapper!(
+  zpubsub::Subscriber<HandlerImpl<zsample::Sample>> as LivelinessSubscriber,
+  "Undeclared liveliness subscriber"
+);
 
 #[napi]
 impl LivelinessSubscriber {
   #[napi(getter)]
-  pub fn key_expr(&self) -> KeyExpr {
-    self.key_expr.clone().into()
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
-  pub fn id(&self) -> EntityGlobalId {
-    self.id.into()
+  pub fn id(&self) -> napi::Result<EntityGlobalId> {
+    Ok(self.get_ref()?.id().into())
+  }
+
+  #[napi(getter)]
+  pub fn handler(&self) -> napi::Result<()> {
+    todo!()
   }
 
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let subscriber = self.inner.take().ok_or_else(|| {
-      napi::Error::from_reason("liveliness subscriber has already been undeclared")
-    })?;
+    let subscriber = self.take()?;
 
     env.spawn_future(async move { subscriber.undeclare().await.map_napi_err() })
   }
 }
-
-channel_forward!(LivelinessSubscriber, receiver, Sample);

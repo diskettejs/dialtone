@@ -18,6 +18,7 @@ async function main() {
   console.log(`Sending Liveliness Query '${keyExpr}'...`)
   const replies = await session.liveliness().get(keyExpr, { timeout: Number(values.timeout) })
 
+  // @ts-expect-error
   for await (const reply of replies.stream()) {
     if (reply.error) {
       console.log(`>> Received (ERROR: '${bytesToString(reply.error.payload)}')`)

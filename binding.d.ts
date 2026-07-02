@@ -149,24 +149,14 @@ export declare class Link {
 export declare class Liveliness {
   declareToken(keyExpr: KeyExprArg): Promise<LivelinessToken>
   declareSubscriber(keyExpr: KeyExprArg, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
-  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<Replies>
+  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<void>
 }
 
 export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
+  get handler(): void
   undeclare(): Promise<undefined>
-  recv(): Promise<Sample>
-  tryRecv(): Sample | null
-  drain(): Array<Sample>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Sample>
 }
 
 export declare class LivelinessToken {
@@ -183,18 +173,8 @@ export declare class Locator {
 }
 
 export declare class MatchingListener {
+  get handler(): void
   undeclare(): Promise<undefined>
-  recv(): Promise<MatchingStatus>
-  tryRecv(): MatchingStatus | null
-  drain(): Array<MatchingStatus>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<MatchingStatus>
 }
 
 export declare class MatchingStatus {
@@ -246,7 +226,7 @@ export declare class Querier {
   get congestionControl(): CongestionControl
   get priority(): Priority
   get acceptReplies(): ReplyKeyExpr
-  get(options?: QuerierGetOptions | undefined | null): Promise<Replies>
+  get(options?: QuerierGetOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
   undeclare(): Promise<undefined>
@@ -267,37 +247,14 @@ export declare class Query {
   reply(keyExpr: KeyExprArg, payload: Payload, options?: ReplyOptions | undefined | null): Promise<void>
   replyErr(payload: Payload, options?: ReplyErrOptions | undefined | null): Promise<void>
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
+  drop(): void
 }
 
 export declare class Queryable {
   get id(): EntityGlobalId
   get keyExpr(): KeyExpr
+  get handler(): void
   undeclare(): Promise<undefined>
-  recv(): Promise<Query>
-  tryRecv(): Query | null
-  drain(): Array<Query>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Query>
-}
-
-export declare class Replies {
-  recv(): Promise<Reply>
-  tryRecv(): Reply | null
-  drain(): Array<Reply>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Reply>
 }
 
 export declare class Reply {
@@ -331,34 +288,14 @@ export declare class Sample {
 }
 
 export declare class SampleMissListener {
+  get handler(): void
   undeclare(): Promise<undefined>
-  recv(): Promise<Miss>
-  tryRecv(): Miss | null
-  drain(): Array<Miss>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Miss>
 }
 
 export declare class Scout {
   static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
+  get handler(): void
   stop(): void
-  recv(): Promise<Hello>
-  tryRecv(): Hello | null
-  drain(): Array<Hello>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Hello>
 }
 
 export declare class Selector {
@@ -378,7 +315,7 @@ export declare class Session {
   config(): SessionConfig
   close(): Promise<void>
   put(keyExpr: KeyExprArg, payload: Payload, options?: PutOptions | undefined | null): Promise<void>
-  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Replies>
+  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<void>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
   declareKeyexpr(keyExpr: KeyExprArg): Promise<KeyExpr>
@@ -414,19 +351,9 @@ export declare class Subscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
+  get handler(): void
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): Promise<undefined>
-  recv(): Promise<Sample>
-  tryRecv(): Sample | null
-  drain(): Array<Sample>
-  isDisconnected(): boolean
-  isEmpty(): boolean
-  isFull(): boolean
-  len(): number
-  capacity(): number | null
-  senderCount(): number
-  receiverCount(): number
-  stream(): ReadableStream<Sample>
 }
 
 export declare class Timestamp {

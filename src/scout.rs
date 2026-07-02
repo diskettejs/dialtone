@@ -1,35 +1,17 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
-use zenoh::handlers::fifo as zfifo;
 use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
 use crate::options::ScoutOptions;
 use crate::{
-  channels::FifoChannel,
-  config::*,
-  error::*,
-  info::*,
-  macros::{channel_forward, wrapper},
+  channels::FifoChannel, config::*, error::*, handlers::HandlerImpl, info::*, macros::*,
   protocol::*,
 };
 
-#[napi]
-pub struct Scout {
-  inner: Option<zscouting::Scout<()>>,
-  receiver: crate::handlers::FifoChannelHandler<zscouting::Hello>,
-}
-
-impl Scout {
-  pub fn new(
-    scout: zscouting::Scout<()>,
-    receiver: zfifo::FifoChannelHandler<zscouting::Hello>,
-  ) -> Self {
-    Scout {
-      inner: Some(scout),
-      receiver: receiver.into(),
-    }
-  }
-}
+option_wrapper!(
+  zscouting::Scout<HandlerImpl<zscouting::Hello>>,
+  "Stopped scout"
+);
 
 #[napi]
 #[allow(clippy::self_named_constructors)]
@@ -44,31 +26,32 @@ impl Scout {
     let what: zconfig::WhatAmIMatcher = what.into();
     let config: zconfig::Config = config.into();
     let ScoutOptions { capacity } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
     env.spawn_future(async move {
-      let scout = zscouting::scout(what, config)
+      let _scout = zscouting::scout(what, config)
         .with((cb, ()))
         .await
         .map_napi_err()?;
 
-      Ok(Scout::new(scout, receiver))
+      // Ok(Scout::new(scout, receiver))
+      todo!("WIP migration to new generic channel system")
     })
+  }
+
+  #[napi(getter)]
+  pub fn handler(&self) -> napi::Result<()> {
+    todo!()
   }
 
   #[napi]
   pub fn stop(&mut self) -> napi::Result<()> {
-    let scout = self
-      .inner
-      .take()
-      .ok_or_else(|| napi::Error::from_reason("scout has already been stopped"))?;
+    let scout = self.take()?;
 
     scout.stop();
     Ok(())
   }
 }
-
-channel_forward!(Scout, receiver, Hello);
 
 wrapper!(zscouting::Hello);
 

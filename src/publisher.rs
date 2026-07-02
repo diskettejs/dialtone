@@ -1,81 +1,39 @@
-use std::sync::Arc;
-
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
-use zenoh::{
-  bytes as zbytes, handlers::IntoHandler, key_expr as zkey_expr, qos as zqos, session as zsession,
-};
+use zenoh::handlers::IntoHandler;
 
 use crate::{
   bytes::*, channels::FifoChannel, config::*, encoding::*, error::*, key_expr::*, macros::build,
-  matching::*, options::*, qos::*,
+  macros::option_wrapper, matching::*, options::*, qos::*,
 };
 
-#[napi]
-pub struct Publisher {
-  id: zsession::EntityGlobalId,
-  key_expr: zkey_expr::KeyExpr<'static>,
-  encoding: zbytes::Encoding,
-  congestion_control: zqos::CongestionControl,
-  priority: zqos::Priority,
-  inner: Option<Arc<zenoh_ext::AdvancedPublisher<'static>>>,
-}
-
-impl From<zenoh_ext::AdvancedPublisher<'static>> for Publisher {
-  fn from(inner: zenoh_ext::AdvancedPublisher<'static>) -> Self {
-    Self {
-      id: inner.id(),
-      key_expr: inner.key_expr().clone(),
-      encoding: inner.encoding().clone(),
-      congestion_control: inner.congestion_control(),
-      priority: inner.priority(),
-      inner: Some(Arc::new(inner)),
-    }
-  }
-}
-
-impl Publisher {
-  fn get(&self) -> napi::Result<&zenoh_ext::AdvancedPublisher<'static>> {
-    self
-      .inner
-      .as_deref()
-      .ok_or_else(|| napi::Error::from_reason("publisher has already been undeclared"))
-  }
-
-  fn arc(&self) -> napi::Result<Arc<zenoh_ext::AdvancedPublisher<'static>>> {
-    self
-      .inner
-      .as_ref()
-      .map(Arc::clone)
-      .ok_or_else(|| napi::Error::from_reason("publisher has already been undeclared"))
-  }
-}
+option_wrapper!(zenoh_ext::AdvancedPublisher<'static> as Publisher, "Undeclared publisher");
 
 #[napi]
 impl Publisher {
   #[napi(getter)]
-  pub fn key_expr(&self) -> KeyExpr {
-    self.key_expr.clone().into()
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
-  pub fn id(&self) -> EntityGlobalId {
-    self.id.into()
+  pub fn id(&self) -> napi::Result<EntityGlobalId> {
+    Ok(self.get_ref()?.id().into())
   }
 
   #[napi(getter)]
-  pub fn encoding(&self) -> Encoding {
-    self.encoding.clone().into()
+  pub fn encoding(&self) -> napi::Result<Encoding> {
+    Ok(self.get_ref()?.encoding().clone().into())
   }
 
   #[napi(getter)]
-  pub fn congestion_control(&self) -> CongestionControl {
-    self.congestion_control.into()
+  pub fn congestion_control(&self) -> napi::Result<CongestionControl> {
+    Ok(self.get_ref()?.congestion_control().into())
   }
 
   #[napi(getter)]
-  pub fn priority(&self) -> Priority {
-    self.priority.into()
+  pub fn priority(&self) -> napi::Result<Priority> {
+    Ok(self.get_ref()?.priority().into())
   }
 
   #[napi]
@@ -90,7 +48,7 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let publisher = self.arc()?;
+    let publisher = self.get_ref()?;
 
     build!(publisher.put(payload), encoding, timestamp, attachment)
       .await
@@ -103,7 +61,7 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let publisher = self.arc()?;
+    let publisher = self.get_ref()?;
 
     build!(publisher.delete(), timestamp, attachment)
       .await
@@ -112,7 +70,7 @@ impl Publisher {
 
   #[napi]
   pub async fn matching_status(&self) -> napi::Result<MatchingStatus> {
-    let m = self.get()?.matching_status().await.map_napi_err()?;
+    let m = self.get_ref()?.matching_status().await.map_napi_err()?;
     Ok(m.into())
   }
 
@@ -122,30 +80,23 @@ impl Publisher {
     options: Option<MatchingListenerOptions>,
   ) -> napi::Result<MatchingListener> {
     let MatchingListenerOptions { capacity } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let listener = self
-      .get()?
+    let _listener = self
+      .get_ref()?
       .matching_listener()
       .with((cb, ()))
       .await
       .map_napi_err()?;
 
-    Ok(MatchingListener::new(listener, receiver))
+    // Ok(MatchingListener::new(listener, receiver))
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let publisher = self
-      .inner
-      .take()
-      .ok_or_else(|| napi::Error::from_reason("publisher has already been undeclared"))?;
+    let publisher = self.take()?;
 
-    env.spawn_future(async move {
-      match Arc::into_inner(publisher) {
-        Some(publisher) => publisher.undeclare().await.map_napi_err(),
-        None => Ok(()),
-      }
-    })
+    env.spawn_future(async move { publisher.undeclare().await.map_napi_err() })
   }
 }

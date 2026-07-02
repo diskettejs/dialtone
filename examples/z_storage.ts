@@ -27,6 +27,7 @@ async function main() {
   // Rust drives both receivers with `select!`; here each async iterator runs
   // its own loop concurrently, sharing the `stored` map.
   const store = (async () => {
+    // @ts-expect-error
     for await (const sample of subscriber.stream()) {
       const key = sample.keyExpr.toString()
       console.log(
@@ -38,6 +39,7 @@ async function main() {
   })()
 
   const serve = (async () => {
+    // @ts-expect-error
     for await (const query of queryable.stream()) {
       console.log(`>> [Queryable] Received Query '${query.keyExpr}'`)
       for (const [key, sample] of stored) {

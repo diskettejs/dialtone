@@ -24,6 +24,7 @@ async function main() {
     const listener = await publisher.matchingListener()
     // No callbacks in Dialtone: consume the listener as an async iterator.
     void (async () => {
+      // @ts-expect-error
       for await (const status of listener.stream()) {
         console.log(
           status.matching

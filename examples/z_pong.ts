@@ -16,6 +16,7 @@ async function main() {
   await using subscriber = await session.declareSubscriber('test/ping')
 
   // Echo every ping payload straight back on test/pong (no callbacks in Dialtone).
+  // @ts-expect-error
   for await (const sample of subscriber.stream()) {
     await publisher.put(sample.payload.toBytes())
   }

@@ -7,63 +7,63 @@ use crate::{
   sample::*, selector::*,
 };
 
-wrapper!(zquery::Query);
+option_wrapper!(zquery::Query, "Dropped query");
 
 #[napi]
 impl Query {
   #[napi(getter)]
-  pub fn selector(&self) -> Selector {
-    self.inner.selector().into_owned().into()
+  pub fn selector(&self) -> napi::Result<Selector> {
+    Ok(self.get_ref()?.selector().into_owned().into())
   }
 
   #[napi(getter)]
-  pub fn key_expr(&self) -> KeyExpr {
-    self.inner.key_expr().clone().into()
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
-  pub fn payload(&self) -> Option<Bytes> {
-    self.inner.payload().cloned().map(Bytes::from)
+  pub fn payload(&self) -> napi::Result<Option<Bytes>> {
+    Ok(self.get_ref()?.payload().cloned().map(Bytes::from))
   }
 
   #[napi(getter)]
-  pub fn encoding(&self) -> Option<Encoding> {
-    self.inner.encoding().cloned().map(Into::into)
+  pub fn encoding(&self) -> napi::Result<Option<Encoding>> {
+    Ok(self.get_ref()?.encoding().cloned().map(Into::into))
   }
 
   #[napi(getter)]
-  pub fn attachment(&self) -> Option<Bytes> {
-    self.inner.attachment().cloned().map(Bytes::from)
+  pub fn attachment(&self) -> napi::Result<Option<Bytes>> {
+    Ok(self.get_ref()?.attachment().cloned().map(Bytes::from))
   }
 
   #[napi(getter)]
-  pub fn source_info(&self) -> Option<SourceInfo> {
-    self.inner.source_info().cloned().map(SourceInfo::from)
+  pub fn source_info(&self) -> napi::Result<Option<SourceInfo>> {
+    Ok(self.get_ref()?.source_info().cloned().map(SourceInfo::from))
   }
 
   #[napi(getter)]
-  pub fn priority(&self) -> Priority {
-    self.inner.priority().into()
+  pub fn priority(&self) -> napi::Result<Priority> {
+    Ok(self.get_ref()?.priority().into())
   }
 
   #[napi(getter)]
-  pub fn congestion_control(&self) -> CongestionControl {
-    self.inner.congestion_control().into()
+  pub fn congestion_control(&self) -> napi::Result<CongestionControl> {
+    Ok(self.get_ref()?.congestion_control().into())
   }
 
   #[napi(getter)]
-  pub fn express(&self) -> bool {
-    self.inner.express()
+  pub fn express(&self) -> napi::Result<bool> {
+    Ok(self.get_ref()?.express())
   }
 
   #[napi(getter)]
-  pub fn parameters(&self) -> Parameters {
-    self.inner.parameters().clone().into()
+  pub fn parameters(&self) -> napi::Result<Parameters> {
+    Ok(self.get_ref()?.parameters().clone().into())
   }
 
   #[napi(getter)]
-  pub fn accept_replies(&self) -> ReplyKeyExpr {
-    self.inner.accepts_replies().into()
+  pub fn accept_replies(&self) -> napi::Result<ReplyKeyExpr> {
+    Ok(self.get_ref()?.accepts_replies().into())
   }
 
   #[napi]
@@ -75,7 +75,7 @@ impl Query {
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
-    let query = self.inner.clone();
+    let query = self.get_ref()?.clone();
 
     let ReplyOptions {
       encoding,
@@ -106,7 +106,7 @@ impl Query {
     let payload = payload.into_zbytes();
     let ReplyErrOptions { encoding } = options.unwrap_or_default();
 
-    build!(self.inner.reply_err(payload), encoding)
+    build!(self.get_ref()?.reply_err(payload), encoding)
       .await
       .map_napi_err()
   }
@@ -118,7 +118,7 @@ impl Query {
     options: Option<ReplyDelOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let query = self.inner.clone();
+    let query = self.get_ref()?.clone();
 
     let ReplyDelOptions {
       express,
@@ -136,6 +136,12 @@ impl Query {
     )
     .await
     .map_napi_err()
+  }
+
+  #[napi]
+  pub fn drop(&mut self) -> napi::Result<()> {
+    self.take()?;
+    Ok(())
   }
 }
 

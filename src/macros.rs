@@ -66,6 +66,87 @@ macro_rules! wrapper {
 }
 pub(crate) use wrapper;
 
+/// Ported from zenoh-python's `option_wrapper!` (src/macros.rs). Wraps a Zenoh entity that
+/// can be undeclared/taken exactly once; access after that returns `$error`. Adapted:
+/// `napi::Error` instead of `PyErr`, no GIL release in `Drop` since napi has no GIL.
+///
+/// option_wrapper!(zenoh_ext::AdvancedSubscriber<HandlerImpl<Sample>> as Subscriber, "subscriber already undeclared");
+/// option_wrapper!(zenoh::pubsub::Publisher<'static>, "publisher already undeclared");
+macro_rules! option_wrapper {
+    (
+        $($seg:ident)::+ $(<$lt:lifetime>)?
+        $(as $Name:ident)?
+        , $error:literal $(,)?
+    ) => {
+        $crate::macros::option_wrapper!(@peel
+            $($seg)::+ ;
+            $($seg)::+ $(<$lt>)? ;
+            $(as $Name)? ;
+            $error ;
+        );
+    };
+    (
+        $($seg:ident)::+ $(<$($arg:ty),+>)?
+        $(as $Name:ident)?
+        , $error:literal $(,)?
+    ) => {
+        $crate::macros::option_wrapper!(@peel
+            $($seg)::+ ;
+            $($seg)::+ $(<$($arg),+>)? ;
+            $(as $Name)? ;
+            $error ;
+        );
+    };
+    (@peel
+        $head:ident :: $($tail:ident)::+ ;
+        $full:path ;
+        $(as $Name:ident)? ;
+        $error:literal ;
+    ) => {
+        $crate::macros::option_wrapper!(@peel
+            $($tail)::+ ; $full ; $(as $Name)? ; $error ;
+        );
+    };
+    (@peel $last:ident ; $full:path ; ; $error:literal ;) => {
+        $crate::macros::option_wrapper!(@emit $last, $full, $error);
+    };
+    (@peel $last:ident ; $full:path ; as $Name:ident ; $error:literal ;) => {
+        $crate::macros::option_wrapper!(@emit $Name, $full, $error);
+    };
+    (@emit $Name:ident, $full:path, $error:literal) => {
+        #[napi]
+        pub struct $Name {
+            inner: Option<$full>,
+        }
+
+        #[allow(dead_code)]
+        impl $Name {
+            fn none() -> napi::Error {
+                napi::Error::from_reason($error)
+            }
+
+            fn get_ref(&self) -> napi::Result<&$full> {
+                self.inner.as_ref().ok_or_else(Self::none)
+            }
+
+            fn get_mut(&mut self) -> napi::Result<&mut $full> {
+                self.inner.as_mut().ok_or_else(Self::none)
+            }
+
+            fn take(&mut self) -> napi::Result<$full> {
+                self.inner.take().ok_or_else(Self::none)
+            }
+        }
+
+        impl From<$full> for $Name {
+            fn from(value: $full) -> Self {
+                Self { inner: Some(value) }
+            }
+        }
+    };
+}
+pub(crate) use option_wrapper;
+
 /// Generates `#[napi(string_enum)] pub enum $Name { variants }` plus both `From` conversions
 /// between it and the mirrored `$path` enum. Variant names must match exactly on both sides.
 ///
@@ -128,73 +209,3 @@ macro_rules! build {
     }};
 }
 pub(crate) use build;
-
-/// Generates a standalone `#[napi] impl $Struct { ... }` with the 11
-/// `crate::handlers::FifoChannelHandler<T>`-forwarding methods. Coexists with a
-/// hand-written impl block for the same struct via napi-rs's additive, TypeId-keyed
-/// class registry.
-///
-/// channel_forward!(Subscriber, receiver, Sample);
-/// channel_forward!(Replies, inner, Reply);
-macro_rules! channel_forward {
-    ($Struct:ident, $field:ident, $J:ty) => {
-        #[napi]
-        impl $Struct {
-            #[napi]
-            pub async fn recv(&self) -> napi::Result<$J> {
-                self.$field.recv::<$J>().await
-            }
-
-            #[napi]
-            pub fn try_recv(&self) -> napi::Result<Option<$J>> {
-                self.$field.try_recv::<$J>()
-            }
-
-            #[napi]
-            pub fn drain(&self) -> Vec<$J> {
-                self.$field.drain::<$J>()
-            }
-
-            #[napi]
-            pub fn is_disconnected(&self) -> bool {
-                self.$field.is_disconnected()
-            }
-
-            #[napi]
-            pub fn is_empty(&self) -> bool {
-                self.$field.is_empty()
-            }
-
-            #[napi]
-            pub fn is_full(&self) -> bool {
-                self.$field.is_full()
-            }
-
-            #[napi]
-            pub fn len(&self) -> u32 {
-                self.$field.len()
-            }
-
-            #[napi]
-            pub fn capacity(&self) -> Option<u32> {
-                self.$field.capacity()
-            }
-
-            #[napi]
-            pub fn sender_count(&self) -> u32 {
-                self.$field.sender_count()
-            }
-
-            #[napi]
-            pub fn receiver_count(&self) -> u32 {
-                self.$field.receiver_count()
-            }
-
-            #[napi]
-            pub fn stream<'env>(&self, env: &'env Env) -> napi::Result<ReadableStream<'env, $J>> {
-                self.$field.stream::<$J>(env)
-            }
-        }
-    };
-}
-pub(crate) use channel_forward;

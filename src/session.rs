@@ -3,9 +3,8 @@ use zenoh::handlers::IntoHandler;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, channels::*, config::*, error::*, handlers::*, info::*, key_expr::*, liveliness::*,
-  macros::{build, wrapper}, options::*, publisher::*, querier::*, queryable::*, selector::*,
-  subscriber::*, time::*,
+  bytes::*, channels::*, config::*, error::*, info::*, key_expr::*, liveliness::*, macros::*,
+  options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*, time::*,
 };
 
 wrapper!(zenoh::Session);
@@ -97,7 +96,7 @@ impl Session {
     &self,
     selector: SelectorArg<'_>,
     options: Option<GetOptions>,
-  ) -> napi::Result<Replies> {
+  ) -> napi::Result<()> {
     let GetOptions {
       parameters,
       target,
@@ -138,7 +137,8 @@ impl Session {
     .await
     .map_napi_err()?;
 
-    Ok(receiver.into())
+    // Ok(receiver.into())
+    todo!("migration to new channel handlers")
   }
 
   #[napi]
@@ -236,9 +236,9 @@ impl Session {
       capacity,
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let (cb, _receiver) = FifoChannel::with_capacity(capacity).into_handler();
 
-    let queryable = build!(
+    let _queryable = build!(
       self.inner.declare_queryable(expr).with((cb, ())),
       allowed_origin,
       complete,
@@ -246,7 +246,8 @@ impl Session {
     .await
     .map_napi_err()?;
 
-    Ok(Queryable::new(queryable, receiver))
+    // Ok(Queryable::new(queryable, receiver))
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi]
@@ -265,7 +266,7 @@ impl Session {
       subscriber_detection_metadata,
       capacity,
     } = options.unwrap_or_default();
-    let (cb, receiver) = FifoChannel::with_capacity(capacity).into_handler();
+    let hanlder = FifoChannel::with_capacity(capacity);
     let query_timeout = duration_ms(query_timeout_ms)?;
 
     let mut builder = build!(
@@ -273,7 +274,7 @@ impl Session {
         .inner
         .declare_subscriber(key_expr)
         .advanced()
-        .with((cb, ())),
+        .with(hanlder),
       allowed_origin,
       history,
       recovery,
@@ -287,7 +288,8 @@ impl Session {
 
     let subscriber = builder.await.map_napi_err()?;
 
-    Ok(Subscriber::new(subscriber, receiver))
+    // Ok(subscriber.into())
+    todo!("WIP migration to new generic channel system")
   }
 
   #[napi]

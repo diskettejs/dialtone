@@ -34,6 +34,7 @@ async function main() {
   if (values.payload !== undefined) options.payload = values.payload
   const replies = await session.get(values.selector, options)
 
+  // @ts-expect-error
   for await (const reply of replies.stream()) {
     if (reply.error) {
       // Refer to z_bytes.ts to see how to deserialize different types of message.

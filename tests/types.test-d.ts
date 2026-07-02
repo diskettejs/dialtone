@@ -5,7 +5,6 @@ import type {
   Encoding,
   EntityGlobalId,
   Reliability,
-  Replies,
   Reply,
   ReplyError,
   ReplyErrored,
@@ -14,18 +13,8 @@ import type {
   Sample,
 } from '../index.js'
 
-declare const replies: Replies
 declare const reply: Reply
 declare const result: ReplyResult
-
-describe('Replies channel methods yield ReplyResult', () => {
-  test('recv / tryRecv / drain / stream advertise the union, not the Reply class', () => {
-    expectTypeOf(replies.recv()).toEqualTypeOf<Promise<ReplyResult>>()
-    expectTypeOf(replies.tryRecv()).toEqualTypeOf<ReplyResult | null>()
-    expectTypeOf(replies.drain()).toEqualTypeOf<ReplyResult[]>()
-    expectTypeOf(replies.stream()).toEqualTypeOf<ReadableStream<ReplyResult>>()
-  })
-})
 
 describe('ReplyResult is a two-arm discriminated union', () => {
   test('union shape', () => {

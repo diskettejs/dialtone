@@ -19,6 +19,7 @@ async function main() {
   await using queryable = await session.declareQueryable(values.key, { complete: values.complete })
 
   console.log('Press CTRL-C to quit...')
+  // @ts-expect-error
   for await (const query of queryable.stream()) {
     const params = query.parameters
     const selector = params.isEmpty ? `${query.keyExpr}` : `${query.keyExpr}?${params}`

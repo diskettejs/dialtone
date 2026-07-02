@@ -1,57 +1,38 @@
 use napi::{Env, bindgen_prelude::*};
 use napi_derive::napi;
-use zenoh::{handlers as zhandlers, key_expr as zkey_expr, query as zquery, session as zsession};
+use zenoh::query as zquery;
 
 use crate::{
-  config::EntityGlobalId, error::MapNapiErr, key_expr::KeyExpr, macros::channel_forward,
-  query::Query,
+  config::EntityGlobalId, error::MapNapiErr, handlers::HandlerImpl, key_expr::KeyExpr,
+  macros::option_wrapper, query::Query,
 };
 
-type ZQueryable = zquery::Queryable<()>;
-
-#[napi]
-pub struct Queryable {
-  id: zsession::EntityGlobalId,
-  key_expr: zkey_expr::KeyExpr<'static>,
-  inner: Option<ZQueryable>,
-  receiver: crate::handlers::FifoChannelHandler<zquery::Query>,
-}
-
-impl Queryable {
-  pub(crate) fn new(
-    inner: ZQueryable,
-    receiver: zhandlers::FifoChannelHandler<zquery::Query>,
-  ) -> Self {
-    Self {
-      id: inner.id(),
-      key_expr: inner.key_expr().clone(),
-      inner: Some(inner),
-      receiver: receiver.into(),
-    }
-  }
-}
+option_wrapper!(
+  zquery::Queryable<HandlerImpl<zquery::Query>>,
+  "Undeclared queryable"
+);
 
 #[napi]
 impl Queryable {
   #[napi(getter)]
-  pub fn id(&self) -> EntityGlobalId {
-    self.id.into()
+  pub fn id(&self) -> napi::Result<EntityGlobalId> {
+    Ok(self.get_ref()?.id().into())
   }
 
   #[napi(getter)]
-  pub fn key_expr(&self) -> KeyExpr {
-    self.key_expr.clone().into()
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
+  }
+
+  #[napi(getter)]
+  pub fn handler(&self) -> napi::Result<()> {
+    todo!()
   }
 
   #[napi]
   pub fn undeclare<'env>(&mut self, env: &'env Env) -> napi::Result<PromiseRaw<'env, ()>> {
-    let queryable = self
-      .inner
-      .take()
-      .ok_or_else(|| napi::Error::from_reason("queryable has already been undeclared"))?;
+    let queryable = self.take()?;
 
     env.spawn_future(async move { queryable.undeclare().await.map_napi_err() })
   }
 }
-
-channel_forward!(Queryable, receiver, Query);
