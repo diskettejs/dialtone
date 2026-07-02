@@ -4,16 +4,9 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, cancellation::*, channels::*, error::*, instance::*, qos::*, query::*, sample::*,
-  time::*,
+  bytes::*, cancellation::*, channels::*, error::*, handlers::IntoZenoh, instance::*, qos::*,
+  query::*, sample::*, time::*,
 };
-
-/// Uniform napi-type -> zenoh-type conversion for option fields, so builder setters can be
-/// applied generically by the `build!` macro. Mirrors zenoh-python's `IntoRust`.
-pub(crate) trait IntoZenoh {
-  type Into;
-  fn into_zenoh(self) -> Self::Into;
-}
 
 /// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
 /// `duration_ms` has already produced and that pass back through `build!`.

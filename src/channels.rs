@@ -2,6 +2,8 @@ use napi_derive::napi;
 use zenoh::handlers as zhandlers;
 use zenoh::handlers::IntoHandler;
 
+use crate::handlers::IntoZenoh;
+
 #[napi]
 pub struct FifoChannel {
   inner: zhandlers::FifoChannel,
@@ -27,6 +29,14 @@ impl FifoChannel {
     Self {
       inner: zhandlers::FifoChannel::default(),
     }
+  }
+}
+
+impl IntoZenoh for FifoChannel {
+  type Into = zhandlers::FifoChannel;
+
+  fn into_zenoh(self) -> Self::Into {
+    self.inner
   }
 }
 

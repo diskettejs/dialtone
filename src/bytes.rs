@@ -2,7 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::bytes as zbytes;
 
-use crate::{error::*, macros::wrapper, options::IntoZenoh};
+use crate::{error::*, handlers::IntoZenoh, macros::wrapper};
 
 #[napi]
 pub type Payload = napi::Either<String, Uint8Array>;
