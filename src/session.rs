@@ -1,5 +1,5 @@
 use napi_derive::napi;
-use zenoh::{Wait, config as zconfig, handlers::IntoHandler, session as zsession};
+use zenoh::{config as zconfig, session as zsession};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{

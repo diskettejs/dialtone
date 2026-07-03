@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{

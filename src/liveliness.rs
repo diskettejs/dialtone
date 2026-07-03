@@ -1,6 +1,5 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::handlers::IntoHandler;
 use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
 use crate::{config::*, handlers::*, key_expr::*, macros::*, options::*, sample::*, utils::*};

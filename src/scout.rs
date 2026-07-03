@@ -1,6 +1,6 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
+use zenoh::{config as zconfig, scouting as zscouting};
 
 use crate::{config::*, handlers::*, macros::*, options::*, session::*, utils::*};
 
