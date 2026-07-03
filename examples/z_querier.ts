@@ -44,7 +44,6 @@ async function main() {
     const listener = await querier.matchingListener()
     // No callbacks in Dialtone: consume the listener as an async iterator.
     void (async () => {
-      // @ts-expect-error
       for await (const status of listener.stream()) {
         console.log(
           status.matching
@@ -64,13 +63,13 @@ async function main() {
     // Refer to z_bytes.ts to see how to serialize different types of message.
     const options: QuerierGetOptions = { payload: buf, parameters: new Parameters(params) }
     const replies = await querier.get(options)
-    // @ts-expect-error
     for await (const reply of replies.stream()) {
-      if (reply.error) {
-        console.log(`>> Received (ERROR: '${bytesToString(reply.error.payload)}')`)
+      const { result } = reply
+      if (result.isError) {
+        console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
       } else {
         console.log(
-          `>> Received ('${reply.sample.keyExpr}': '${bytesToString(reply.sample.payload)}')`,
+          `>> Received ('${result.sample.keyExpr}': '${bytesToString(result.sample.payload)}')`,
         )
       }
     }

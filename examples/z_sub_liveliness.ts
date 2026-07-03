@@ -20,7 +20,6 @@ async function main() {
     .declareSubscriber(values.key, { history: values.history })
 
   console.log('Press CTRL-C to quit...')
-  // @ts-expect-error
   for await (const sample of subscriber.stream()) {
     if (sample.kind === 'Put') {
       console.log(`>> [LivelinessSubscriber] New alive token ('${sample.keyExpr}')`)

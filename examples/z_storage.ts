@@ -38,7 +38,6 @@ async function main() {
   })()
 
   const serve = (async () => {
-    // @ts-expect-error
     for await (const query of queryable.stream()) {
       console.log(`>> [Queryable] Received Query '${query.keyExpr}'`)
       for (const [key, sample] of stored) {

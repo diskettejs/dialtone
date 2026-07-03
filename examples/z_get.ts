@@ -34,13 +34,13 @@ async function main() {
   if (values.payload !== undefined) options.payload = values.payload
   const replies = await session.get(values.selector, options)
 
-  // @ts-expect-error
   for await (const reply of replies.stream()) {
-    if (reply.error) {
+    const { result } = reply
+    if (result.isError) {
       // Refer to z_bytes.ts to see how to deserialize different types of message.
-      console.log(`>> Received (ERROR: '${bytesToString(reply.error.payload)}')`)
+      console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
     } else {
-      const { sample } = reply
+      const { sample } = result
       console.log(`>> Received ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`)
     }
   }

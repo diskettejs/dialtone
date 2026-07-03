@@ -8,11 +8,9 @@ async function main() {
   // Scout for one second, then stop — which ends the stream below.
   const timer = setTimeout(() => scout.stop(), 1000)
   try {
-    // @ts-expect-error
     for await (const hello of scout.stream()) {
       const locators = hello
         .locators()
-        // @ts-expect-error
         .map((l) => l.toString())
         .join(', ')
       console.log(`Hello { zid: ${hello.zid}, whatami: ${hello.whatami}, locators: [${locators}] }`)

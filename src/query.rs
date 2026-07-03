@@ -168,7 +168,46 @@ impl Reply {
   pub fn replier_id(&self) -> Option<EntityGlobalId> {
     self.inner.replier_id().map(EntityGlobalId::from)
   }
+
+  #[napi(getter)]
+  pub fn is_sample(&self) -> bool {
+    self.inner.result().is_ok()
+  }
+
+  #[napi(getter)]
+  pub fn is_error(&self) -> bool {
+    self.inner.result().is_err()
+  }
+
+  #[napi(getter, ts_return_type = "ReplyResult")]
+  pub fn result(&self) -> Reply {
+    self.inner.clone().into()
+  }
 }
+
+#[allow(dead_code)]
+#[napi(object)]
+pub struct ReplySample<'env> {
+  #[napi(ts_type = "true")]
+  pub is_sample: bool,
+  #[napi(ts_type = "false")]
+  pub is_error: bool,
+  pub sample: ClassInstance<'env, Sample>,
+}
+
+#[allow(dead_code)]
+#[napi(object)]
+pub struct ReplyErrored<'env> {
+  #[napi(ts_type = "false")]
+  pub is_sample: bool,
+  #[napi(ts_type = "true")]
+  pub is_error: bool,
+  pub error: ClassInstance<'env, ReplyError>,
+}
+
+#[allow(dead_code)]
+#[napi]
+pub type ReplyResult<'env> = Either<ReplySample<'env>, ReplyErrored<'env>>;
 
 wrapper!(zquery::ReplyError);
 

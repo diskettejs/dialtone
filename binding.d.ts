@@ -316,6 +316,9 @@ export declare class Reply {
   get sample(): Sample | null
   get error(): ReplyError | null
   get replierId(): EntityGlobalId | null
+  get isSample(): boolean
+  get isError(): boolean
+  get result(): ReplyResult
 }
 
 export declare class ReplyError {
@@ -669,6 +672,12 @@ export interface ReplyErrOptions {
   encoding?: string
 }
 
+export interface ReplyErrored {
+  isSample: false
+  isError: true
+  error: ReplyError
+}
+
 export type ReplyKeyExpr =  'Any'|
 'MatchingQuery';
 
@@ -678,6 +687,15 @@ export interface ReplyOptions {
   timestamp?: Timestamp
   attachment?: Payload
   sourceInfo?: SourceInfo
+}
+
+export type ReplyResult =
+  ReplySample | ReplyErrored
+
+export interface ReplySample {
+  isSample: true
+  isError: false
+  sample: Sample
 }
 
 export type SampleKind =  'Put'|
