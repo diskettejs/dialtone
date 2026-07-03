@@ -207,20 +207,31 @@ impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct ScoutOptions {}
+pub struct ScoutOptions {
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::scouting::Hello>>,
+}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct MatchingListenerOptions {}
+pub struct MatchingListenerOptions {
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::matching::MatchingStatus>>,
+}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SampleMissListenerOptions {}
+pub struct SampleMissListenerOptions {
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh_ext::Miss>>,
+}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct LivelinessSubscriberOptions {
   pub history: Option<bool>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::sample::Sample>>,
 }
 
 #[derive(Default)]
@@ -347,6 +358,8 @@ pub struct QuerierGetOptions {
 pub struct QueryableOptions {
   pub complete: Option<bool>,
   pub allowed_origin: Option<Locality>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::query::Query>>,
 }
 
 #[derive(Default)]

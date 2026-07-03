@@ -154,8 +154,9 @@ export declare class Liveliness {
 export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
-  get handler(): void
   undeclare(): void
+  recv(): Promise<Sample>
+  tryRecv(): Sample | null
 }
 
 export declare class LivelinessToken {
@@ -172,8 +173,9 @@ export declare class Locator {
 }
 
 export declare class MatchingListener {
-  get handler(): void
   undeclare(): void
+  recv(): Promise<MatchingStatus>
+  tryRecv(): MatchingStatus | null
 }
 
 export declare class MatchingStatus {
@@ -252,8 +254,9 @@ export declare class Query {
 export declare class Queryable {
   get id(): EntityGlobalId
   get keyExpr(): KeyExpr
-  get handler(): void
   undeclare(): void
+  recv(): Promise<Query>
+  tryRecv(): Query | null
 }
 
 export declare class Reply {
@@ -286,14 +289,16 @@ export declare class Sample {
 }
 
 export declare class SampleMissListener {
-  get handler(): void
   undeclare(): void
+  recv(): Promise<Miss>
+  tryRecv(): Miss | null
 }
 
 export declare class Scout {
   static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
-  get handler(): void
   stop(): void
+  recv(): Promise<Hello>
+  tryRecv(): Hello | null
 }
 
 export declare class Selector {
@@ -349,10 +354,10 @@ export declare class Subscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
-  recv(): Promise<Sample>
-  tryRecv(): Sample | null
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): void
+  recv(): Promise<Sample>
+  tryRecv(): Sample | null
 }
 
 export declare class Timestamp {
@@ -460,6 +465,7 @@ export interface LivelinessGetOptions {
 
 export interface LivelinessSubscriberOptions {
   history?: boolean
+  channel?: FifoChannel | RingChannel
 }
 
 export type Locality =  'SessionLocal'|
@@ -467,7 +473,7 @@ export type Locality =  'SessionLocal'|
 'Any';
 
 export interface MatchingListenerOptions {
-
+  channel?: FifoChannel | RingChannel
 }
 
 export interface MissDetectionConfig {
@@ -551,6 +557,7 @@ export interface QuerierOptions {
 export interface QueryableOptions {
   complete?: boolean
   allowedOrigin?: Locality
+  channel?: FifoChannel | RingChannel
 }
 
 export type QueryTarget =  'BestMatching'|
@@ -592,11 +599,11 @@ export type SampleKind =  'Put'|
 'Delete';
 
 export interface SampleMissListenerOptions {
-
+  channel?: FifoChannel | RingChannel
 }
 
 export interface ScoutOptions {
-
+  channel?: FifoChannel | RingChannel
 }
 
 export type SelectorArg =

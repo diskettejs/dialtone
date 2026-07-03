@@ -1,9 +1,9 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{Wait, handlers::IntoHandler};
+use zenoh::Wait;
 
 use crate::{
-  bytes::*, channels::FifoChannel, config::*, encoding::*, error::*, key_expr::*, macros::build,
+  bytes::*, config::*, encoding::*, error::*, handlers::into_handler, key_expr::*, macros::build,
   macros::option_wrapper, matching::*, options::*, qos::*,
 };
 
@@ -79,20 +79,17 @@ impl Publisher {
     &self,
     options: Option<MatchingListenerOptions>,
   ) -> napi::Result<MatchingListener> {
-    let MatchingListenerOptions {} = options.unwrap_or_default();
+    let MatchingListenerOptions { channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
-
-    let _listener = self
+    let listener = self
       .get_ref()?
       .matching_listener()
-      .with((cb, ()))
+      .with(handler)
       .await
       .map_napi_err()?;
 
-    // Ok(MatchingListener::new(listener, receiver))
-    todo!("WIP migration to new generic channel system")
+    Ok(listener.into())
   }
 
   #[napi]

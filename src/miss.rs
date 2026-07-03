@@ -25,13 +25,10 @@ option_wrapper!(
 
 #[napi]
 impl SampleMissListener {
-  #[napi(getter)]
-  pub fn handler(&self) -> napi::Result<()> {
-    todo!()
-  }
-
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
     Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
+
+recv_handler!(SampleMissListener => Miss);

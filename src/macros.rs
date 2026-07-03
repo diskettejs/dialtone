@@ -147,6 +147,31 @@ macro_rules! option_wrapper {
 }
 pub(crate) use option_wrapper;
 
+/// Emits a `#[napi] impl $Entity` block exposing the entity's channel receiver as `recv`
+/// (async) / `try_recv`. Works for any `option_wrapper!` entity whose Zenoh type derefs to
+/// `HandlerImpl<T>` (subscribers, queryables, listeners, scout); each received `T` is mapped
+/// into its napi wrapper via `Into`. Lives in a separate impl block because a proc-macro
+/// attribute can't expand an inner `macro_rules!` call inside the entity's own `#[napi] impl`.
+///
+/// recv_handler!(Subscriber => Sample);
+macro_rules! recv_handler {
+    ($Entity:ident => $Item:ty) => {
+        #[napi]
+        impl $Entity {
+            #[napi]
+            pub async fn recv(&self) -> napi::Result<$Item> {
+                Ok(self.get_ref()?.recv().await?.into())
+            }
+
+            #[napi]
+            pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
+                Ok(self.get_ref()?.try_recv()?.map(Into::into))
+            }
+        }
+    };
+}
+pub(crate) use recv_handler;
+
 /// Generates `#[napi(string_enum)] pub enum $Name { variants }` plus both `From` conversions
 /// between it and the mirrored `$path` enum. Variant names must match exactly on both sides.
 ///

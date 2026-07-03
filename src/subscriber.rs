@@ -7,8 +7,15 @@ use zenoh::{
 };
 
 use crate::{
-  channels::*, config::*, error::*, handlers::HandlerImpl, key_expr::*, liveliness::*, macros::*,
-  miss::*, options::*, sample::*,
+  config::*,
+  error::*,
+  handlers::{HandlerImpl, into_handler},
+  key_expr::*,
+  liveliness::*,
+  macros::*,
+  miss::*,
+  options::*,
+  sample::*,
 };
 
 option_wrapper!(
@@ -33,30 +40,17 @@ impl Subscriber {
     &self,
     options: Option<SampleMissListenerOptions>,
   ) -> napi::Result<SampleMissListener> {
-    let SampleMissListenerOptions {} = options.unwrap_or_default();
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
+    let SampleMissListenerOptions { channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    let _sample_listener = self
+    let sample_listener = self
       .get_ref()?
       .sample_miss_listener()
-      .with((cb, ()))
+      .with(handler)
       .await
       .map_napi_err()?;
 
-    // Ok(SampleMissListener::new(sample_listener))
-    todo!("WIP migration to new generic channel system")
-  }
-
-  #[napi]
-  pub async fn recv(&self) -> napi::Result<Sample> {
-    let sample = self.get_ref()?.handler().recv().await?;
-    Ok(sample.into())
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
-    Ok(self.get_ref()?.handler().try_recv()?.map(Into::into))
+    Ok(sample_listener.into())
   }
 
   #[napi]
@@ -64,15 +58,14 @@ impl Subscriber {
     &self,
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
-    let LivelinessSubscriberOptions { history } = options.unwrap_or_default();
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
+    let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    let _subscriber = build!(self.get_ref()?.detect_publishers().with((cb, ())), history)
+    let subscriber = build!(self.get_ref()?.detect_publishers().with(handler), history)
       .await
       .map_napi_err()?;
 
-    // Ok(LivelinessSubscriber::new(subscriber, receiver))
-    todo!("WIP migration to new generic channel system")
+    Ok(subscriber.into())
   }
 
   #[napi]
@@ -80,3 +73,5 @@ impl Subscriber {
     Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
+
+recv_handler!(Subscriber => Sample);

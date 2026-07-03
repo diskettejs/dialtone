@@ -4,7 +4,13 @@ use zenoh::handlers::IntoHandler;
 use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
 use crate::{
-  channels::*, config::*, error::*, handlers::HandlerImpl, key_expr::*, macros::*, options::*,
+  channels::*,
+  config::*,
+  error::*,
+  handlers::{HandlerImpl, into_handler},
+  key_expr::*,
+  macros::*,
+  options::*,
   sample::*,
 };
 
@@ -32,22 +38,19 @@ impl Liveliness {
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let LivelinessSubscriberOptions { history } = options.unwrap_or_default();
+    let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
-
-    let _subscriber = self
+    let subscriber = self
       .inner
       .liveliness()
       .declare_subscriber(expr)
-      .with((cb, ()))
+      .with(handler)
       .history(history.unwrap_or(false))
       .await
       .map_napi_err()?;
 
-    // Ok(LivelinessSubscriber::new(subscriber, receiver))
-    todo!("WIP migration to new generic channel system")
+    Ok(subscriber.into())
   }
 
   #[napi]
@@ -106,13 +109,10 @@ impl LivelinessSubscriber {
     Ok(self.get_ref()?.id().into())
   }
 
-  #[napi(getter)]
-  pub fn handler(&self) -> napi::Result<()> {
-    todo!()
-  }
-
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
     Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
+
+recv_handler!(LivelinessSubscriber => Sample);

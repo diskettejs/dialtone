@@ -235,22 +235,20 @@ impl Session {
     let QueryableOptions {
       allowed_origin,
       complete,
+      channel,
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
+    let handler = into_handler(channel);
 
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
-
-    let _queryable = build!(
-      self.inner.declare_queryable(expr).with((cb, ())),
+    let queryable = build!(
+      self.inner.declare_queryable(expr).with(handler),
       allowed_origin,
       complete,
     )
     .await
     .map_napi_err()?;
 
-    // Ok(Queryable::new(queryable, receiver))
-    todo!("WIP migration to new generic channel system")
+    Ok(queryable.into())
   }
 
   #[napi]

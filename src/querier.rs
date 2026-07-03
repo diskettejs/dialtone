@@ -1,10 +1,10 @@
-use napi::{Env, bindgen_prelude::*};
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, handlers::IntoHandler, query as zquery};
 
 use crate::{
-  channels::FifoChannel, config::*, error::*, key_expr::*, macros::*, matching::*, options::*,
-  qos::*, query::*,
+  channels::FifoChannel, config::*, error::*, handlers::into_handler, key_expr::*, macros::*,
+  matching::*, options::*, qos::*, query::*,
 };
 
 option_wrapper!(zquery::Querier<'static>, "Undeclared querier");
@@ -76,19 +76,21 @@ impl Querier {
   }
 
   #[napi]
-  pub fn matching_listener<'env>(
+  pub async fn matching_listener(
     &self,
-    env: &'env Env,
     options: Option<MatchingListenerOptions>,
-  ) -> napi::Result<PromiseRaw<'env, MatchingListener>> {
-    let querier = self.get_ref()?;
+  ) -> napi::Result<MatchingListener> {
+    let MatchingListenerOptions { channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    let MatchingListenerOptions {} = options.unwrap_or_default();
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
-    let _listener = querier.matching_listener().with(cb).wait().map_napi_err()?;
+    let listener = self
+      .get_ref()?
+      .matching_listener()
+      .with(handler)
+      .await
+      .map_napi_err()?;
 
-    todo!("WIP migration to new generic channel system")
+    Ok(listener.into())
   }
 
   #[napi]

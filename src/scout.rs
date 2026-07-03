@@ -4,7 +4,11 @@ use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
 use crate::options::ScoutOptions;
 use crate::{
-  channels::FifoChannel, config::*, error::*, handlers::HandlerImpl, info::*, macros::*,
+  config::*,
+  error::*,
+  handlers::{HandlerImpl, into_handler},
+  info::*,
+  macros::*,
   protocol::*,
 };
 
@@ -24,20 +28,15 @@ impl Scout {
   ) -> napi::Result<Scout> {
     let what: zconfig::WhatAmIMatcher = what.into();
     let config: zconfig::Config = config.into();
-    let ScoutOptions {} = options.unwrap_or_default();
+    let ScoutOptions { channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
 
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, _receiver) = FifoChannel::new(256).into_handler();
+    let scout = zscouting::scout(what, config)
+      .with(handler)
+      .await
+      .map_napi_err()?;
 
-    let builder = zscouting::scout(what, config).with((cb, ()));
-    let _scout = builder.await;
-
-    todo!("WIP migration to new generic channel system")
-  }
-
-  #[napi(getter)]
-  pub fn handler(&self) -> napi::Result<()> {
-    todo!()
+    Ok(scout.into())
   }
 
   #[napi]
@@ -48,6 +47,8 @@ impl Scout {
     Ok(())
   }
 }
+
+recv_handler!(Scout => Hello);
 
 wrapper!(zscouting::Hello);
 
