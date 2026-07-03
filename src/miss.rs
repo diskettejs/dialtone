@@ -1,7 +1,8 @@
-use crate::{config::*, error::*, handlers::HandlerImpl, macros::*};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::Wait;
+
+use crate::{config::*, handlers::HandlerImpl, macros::*, utils::*};
 
 wrapper!(zenoh_ext::Miss);
 

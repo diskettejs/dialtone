@@ -3,17 +3,7 @@ use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
 use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
-use crate::handlers::ReplyHandler;
-use crate::{
-  channels::*,
-  config::*,
-  error::*,
-  handlers::{HandlerImpl, into_handler},
-  key_expr::*,
-  macros::*,
-  options::*,
-  sample::*,
-};
+use crate::{config::*, handlers::*, key_expr::*, macros::*, options::*, sample::*, utils::*};
 
 wrapper!(zenoh::Session as Liveliness);
 

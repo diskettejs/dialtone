@@ -2,7 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{config as zconfig, session as zsession};
 
-use crate::{error::*, macros::wrapper};
+use crate::{macros::*, utils::*};
 
 wrapper!(zsession::EntityGlobalId);
 
@@ -109,5 +109,47 @@ impl SessionConfig {
       .get_plugin_config(&plugin_name)
       .map(|value| value.to_string())
       .map_napi_err()
+  }
+}
+
+enum_mapper!(zconfig::WhatAmI: Router, Peer, Client);
+
+wrapper!(zconfig::WhatAmIMatcher);
+
+#[napi]
+impl WhatAmIMatcher {
+  #[napi(factory)]
+  pub fn empty() -> Self {
+    zconfig::WhatAmIMatcher::empty().into()
+  }
+
+  #[napi]
+  pub fn router(&self) -> Self {
+    self.inner.router().into()
+  }
+
+  #[napi]
+  pub fn peer(&self) -> Self {
+    self.inner.peer().into()
+  }
+
+  #[napi]
+  pub fn client(&self) -> Self {
+    self.inner.client().into()
+  }
+
+  #[napi(getter)]
+  pub fn is_empty(&self) -> bool {
+    self.inner.is_empty()
+  }
+
+  #[napi]
+  pub fn matches(&self, w: WhatAmI) -> bool {
+    self.inner.matches(w.into())
+  }
+
+  #[napi]
+  pub fn to_str(&self) -> String {
+    self.inner.to_str().to_string()
   }
 }

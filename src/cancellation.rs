@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::cancellation as zcancellation;
 
-use crate::{error::*, macros::wrapper};
+use crate::{macros::wrapper, utils::*};
 
 wrapper!(zcancellation::CancellationToken: Clone);
 

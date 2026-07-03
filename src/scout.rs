@@ -2,15 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{config as zconfig, handlers::IntoHandler, scouting as zscouting};
 
-use crate::options::ScoutOptions;
-use crate::{
-  config::*,
-  error::*,
-  handlers::{HandlerImpl, into_handler},
-  info::*,
-  macros::*,
-  protocol::*,
-};
+use crate::{config::*, handlers::*, macros::*, options::*, session::*, utils::*};
 
 option_wrapper!(
   zscouting::Scout<HandlerImpl<zscouting::Hello>>,

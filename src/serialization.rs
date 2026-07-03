@@ -4,8 +4,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh_ext as ext;
 
-use crate::bytes::Bytes;
-use crate::error::*;
+use crate::{bytes::Bytes, utils::*};
 
 /// Internal shape of a `Schema`. Rust owns what a valid node looks like, so there
 /// is no JS-defined shape to re-validate. `Object` keeps declaration order because

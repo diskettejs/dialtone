@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::sample as zsample;
 
-use crate::{bytes::*, config::*, encoding::*, key_expr::*, macros::*, qos::*, time::*};
+use crate::{bytes::*, config::*, key_expr::*, macros::*, qos::*, time::*};
 
 enum_mapper!(zsample::SampleKind: Put, Delete);
 

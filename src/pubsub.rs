@@ -1,10 +1,10 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::Wait;
+use zenoh::{Wait, sample as zsample};
 
 use crate::{
-  bytes::*, config::*, encoding::*, error::*, handlers::into_handler, key_expr::*, macros::build,
-  macros::option_wrapper, matching::*, options::*, qos::*,
+  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, macros::*, matching::*, miss::*,
+  options::*, qos::*, sample::*, utils::*,
 };
 
 option_wrapper!(zenoh_ext::AdvancedPublisher<'static> as Publisher, "Undeclared publisher");
@@ -97,3 +97,61 @@ impl Publisher {
     Wait::wait(self.take()?.undeclare()).map_napi_err()
   }
 }
+
+option_wrapper!(
+  zenoh_ext::AdvancedSubscriber<HandlerImpl<zsample::Sample>> as Subscriber,
+  "Undeclared subscriber"
+);
+
+#[napi]
+impl Subscriber {
+  #[napi(getter)]
+  pub fn key_expr(&self) -> napi::Result<KeyExpr> {
+    Ok(self.get_ref()?.key_expr().clone().into())
+  }
+
+  #[napi(getter)]
+  pub fn id(&self) -> napi::Result<EntityGlobalId> {
+    Ok(self.get_ref()?.id().into())
+  }
+
+  #[napi]
+  pub async fn sample_miss_listener(
+    &self,
+    options: Option<SampleMissListenerOptions>,
+  ) -> napi::Result<SampleMissListener> {
+    let SampleMissListenerOptions { channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
+
+    let sample_listener = self
+      .get_ref()?
+      .sample_miss_listener()
+      .with(handler)
+      .await
+      .map_napi_err()?;
+
+    Ok(sample_listener.into())
+  }
+
+  #[napi]
+  pub async fn detect_publishers(
+    &self,
+    options: Option<LivelinessSubscriberOptions>,
+  ) -> napi::Result<LivelinessSubscriber> {
+    let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
+
+    let subscriber = build!(self.get_ref()?.detect_publishers().with(handler), history)
+      .await
+      .map_napi_err()?;
+
+    Ok(subscriber.into())
+  }
+
+  #[napi]
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
+  }
+}
+
+recv_handler!(Subscriber => Sample);

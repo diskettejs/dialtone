@@ -4,8 +4,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, cancellation::*, channels::*, error::*, handlers::ChannelHandler, instance::*, qos::*,
-  query::*, sample::*, time::*, utils::IntoZenoh,
+  bytes::*, cancellation::*, handlers::*, qos::*, query::*, sample::*, time::*, utils::*,
 };
 
 /// Identity conversions: primitives passed straight to a setter, plus `Duration` values that

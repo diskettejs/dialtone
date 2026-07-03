@@ -2,7 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, matching as zmatching};
 
-use crate::{error::*, handlers::HandlerImpl, macros::*};
+use crate::{handlers::HandlerImpl, macros::*, utils::*};
 
 wrapper!(zmatching::MatchingStatus);
 

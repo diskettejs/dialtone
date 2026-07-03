@@ -1,7 +1,7 @@
 use napi_derive::napi;
 use zenoh::key_expr as zkey_expr;
 
-use crate::{error::*, macros::wrapper};
+use crate::{macros::wrapper, utils::*};
 
 wrapper!(zkey_expr::KeyExpr<'static>: Clone);
 
