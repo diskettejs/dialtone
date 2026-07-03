@@ -1,6 +1,10 @@
 {
   "name": "@diskette/dialtone",
-  "version": "0.0.0",
+  "version": "0.5.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diskettejs/dialtone.git"
+  },
   "files": [
     "binding.d.ts",
     "binding.js",
@@ -10,6 +14,16 @@
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "artifacts": "napi artifacts",
     "build": "napi build --esm --platform --release --js binding.js --dts binding.d.ts",
