@@ -4,8 +4,8 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, cancellation::*, channels::*, error::*, handlers::IntoZenoh, instance::*, qos::*,
-  query::*, sample::*, time::*,
+  bytes::*, cancellation::*, channels::*, error::*, instance::*, qos::*, query::*, sample::*,
+  time::*, utils::IntoZenoh,
 };
 
 /// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
@@ -206,9 +206,7 @@ impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct ScoutOptions {
-  // pub channel: Option<ChannelArg>,
-}
+pub struct ScoutOptions {}
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]

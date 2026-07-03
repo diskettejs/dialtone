@@ -22,12 +22,6 @@ impl<T> HandlerImpl<T> {
   }
 }
 
-pub(crate) trait IntoZenoh: 'static {
-  type Into;
-
-  fn into_zenoh(self) -> Self::Into;
-}
-
 #[async_trait]
 pub(crate) trait Receiver<T>: Send + Sync {
   async fn recv(&self) -> napi::Result<T>;

@@ -180,7 +180,7 @@ macro_rules! enum_mapper {
             }
         }
 
-        impl $crate::handlers::IntoZenoh for $last {
+        impl $crate::utils::IntoZenoh for $last {
             type Into = $full;
             fn into_zenoh(self) -> $full {
                 self.into()
@@ -201,7 +201,7 @@ macro_rules! build {
     ($builder:expr $(, $value:ident)* $(,)?) => {{
         let mut builder = $builder;
         $(
-            if let Some(value) = $value.map($crate::handlers::IntoZenoh::into_zenoh) {
+            if let Some(value) = $value.map($crate::utils::IntoZenoh::into_zenoh) {
                 builder = builder.$value(value);
             }
         )*

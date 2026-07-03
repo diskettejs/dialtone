@@ -64,3 +64,9 @@ pub trait Downcast<'env>: JsValue<'env> {
 }
 
 impl<'env, V: JsValue<'env>> Downcast<'env> for V {}
+
+pub(crate) trait IntoZenoh: 'static {
+  type Into;
+
+  fn into_zenoh(self) -> Self::Into;
+}

@@ -2,7 +2,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{key_expr as zkey_expr, query as zquery};
 
-use crate::{error::*, handlers::IntoZenoh, instance::*, key_expr::*, macros::*, query::*};
+use crate::{error::*, instance::*, key_expr::*, macros::*, query::*, utils::IntoZenoh};
 
 wrapper!(zquery::Selector<'static>);
 
