@@ -3,9 +3,22 @@ use zenoh::{Wait, handlers::IntoHandler};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, channels::*, config::*, error::*, handlers::into_handler, info::*, key_expr::*,
-  liveliness::*, macros::*, options::*, publisher::*, querier::*, queryable::*, selector::*,
-  subscriber::*, time::*,
+  bytes::*,
+  channels::*,
+  config::*,
+  error::*,
+  handlers::{ReplyHandler, into_handler},
+  info::*,
+  key_expr::*,
+  liveliness::*,
+  macros::*,
+  options::*,
+  publisher::*,
+  querier::*,
+  queryable::*,
+  selector::*,
+  subscriber::*,
+  time::*,
 };
 
 wrapper!(zenoh::Session);
@@ -97,7 +110,7 @@ impl Session {
     &self,
     selector: SelectorArg<'_>,
     options: Option<GetOptions>,
-  ) -> napi::Result<()> {
+  ) -> napi::Result<ReplyHandler> {
     let GetOptions {
       parameters,
       target,
@@ -112,17 +125,16 @@ impl Session {
       attachment,
       source_info,
       cancellation_token,
+      channel,
     } = options.unwrap_or_default();
-
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, receiver) = FifoChannel::new(256).into_handler();
 
     let selector = Selector::resolve(selector, parameters)?;
     let timeout = duration_ms(timeout)?;
+    let handler = into_handler(channel);
     let session = self.inner.clone();
 
-    build!(
-      session.get(selector).with(cb),
+    let receiver = build!(
+      session.get(selector).with(handler),
       target,
       consolidation,
       congestion_control,
@@ -139,8 +151,7 @@ impl Session {
     .await
     .map_napi_err()?;
 
-    // Ok(receiver.into())
-    todo!("migration to new channel handlers")
+    Ok(receiver.into())
   }
 
   #[napi]

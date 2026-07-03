@@ -240,6 +240,8 @@ pub struct LivelinessGetOptions {
   pub timeout: Option<f64>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }
 
 #[napi(object, object_to_js = false)]
@@ -351,6 +353,8 @@ pub struct QuerierGetOptions {
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }
 
 #[derive(Default)]
@@ -394,4 +398,6 @@ pub struct GetOptions {
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
   pub cancellation_token: Option<Instance<CancellationToken>>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }

@@ -147,28 +147,48 @@ macro_rules! option_wrapper {
 }
 pub(crate) use option_wrapper;
 
-/// Emits a `#[napi] impl $Entity` block exposing the entity's channel receiver as `recv`
-/// (async) / `try_recv`. Works for any `option_wrapper!` entity whose Zenoh type derefs to
-/// `HandlerImpl<T>` (subscribers, queryables, listeners, scout); each received `T` is mapped
-/// into its napi wrapper via `Into`. Lives in a separate impl block because a proc-macro
-/// attribute can't expand an inner `macro_rules!` call inside the entity's own `#[napi] impl`.
+/// Emits a `#[napi] impl` block exposing a channel receiver as `recv` (async) / `try_recv`,
+/// mapping each received `T` into its napi wrapper via `Into`. Two forms:
+///
+/// - `recv_handler!(Entity => Item)` — an `option_wrapper!` entity whose Zenoh type derefs to
+///   `HandlerImpl<T>` (subscribers, queryables, listeners, scout); reached via `get_ref()`.
+/// - `recv_handler!(Wrapper.field => Item)` — a newtype holding a `HandlerImpl<T>` in `field`
+///   directly (e.g. `ReplyHandler.0`, the receiver returned by one-shot `get`s).
+///
+/// Lives in a separate impl block because a proc-macro attribute can't expand an inner
+/// `macro_rules!` call inside the type's own `#[napi] impl`.
 ///
 /// recv_handler!(Subscriber => Sample);
+/// recv_handler!(ReplyHandler.0 => Reply);
 macro_rules! recv_handler {
-    ($Entity:ident => $Item:ty) => {
-        #[napi]
-        impl $Entity {
-            #[napi]
-            pub async fn recv(&self) -> napi::Result<$Item> {
-                Ok(self.get_ref()?.recv().await?.into())
-            }
+  ($Entity:ident => $Item:ty) => {
+    #[napi]
+    impl $Entity {
+      #[napi]
+      pub async fn recv(&self) -> napi::Result<$Item> {
+        Ok(self.get_ref()?.recv().await?.into())
+      }
 
-            #[napi]
-            pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
-                Ok(self.get_ref()?.try_recv()?.map(Into::into))
-            }
-        }
-    };
+      #[napi]
+      pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
+        Ok(self.get_ref()?.try_recv()?.map(Into::into))
+      }
+    }
+  };
+  ($Wrapper:ident . $field:tt => $Item:ty) => {
+    #[napi]
+    impl $Wrapper {
+      #[napi]
+      pub async fn recv(&self) -> napi::Result<$Item> {
+        Ok(self.$field.recv().await?.into())
+      }
+
+      #[napi]
+      pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
+        Ok(self.$field.try_recv()?.map(Into::into))
+      }
+    }
+  };
 }
 pub(crate) use recv_handler;
 

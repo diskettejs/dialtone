@@ -3,8 +3,7 @@ use napi_derive::napi;
 use zenoh::{Wait, query as zquery};
 
 use crate::{
-  config::EntityGlobalId, error::MapNapiErr, handlers::HandlerImpl, key_expr::KeyExpr,
-  macros::{option_wrapper, recv_handler},
+  config::EntityGlobalId, error::MapNapiErr, handlers::HandlerImpl, key_expr::KeyExpr, macros::*,
   query::Query,
 };
 

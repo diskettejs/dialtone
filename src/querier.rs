@@ -1,10 +1,17 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{Wait, handlers::IntoHandler, query as zquery};
+use zenoh::{Wait, query as zquery};
 
 use crate::{
-  channels::FifoChannel, config::*, error::*, handlers::into_handler, key_expr::*, macros::*,
-  matching::*, options::*, qos::*, query::*,
+  config::*,
+  error::*,
+  handlers::{ReplyHandler, into_handler},
+  key_expr::*,
+  macros::*,
+  matching::*,
+  options::*,
+  qos::*,
+  query::*,
 };
 
 option_wrapper!(zquery::Querier<'static>, "Undeclared querier");
@@ -37,9 +44,7 @@ impl Querier {
   }
 
   #[napi]
-  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<()> {
-    let querier = self.get_ref()?;
-
+  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<ReplyHandler> {
     let QuerierGetOptions {
       parameters,
       payload,
@@ -47,13 +52,13 @@ impl Querier {
       attachment,
       source_info,
       cancellation_token,
+      channel,
     } = options.unwrap_or_default();
 
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let (cb, receiver) = FifoChannel::new(256).into_handler();
+    let handler = into_handler(channel);
 
-    build!(
-      querier.get().with(cb),
+    let receiver = build!(
+      self.get_ref()?.get().with(handler),
       parameters,
       payload,
       encoding,
@@ -64,8 +69,7 @@ impl Querier {
     .await
     .map_napi_err()?;
 
-    // Ok(receiver.into())
-    todo!("migration to new channel handlers")
+    Ok(receiver.into())
   }
 
   #[napi]

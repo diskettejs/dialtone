@@ -3,6 +3,7 @@ use napi_derive::napi;
 use zenoh::handlers::IntoHandler;
 use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
+use crate::handlers::ReplyHandler;
 use crate::{
   channels::*,
   config::*,
@@ -58,27 +59,27 @@ impl Liveliness {
     &self,
     key_expr: KeyExprArg<'_>,
     options: Option<LivelinessGetOptions>,
-  ) -> napi::Result<()> {
+  ) -> napi::Result<ReplyHandler> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
       cancellation_token,
+      channel,
     } = options.unwrap_or_default();
 
     let timeout = duration_ms(timeout)?;
-    let (cb, receiver) = FifoChannel::new(256).into_handler();
+    let handler = into_handler(channel);
     let session = self.inner.clone();
 
-    build!(
-      session.liveliness().get(expr).with(cb),
+    let rec = build!(
+      session.liveliness().get(expr).with(handler),
       timeout,
       cancellation_token,
     )
     .await
     .map_napi_err()?;
 
-    // Ok(receiver.into())
-    todo!("migration to new channel handlers")
+    Ok(rec.into())
   }
 }
 

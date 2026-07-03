@@ -4,13 +4,14 @@ use std::pin::Pin;
 use async_trait::async_trait;
 use napi::Unknown;
 use napi::bindgen_prelude::*;
+use napi_derive::napi;
 use zenoh::handlers::{self as zhandlers, IntoHandler};
 
-use crate::{channels::*, error::MapNapiErr};
+use crate::{channels::*, error::MapNapiErr, macros::recv_handler, query::Reply};
 
 type RecvFuture<'a, T> = Pin<Box<dyn Future<Output = napi::Result<T>> + Send + 'a>>;
 
-pub(crate) struct HandlerImpl<T>(Box<dyn Receiver<T>>);
+pub struct HandlerImpl<T>(Box<dyn Receiver<T>>);
 
 impl<T> HandlerImpl<T> {
   pub(crate) fn recv(&self) -> RecvFuture<'_, T> {
@@ -28,6 +29,17 @@ pub(crate) trait Receiver<T>: Send + Sync {
   fn try_recv(&self) -> napi::Result<Option<T>>;
 }
 
+#[napi]
+pub struct ReplyHandler(HandlerImpl<zenoh::query::Reply>);
+
+impl From<HandlerImpl<zenoh::query::Reply>> for ReplyHandler {
+  fn from(value: HandlerImpl<zenoh::query::Reply>) -> Self {
+    Self(value)
+  }
+}
+
+recv_handler!(ReplyHandler.0 => Reply);
+
 macro_rules! impl_receiver {
   ($($handler:ident),* $(,)?) => {$(
     #[async_trait]
@@ -42,7 +54,7 @@ macro_rules! impl_receiver {
     }
   )*};
 }
-impl_receiver!(FifoChannelHandler, RingChannelHandler);
+impl_receiver!(FifoChannelHandler, RingChannelHandler,);
 
 fn erased<C, T>(channel: C) -> (zhandlers::Callback<T>, HandlerImpl<T>)
 where

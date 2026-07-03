@@ -148,7 +148,7 @@ export declare class Link {
 export declare class Liveliness {
   declareToken(keyExpr: KeyExprArg): Promise<LivelinessToken>
   declareSubscriber(keyExpr: KeyExprArg, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
-  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<void>
+  get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<ReplyHandler>
 }
 
 export declare class LivelinessSubscriber {
@@ -227,7 +227,7 @@ export declare class Querier {
   get congestionControl(): CongestionControl
   get priority(): Priority
   get acceptReplies(): ReplyKeyExpr
-  get(options?: QuerierGetOptions | undefined | null): Promise<void>
+  get(options?: QuerierGetOptions | undefined | null): Promise<ReplyHandler>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
   undeclare(): void
@@ -268,6 +268,11 @@ export declare class Reply {
 export declare class ReplyError {
   get encoding(): Encoding
   get payload(): Bytes
+}
+
+export declare class ReplyHandler {
+  recv(): Promise<Reply>
+  tryRecv(): Reply | null
 }
 
 export declare class RingChannel {
@@ -318,7 +323,7 @@ export declare class Session {
   config(): SessionConfig
   close(): Promise<void>
   put(keyExpr: KeyExprArg, payload: Payload, options?: PutOptions | undefined | null): Promise<void>
-  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<void>
+  get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<ReplyHandler>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
   declareKeyexpr(keyExpr: KeyExprArg): Promise<KeyExpr>
@@ -431,6 +436,7 @@ export interface GetOptions {
   attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
+  channel?: FifoChannel | RingChannel
 }
 
 export interface HeartbeatConfig {
@@ -461,6 +467,7 @@ export interface LinkPriorities {
 export interface LivelinessGetOptions {
   timeout?: number
   cancellationToken?: CancellationToken
+  channel?: FifoChannel | RingChannel
 }
 
 export interface LivelinessSubscriberOptions {
@@ -541,6 +548,7 @@ export interface QuerierGetOptions {
   attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
+  channel?: FifoChannel | RingChannel
 }
 
 export interface QuerierOptions {
