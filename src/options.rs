@@ -106,13 +106,14 @@ pub struct PublisherOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SubscriberOptions {
+pub struct SubscriberOptions<'a> {
   pub allowed_origin: Option<Locality>,
   pub history: Option<HistoryConfig>,
   pub recovery: Option<napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
   pub subscriber_detection: Option<bool>,
   pub subscriber_detection_metadata: Option<String>,
   pub query_timeout_ms: Option<f64>,
+  pub channel: Option<Unknown<'a>>,
 }
 
 #[derive(Default)]

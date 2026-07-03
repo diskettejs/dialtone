@@ -4,10 +4,10 @@ use zenoh::handlers::IntoHandler;
 
 use crate::handlers::IntoZenoh;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 #[napi]
 pub struct FifoChannel {
-  capacity: usize,
+  capacity: Option<usize>,
 }
 
 #[napi]
@@ -15,7 +15,7 @@ impl FifoChannel {
   #[napi(constructor)]
   pub fn new(capacity: u32) -> Self {
     Self {
-      capacity: capacity as usize,
+      capacity: Some(capacity as usize),
     }
   }
 }
@@ -24,7 +24,10 @@ impl IntoZenoh for FifoChannel {
   type Into = zhandlers::FifoChannel;
 
   fn into_zenoh(self) -> Self::Into {
-    zhandlers::FifoChannel::new(self.capacity)
+    match self.capacity {
+      Some(capacity) => zhandlers::FifoChannel::new(capacity),
+      None => zhandlers::FifoChannel::default(),
+    }
   }
 }
 

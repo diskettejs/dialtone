@@ -153,7 +153,7 @@ wrapper!(zquery::Reply);
 impl Reply {
   #[napi(getter)]
   pub fn sample(&self) -> Option<Sample> {
-    self.inner.result().ok().map(|s| Sample::new(s.clone()))
+    self.inner.result().ok().map(|s| Sample::from(s.clone()))
   }
 
   #[napi(getter)]

@@ -48,10 +48,15 @@ impl Subscriber {
     todo!("WIP migration to new generic channel system")
   }
 
-  #[napi(getter)]
-  pub fn handler(&self) -> napi::Result<()> {
-    // Ok(self.get_ref()?.handler())
-    todo!()
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<Sample> {
+    let sample = self.get_ref()?.handler().recv().await?;
+    Ok(sample.into())
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
+    Ok(self.get_ref()?.handler().try_recv()?.map(Into::into))
   }
 
   #[napi]

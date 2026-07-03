@@ -17,9 +17,8 @@ async function main() {
   await using subscriber = await session.declareSubscriber(values.key)
 
   console.log('Press CTRL-C to quit...')
-  // Dialtone surfaces samples as an async iterator (no callbacks).
-  // @ts-expect-error
-  for await (const sample of subscriber.stream()) {
+  while (true) {
+    const sample = await subscriber.recv()
     // Refer to z_bytes.ts to see how to deserialize different types of message.
     let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
     if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`

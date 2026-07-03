@@ -1,10 +1,12 @@
+use napi::{Env, bindgen_prelude::PromiseRaw};
 use napi_derive::napi;
-use zenoh::handlers::IntoHandler;
+use zenoh::{Wait, handlers::IntoHandler};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, channels::*, config::*, error::*, info::*, key_expr::*, liveliness::*, macros::*,
-  options::*, publisher::*, querier::*, queryable::*, selector::*, subscriber::*, time::*,
+  bytes::*, channels::*, config::*, error::*, handlers::into_handler, info::*, key_expr::*,
+  liveliness::*, macros::*, options::*, publisher::*, querier::*, queryable::*, selector::*,
+  subscriber::*, time::*,
 };
 
 wrapper!(zenoh::Session);
@@ -253,11 +255,12 @@ impl Session {
   }
 
   #[napi]
-  pub async fn declare_subscriber(
+  pub fn declare_subscriber<'env>(
     &self,
+    env: &'env Env,
     key_expr: KeyExprArg<'_>,
-    options: Option<SubscriberOptions>,
-  ) -> napi::Result<Subscriber> {
+    options: Option<SubscriberOptions<'_>>,
+  ) -> napi::Result<PromiseRaw<'env, Subscriber>> {
     let key_expr = KeyExpr::try_from(key_expr)?;
     let SubscriberOptions {
       allowed_origin,
@@ -266,32 +269,35 @@ impl Session {
       recovery,
       subscriber_detection,
       subscriber_detection_metadata,
+      channel,
     } = options.unwrap_or_default();
-    // NOTE: temp hardcoded because of ongoing channel handlers rework
-    let hanlder = FifoChannel::new(256);
     let query_timeout = duration_ms(query_timeout_ms)?;
+    let session = self.inner.clone();
+    let handler = into_handler(channel)?;
 
-    let mut builder = build!(
-      self
-        .inner
+    env.spawn_future(async move {
+      let base = session
         .declare_subscriber(key_expr)
         .advanced()
-        .with(hanlder),
-      allowed_origin,
-      history,
-      recovery,
-      query_timeout,
-      subscriber_detection_metadata,
-    );
+        .with(handler);
 
-    if subscriber_detection == Some(true) {
-      builder = builder.subscriber_detection();
-    }
+      let mut builder = build!(
+        base,
+        allowed_origin,
+        history,
+        recovery,
+        query_timeout,
+        subscriber_detection_metadata,
+      );
 
-    let subscriber = builder.await.map_napi_err()?;
+      if subscriber_detection == Some(true) {
+        builder = builder.subscriber_detection();
+      }
 
-    // Ok(subscriber.into())
-    todo!("WIP migration to new generic channel system")
+      let subscriber = builder.await.map_napi_err()?;
+
+      Ok(subscriber.into())
+    })
   }
 
   #[napi]

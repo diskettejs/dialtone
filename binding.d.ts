@@ -114,10 +114,6 @@ export declare class FifoChannel {
   constructor(capacity: number)
 }
 
-export declare class Handler {
-
-}
-
 export declare class Hello {
   locators(): Array<Locator>
   get whatami(): WhatAmI
@@ -353,7 +349,8 @@ export declare class Subscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
-  get handler(): void
+  recv(): Promise<Sample>
+  tryRecv(): Sample | null
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): void
 }

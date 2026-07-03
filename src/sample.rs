@@ -5,79 +5,63 @@ use crate::{bytes::*, config::*, encoding::*, key_expr::*, macros::*, qos::*, ti
 
 enum_mapper!(zsample::SampleKind: Put, Delete);
 
-#[napi]
-pub struct Sample {
-  inner: zsample::SampleFields,
-}
-
-impl Sample {
-  pub(crate) fn new(zsample: zsample::Sample) -> Self {
-    let fields: zsample::SampleFields = zsample.into();
-    Sample { inner: fields }
-  }
-}
-
-impl From<zsample::Sample> for Sample {
-  fn from(zsample: zsample::Sample) -> Self {
-    Sample::new(zsample)
-  }
-}
+wrapper!(zenoh::sample::Sample);
 
 #[napi]
 impl Sample {
   #[napi(getter)]
   pub fn payload(&self) -> Bytes {
-    self.inner.payload.clone().into()
+    self.inner.payload().clone().into()
   }
 
   #[napi(getter)]
   pub fn key_expr(&self) -> KeyExpr {
-    self.inner.key_expr.clone().into()
+    self.inner.key_expr().clone().into()
   }
 
   #[napi(getter)]
   pub fn kind(&self) -> SampleKind {
-    self.inner.kind.into()
+    self.inner.kind().into()
   }
 
   #[napi(getter)]
   pub fn encoding(&self) -> Encoding {
-    self.inner.encoding.clone().into()
+    self.inner.encoding().clone().into()
   }
 
   #[napi(getter)]
   pub fn timestamp(&self) -> Option<Timestamp> {
-    self.inner.timestamp.map(Timestamp::from)
+    self.inner.timestamp().cloned().map(Timestamp::from)
   }
 
   #[napi(getter)]
   pub fn express(&self) -> bool {
-    self.inner.express
+    self.inner.express()
   }
 
   #[napi(getter)]
   pub fn priority(&self) -> Priority {
-    self.inner.priority.into()
+    self.inner.priority().into()
   }
 
   #[napi(getter)]
   pub fn congestion_control(&self) -> CongestionControl {
-    self.inner.congestion_control.into()
+    self.inner.congestion_control().into()
   }
 
   #[napi(getter)]
   pub fn reliability(&self) -> Reliability {
-    self.inner.reliability.into()
+    self.inner.reliability().into()
   }
 
   #[napi(getter)]
   pub fn attachment(&self) -> Option<Bytes> {
-    self.inner.attachment.clone().map(Bytes::from)
+    self.inner.attachment().cloned().map(Bytes::from)
   }
 
   #[napi(getter)]
   pub fn source_info(&self) -> Option<SourceInfo> {
-    self.inner.source_info.clone().map(SourceInfo::from)
+    self.inner.source_info().cloned().map(SourceInfo::from)
   }
 }
 
