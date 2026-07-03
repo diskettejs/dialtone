@@ -4,8 +4,8 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, cancellation::*, channels::*, error::*, instance::*, qos::*, query::*, sample::*,
-  time::*, utils::IntoZenoh,
+  bytes::*, cancellation::*, channels::*, error::*, handlers::ChannelHandler, instance::*, qos::*,
+  query::*, sample::*, time::*, utils::IntoZenoh,
 };
 
 /// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
@@ -106,14 +106,15 @@ pub struct PublisherOptions {
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
-pub struct SubscriberOptions<'a> {
+pub struct SubscriberOptions {
   pub allowed_origin: Option<Locality>,
   pub history: Option<HistoryConfig>,
   pub recovery: Option<napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery>>,
   pub subscriber_detection: Option<bool>,
   pub subscriber_detection_metadata: Option<String>,
   pub query_timeout_ms: Option<f64>,
-  pub channel: Option<Unknown<'a>>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::sample::Sample>>,
 }
 
 #[derive(Default)]

@@ -614,7 +614,7 @@ export interface SubscriberOptions {
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number
-  channel?: unknown
+  channel?: FifoChannel | RingChannel
 }
 
 export type WhatAmI =  'Router'|

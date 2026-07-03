@@ -53,24 +53,36 @@ where
   (callback, HandlerImpl(Box::new(handler)))
 }
 
-pub(crate) fn into_handler<'a, T>(
-  handler: Option<Unknown<'a>>,
-) -> napi::Result<impl IntoHandler<T, Handler = HandlerImpl<T>> + use<T>>
-where
-  T: Send + 'static,
-{
-  let Some(obj) = handler else {
-    return Ok(erased(zhandlers::FifoChannel::default()));
-  };
+/// Owned, `Send`, `Env`-free channel resolved during argument conversion.
+///
+/// `from_napi_value` runs on the JS thread, where `Env` is available, so it narrows the JS
+/// channel (`FifoChannel`/`RingChannel`) and erases it into the `(Callback, HandlerImpl)` pair
+/// right there. Downstream holds only that pair — no `Env`, still `Send` — so a declaration can
+/// run as a plain `async fn` without `spawn_future`.
+pub struct ChannelHandler<T>(zhandlers::Callback<T>, HandlerImpl<T>);
 
-  let channel =
-    Either::<ClassInstance<'_, FifoChannel>, ClassInstance<'_, RingChannel>>::from_unknown(obj)
-      .map_err(|_| {
-        napi::Error::from_reason("Invalid handler type: expected FifoChannel or RingChannel")
-      })?;
+impl<T: Send + 'static> FromNapiValue for ChannelHandler<T> {
+  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> napi::Result<Self> {
+    let obj = unsafe { Unknown::from_napi_value(env, napi_val)? };
+    let (callback, handler) = match Either::<
+      ClassInstance<'_, FifoChannel>,
+      ClassInstance<'_, RingChannel>,
+    >::from_unknown(obj)
+    .map_err(|_| {
+      napi::Error::from_reason("Invalid handler type: expected FifoChannel or RingChannel")
+    })? {
+      Either::A(h) => erased((*h).clone()),
+      Either::B(h) => erased((*h).clone()),
+    };
+    Ok(Self(callback, handler))
+  }
+}
 
-  Ok(match channel {
-    Either::A(h) => erased((*h).clone()),
-    Either::B(h) => erased((*h).clone()),
-  })
+pub(crate) fn into_handler<T: Send + 'static>(
+  handler: Option<ChannelHandler<T>>,
+) -> impl IntoHandler<T, Handler = HandlerImpl<T>> {
+  match handler {
+    Some(ChannelHandler(callback, handler)) => (callback, handler),
+    None => erased(zhandlers::FifoChannel::default()),
+  }
 }

@@ -1,4 +1,3 @@
-use napi::{Env, bindgen_prelude::PromiseRaw};
 use napi_derive::napi;
 use zenoh::{Wait, handlers::IntoHandler};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
@@ -255,12 +254,11 @@ impl Session {
   }
 
   #[napi]
-  pub fn declare_subscriber<'env>(
+  pub async fn declare_subscriber(
     &self,
-    env: &'env Env,
     key_expr: KeyExprArg<'_>,
-    options: Option<SubscriberOptions<'_>>,
-  ) -> napi::Result<PromiseRaw<'env, Subscriber>> {
+    options: Option<SubscriberOptions>,
+  ) -> napi::Result<Subscriber> {
     let key_expr = KeyExpr::try_from(key_expr)?;
     let SubscriberOptions {
       allowed_origin,
@@ -272,32 +270,30 @@ impl Session {
       channel,
     } = options.unwrap_or_default();
     let query_timeout = duration_ms(query_timeout_ms)?;
+    let handler = into_handler(channel);
     let session = self.inner.clone();
-    let handler = into_handler(channel)?;
 
-    env.spawn_future(async move {
-      let base = session
-        .declare_subscriber(key_expr)
-        .advanced()
-        .with(handler);
+    let base = session
+      .declare_subscriber(key_expr)
+      .advanced()
+      .with(handler);
 
-      let mut builder = build!(
-        base,
-        allowed_origin,
-        history,
-        recovery,
-        query_timeout,
-        subscriber_detection_metadata,
-      );
+    let mut builder = build!(
+      base,
+      allowed_origin,
+      history,
+      recovery,
+      query_timeout,
+      subscriber_detection_metadata,
+    );
 
-      if subscriber_detection == Some(true) {
-        builder = builder.subscriber_detection();
-      }
+    if subscriber_detection == Some(true) {
+      builder = builder.subscriber_detection();
+    }
 
-      let subscriber = builder.await.map_napi_err()?;
+    let subscriber = builder.await.map_napi_err()?;
 
-      Ok(subscriber.into())
-    })
+    Ok(subscriber.into())
   }
 
   #[napi]
