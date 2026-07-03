@@ -112,7 +112,10 @@ export declare class EntityGlobalId {
 
 export declare class FifoChannel {
   constructor(capacity: number)
-  static default(): FifoChannel
+}
+
+export declare class Handler {
+
 }
 
 export declare class Hello {
@@ -270,7 +273,6 @@ export declare class ReplyError {
 
 export declare class RingChannel {
   constructor(capacity: number)
-  static default(): RingChannel
 }
 
 export declare class Sample {
@@ -386,9 +388,6 @@ export interface CacheConfig {
   repliesConfig?: RepliesConfig
 }
 
-export type ChannelArg =
-  FifoChannel | RingChannel
-
 export type CongestionControl =  'Drop'|
 'Block'|
 'BlockFirst';
@@ -430,7 +429,6 @@ export interface GetOptions {
   attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
-  capacity?: number
 }
 
 export interface HeartbeatConfig {
@@ -461,12 +459,10 @@ export interface LinkPriorities {
 export interface LivelinessGetOptions {
   timeout?: number
   cancellationToken?: CancellationToken
-  capacity?: number
 }
 
 export interface LivelinessSubscriberOptions {
   history?: boolean
-  capacity?: number
 }
 
 export type Locality =  'SessionLocal'|
@@ -474,7 +470,7 @@ export type Locality =  'SessionLocal'|
 'Any';
 
 export interface MatchingListenerOptions {
-  capacity?: number
+
 }
 
 export interface MissDetectionConfig {
@@ -542,7 +538,6 @@ export interface QuerierGetOptions {
   attachment?: Payload
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
-  capacity?: number
 }
 
 export interface QuerierOptions {
@@ -559,7 +554,6 @@ export interface QuerierOptions {
 export interface QueryableOptions {
   complete?: boolean
   allowedOrigin?: Locality
-  capacity?: number
 }
 
 export type QueryTarget =  'BestMatching'|
@@ -586,12 +580,6 @@ export interface ReplyErrOptions {
   encoding?: string
 }
 
-export interface ReplyErrored {
-  sample?: null
-  error: ReplyError
-  replierId: EntityGlobalId | null
-}
-
 export type ReplyKeyExpr =  'Any'|
 'MatchingQuery';
 
@@ -603,24 +591,15 @@ export interface ReplyOptions {
   sourceInfo?: SourceInfo
 }
 
-export type ReplyResult =
-  ReplySample | ReplyErrored
-
-export interface ReplySample {
-  sample: Sample
-  error?: null
-  replierId: EntityGlobalId | null
-}
-
 export type SampleKind =  'Put'|
 'Delete';
 
 export interface SampleMissListenerOptions {
-  capacity?: number
+
 }
 
 export interface ScoutOptions {
-  capacity?: number
+
 }
 
 export type SelectorArg =
@@ -638,7 +617,7 @@ export interface SubscriberOptions {
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number
-  capacity?: number
+  channel?: unknown
 }
 
 export type WhatAmI =  'Router'|

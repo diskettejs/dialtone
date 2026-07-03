@@ -167,30 +167,6 @@ impl Reply {
   }
 }
 
-#[allow(dead_code)]
-#[napi(object)]
-pub struct ReplySample<'env> {
-  pub sample: ClassInstance<'env, Sample>,
-  #[napi(ts_type = "null")]
-  pub error: Option<ClassInstance<'env, ReplyError>>,
-  #[napi(ts_type = "EntityGlobalId | null")]
-  pub replier_id: ClassInstance<'env, EntityGlobalId>,
-}
-
-#[allow(dead_code)]
-#[napi(object)]
-pub struct ReplyErrored<'env> {
-  #[napi(ts_type = "null")]
-  pub sample: Option<ClassInstance<'env, Sample>>,
-  pub error: ClassInstance<'env, ReplyError>,
-  #[napi(ts_type = "EntityGlobalId | null")]
-  pub replier_id: ClassInstance<'env, EntityGlobalId>,
-}
-
-#[allow(dead_code)]
-#[napi]
-pub type ReplyResult<'env> = Either<ReplySample<'env>, ReplyErrored<'env>>;
-
 wrapper!(zquery::ReplyError);
 
 #[napi]
