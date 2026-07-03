@@ -4,9 +4,10 @@ use zenoh::handlers::IntoHandler;
 
 use crate::handlers::IntoZenoh;
 
+#[derive(Clone)]
 #[napi]
 pub struct FifoChannel {
-  inner: zhandlers::FifoChannel,
+  capacity: usize,
 }
 
 #[napi]
@@ -14,14 +15,7 @@ impl FifoChannel {
   #[napi(constructor)]
   pub fn new(capacity: u32) -> Self {
     Self {
-      inner: zhandlers::FifoChannel::new(capacity as usize),
-    }
-  }
-
-  #[napi(factory)]
-  pub fn default() -> Self {
-    Self {
-      inner: zhandlers::FifoChannel::default(),
+      capacity: capacity as usize,
     }
   }
 }
@@ -30,37 +24,7 @@ impl IntoZenoh for FifoChannel {
   type Into = zhandlers::FifoChannel;
 
   fn into_zenoh(self) -> Self::Into {
-    self.inner
-  }
-}
-
-#[napi]
-pub struct RingChannel {
-  inner: zhandlers::RingChannel,
-}
-
-impl<T: Send + 'static> IntoHandler<T> for RingChannel {
-  type Handler = zhandlers::RingChannelHandler<T>;
-
-  fn into_handler(self) -> (zhandlers::Callback<T>, Self::Handler) {
-    self.inner.into_handler()
-  }
-}
-
-#[napi]
-impl RingChannel {
-  #[napi(constructor)]
-  pub fn new(capacity: u32) -> Self {
-    Self {
-      inner: zhandlers::RingChannel::new(capacity as usize),
-    }
-  }
-
-  #[napi(factory)]
-  pub fn default() -> Self {
-    Self {
-      inner: zhandlers::RingChannel::default(),
-    }
+    zhandlers::FifoChannel::new(self.capacity)
   }
 }
 
@@ -68,6 +32,38 @@ impl<T: Send + 'static> IntoHandler<T> for FifoChannel {
   type Handler = zhandlers::FifoChannelHandler<T>;
 
   fn into_handler(self) -> (zhandlers::Callback<T>, Self::Handler) {
-    self.inner.into_handler()
+    self.into_zenoh().into_handler()
+  }
+}
+
+#[derive(Clone)]
+#[napi]
+pub struct RingChannel {
+  capacity: usize,
+}
+
+#[napi]
+impl RingChannel {
+  #[napi(constructor)]
+  pub fn new(capacity: u32) -> Self {
+    Self {
+      capacity: capacity as usize,
+    }
+  }
+}
+
+impl IntoZenoh for RingChannel {
+  type Into = zhandlers::RingChannel;
+
+  fn into_zenoh(self) -> Self::Into {
+    zhandlers::RingChannel::new(self.capacity)
+  }
+}
+
+impl<T: Send + 'static> IntoHandler<T> for RingChannel {
+  type Handler = zhandlers::RingChannelHandler<T>;
+
+  fn into_handler(self) -> (zhandlers::Callback<T>, Self::Handler) {
+    self.into_zenoh().into_handler()
   }
 }
