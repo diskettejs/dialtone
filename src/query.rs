@@ -278,6 +278,7 @@ impl Queryable {
 }
 
 recv_handler!(Queryable => Query);
+async_stream!(Queryable => QueryStream yields Query from zquery::Query);
 
 option_wrapper!(zquery::Querier<'static>, "Undeclared querier");
 

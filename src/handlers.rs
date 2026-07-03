@@ -1,5 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use napi::Unknown;
@@ -7,7 +8,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers::{self as zhandlers, IntoHandler};
 
-use crate::{macros::recv_handler, query::Reply, utils::MapNapiErr};
+use crate::{macros::*, query::Reply, utils::MapNapiErr};
 
 #[derive(Clone, Default)]
 #[napi]
@@ -59,7 +60,13 @@ impl<T: Send + 'static> IntoHandler<T> for RingChannel {
 
 type RecvFuture<'a, T> = Pin<Box<dyn Future<Output = napi::Result<T>> + Send + 'a>>;
 
-pub struct HandlerImpl<T>(Box<dyn Receiver<T>>);
+pub struct HandlerImpl<T>(Arc<dyn Receiver<T>>);
+
+impl<T> Clone for HandlerImpl<T> {
+  fn clone(&self) -> Self {
+    Self(self.0.clone())
+  }
+}
 
 impl<T> HandlerImpl<T> {
   pub(crate) fn recv(&self) -> RecvFuture<'_, T> {
@@ -68,6 +75,10 @@ impl<T> HandlerImpl<T> {
 
   pub(crate) fn try_recv(&self) -> napi::Result<Option<T>> {
     self.0.try_recv()
+  }
+
+  pub(crate) fn share(&self) -> HandlerImpl<T> {
+    self.clone()
   }
 }
 
@@ -87,6 +98,7 @@ impl From<HandlerImpl<zenoh::query::Reply>> for ReplyHandler {
 }
 
 recv_handler!(ReplyHandler.0 => Reply);
+async_stream!(ReplyHandler.0 => ReplyStream yields Reply from zenoh::query::Reply);
 
 macro_rules! impl_receiver {
   ($($handler:ident),* $(,)?) => {$(
@@ -110,7 +122,7 @@ where
   C::Handler: Receiver<T> + 'static,
 {
   let (callback, handler) = channel.into_handler();
-  (callback, HandlerImpl(Box::new(handler)))
+  (callback, HandlerImpl(Arc::new(handler)))
 }
 
 /// Owned, `Send`, `Env`-free channel resolved during argument conversion.

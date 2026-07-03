@@ -28,3 +28,4 @@ impl MatchingListener {
 }
 
 recv_handler!(MatchingListener => MatchingStatus);
+async_stream!(MatchingListener => MatchingStatusStream yields MatchingStatus from zmatching::MatchingStatus);

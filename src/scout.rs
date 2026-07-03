@@ -41,6 +41,7 @@ impl Scout {
 }
 
 recv_handler!(Scout => Hello);
+async_stream!(Scout => HelloStream yields Hello from zscouting::Hello);
 
 wrapper!(zscouting::Hello);
 

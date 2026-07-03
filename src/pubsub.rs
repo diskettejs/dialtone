@@ -155,3 +155,4 @@ impl Subscriber {
 }
 
 recv_handler!(Subscriber => Sample);
+async_stream!(Subscriber => SampleStream yields Sample from zsample::Sample);

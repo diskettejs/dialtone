@@ -33,3 +33,4 @@ impl SampleMissListener {
 }
 
 recv_handler!(SampleMissListener => Miss);
+async_stream!(SampleMissListener => MissStream yields Miss from zenoh_ext::Miss);

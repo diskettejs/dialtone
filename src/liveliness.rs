@@ -107,3 +107,4 @@ impl LivelinessSubscriber {
 }
 
 recv_handler!(LivelinessSubscriber => Sample);
+async_stream!(LivelinessSubscriber => LivelinessSampleStream yields Sample from zsample::Sample);

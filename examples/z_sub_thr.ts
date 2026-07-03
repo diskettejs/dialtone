@@ -55,7 +55,6 @@ async function main() {
   await using subscriber = await session.declareSubscriber('test/thr')
 
   console.log('Press CTRL-C to quit...')
-  // @ts-expect-error
   for await (const _sample of subscriber.stream()) {
     stats.increment()
     if (stats.finishedRounds >= samples) break

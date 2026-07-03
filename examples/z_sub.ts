@@ -17,13 +17,18 @@ async function main() {
   await using subscriber = await session.declareSubscriber(values.key)
 
   console.log('Press CTRL-C to quit...')
-  while (true) {
-    const sample = await subscriber.recv()
-    // Refer to z_bytes.ts to see how to deserialize different types of message.
+  for await (const sample of subscriber.stream()) {
     let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
     if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`
     console.log(line)
   }
+  // while (true) {
+  //   const sample = await subscriber.recv()
+  //   // Refer to z_bytes.ts to see how to deserialize different types of message.
+  //   let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
+  //   if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`
+  //   console.log(line)
+  // }
 }
 
 await main()

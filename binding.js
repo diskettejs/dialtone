@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, KeyExpr, Link, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, ReplyHandler, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, HelloStream, KeyExpr, Link, Liveliness, LivelinessSampleStream, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyHandler, ReplyStream, RingChannel, Sample, SampleMissListener, SampleStream, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -599,27 +599,34 @@ export { EndPoint }
 export { EntityGlobalId }
 export { FifoChannel }
 export { Hello }
+export { HelloStream }
 export { KeyExpr }
 export { Link }
 export { Liveliness }
+export { LivelinessSampleStream }
 export { LivelinessSubscriber }
 export { LivelinessToken }
 export { Locator }
 export { MatchingListener }
 export { MatchingStatus }
+export { MatchingStatusStream }
 export { Metadata }
 export { Miss }
+export { MissStream }
 export { Parameters }
 export { Publisher }
 export { Querier }
 export { Query }
 export { Queryable }
+export { QueryStream }
 export { Reply }
 export { ReplyError }
 export { ReplyHandler }
+export { ReplyStream }
 export { RingChannel }
 export { Sample }
 export { SampleMissListener }
+export { SampleStream }
 export { Scout }
 export { Selector }
 export { Session }

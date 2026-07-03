@@ -22,7 +22,6 @@ async function main() {
 
   console.log(`Forwarding data from '${values.key}' to '${values.forward}'...`)
   // Dialtone has no SubscriberForward helper; forward via the async iterator.
-  // @ts-expect-error
   for await (const sample of subscriber.stream()) {
     if (sample.kind === 'Delete') {
       await publisher.delete()

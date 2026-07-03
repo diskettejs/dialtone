@@ -192,6 +192,69 @@ macro_rules! recv_handler {
 }
 pub(crate) use recv_handler;
 
+/// Emits an async iterator over a `HandlerImpl<T>`: a `#[napi(async_iterator)]` newtype whose
+/// `[Symbol.asyncIterator]` yields each received item's napi wrapper, plus a `stream()` accessor
+/// on the owning entity that hands out a shared cursor. Mirrors `recv_handler!`'s two forms:
+///
+/// - `async_stream!(Entity => Stream yields Wrapper from RawItem)` — an entity whose Zenoh type
+///   derefs to `HandlerImpl<RawItem>`; reached via `get_ref()`.
+/// - `async_stream!(Wrapper.field => Stream yields Item from RawItem)` — a newtype holding the
+///   `HandlerImpl<RawItem>` in `field` directly (e.g. `ReplyHandler.0`).
+///
+/// `Wrapper` must be a bare identifier, not a path: napi reads the `AsyncGenerator::Yield` type
+/// with a strict `Type::Path` match, and a `:ty` metavariable (wrapped in invisible delimiters)
+/// parses as `Type::Group`, which silently drops the `[Symbol.asyncIterator]` type-def.
+///
+/// async_stream!(Subscriber => SampleStream yields Sample from zsample::Sample);
+macro_rules! async_stream {
+  ($Entity:ident => $Stream:ident yields $Item:ident from $Raw:ty) => {
+    #[napi]
+    impl $Entity {
+      #[napi]
+      pub fn stream(&self) -> napi::Result<$Stream> {
+        Ok(self.get_ref()?.share().into())
+      }
+    }
+    async_stream!(@def $Stream yields $Item from $Raw);
+  };
+  ($Wrapper:ident . $field:tt => $Stream:ident yields $Item:ident from $Raw:ty) => {
+    #[napi]
+    impl $Wrapper {
+      #[napi]
+      pub fn stream(&self) -> napi::Result<$Stream> {
+        Ok(self.$field.share().into())
+      }
+    }
+    async_stream!(@def $Stream yields $Item from $Raw);
+  };
+  (@def $Stream:ident yields $Item:ident from $Raw:ty) => {
+    #[napi(async_iterator)]
+    pub struct $Stream(HandlerImpl<$Raw>);
+
+    impl From<HandlerImpl<$Raw>> for $Stream {
+      fn from(handler: HandlerImpl<$Raw>) -> Self {
+        Self(handler)
+      }
+    }
+
+    #[napi]
+    impl AsyncGenerator for $Stream {
+      type Yield = $Item;
+      type Next = ();
+      type Return = ();
+
+      fn next(
+        &mut self,
+        _value: Option<()>,
+      ) -> impl std::future::Future<Output = napi::Result<Option<$Item>>> + Send + 'static {
+        let handler = self.0.share();
+        async move { Ok(handler.recv().await.ok().map(Into::into)) }
+      }
+    }
+  };
+}
+pub(crate) use async_stream;
+
 /// Generates `#[napi(string_enum)] pub enum $Name { variants }` plus both `From` conversions
 /// between it and the mirrored `$path` enum. Variant names must match exactly on both sides.
 ///

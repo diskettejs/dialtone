@@ -120,6 +120,16 @@ export declare class Hello {
   get zid(): string
 }
 
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class HelloStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Hello, void, undefined>
+}
+
 export declare class KeyExpr {
   constructor(expr: string)
   static autocanonize(expr: string): KeyExpr
@@ -151,12 +161,23 @@ export declare class Liveliness {
   get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<ReplyHandler>
 }
 
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class LivelinessSampleStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Sample, void, undefined>
+}
+
 export declare class LivelinessSubscriber {
   get keyExpr(): KeyExpr
   get id(): EntityGlobalId
   undeclare(): void
   recv(): Promise<Sample>
   tryRecv(): Sample | null
+  stream(): LivelinessSampleStream
 }
 
 export declare class LivelinessToken {
@@ -176,10 +197,21 @@ export declare class MatchingListener {
   undeclare(): void
   recv(): Promise<MatchingStatus>
   tryRecv(): MatchingStatus | null
+  stream(): MatchingStatusStream
 }
 
 export declare class MatchingStatus {
   get matching(): boolean
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class MatchingStatusStream {
+  [Symbol.asyncIterator](): AsyncGenerator<MatchingStatus, void, undefined>
 }
 
 export declare class Metadata {
@@ -192,6 +224,16 @@ export declare class Metadata {
 export declare class Miss {
   get source(): EntityGlobalId
   get nb(): number
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class MissStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Miss, void, undefined>
 }
 
 export declare class Parameters {
@@ -257,6 +299,17 @@ export declare class Queryable {
   undeclare(): void
   recv(): Promise<Query>
   tryRecv(): Query | null
+  stream(): QueryStream
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class QueryStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Query, void, undefined>
 }
 
 export declare class Reply {
@@ -273,6 +326,17 @@ export declare class ReplyError {
 export declare class ReplyHandler {
   recv(): Promise<Reply>
   tryRecv(): Reply | null
+  stream(): ReplyStream
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class ReplyStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Reply, void, undefined>
 }
 
 export declare class RingChannel {
@@ -297,6 +361,17 @@ export declare class SampleMissListener {
   undeclare(): void
   recv(): Promise<Miss>
   tryRecv(): Miss | null
+  stream(): MissStream
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class SampleStream {
+  [Symbol.asyncIterator](): AsyncGenerator<Sample, void, undefined>
 }
 
 export declare class Scout {
@@ -304,6 +379,7 @@ export declare class Scout {
   stop(): void
   recv(): Promise<Hello>
   tryRecv(): Hello | null
+  stream(): HelloStream
 }
 
 export declare class Selector {
@@ -363,6 +439,7 @@ export declare class Subscriber {
   undeclare(): void
   recv(): Promise<Sample>
   tryRecv(): Sample | null
+  stream(): SampleStream
 }
 
 export declare class Timestamp {
