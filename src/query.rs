@@ -155,59 +155,39 @@ wrapper!(zquery::Reply);
 #[napi]
 impl Reply {
   #[napi(getter)]
-  pub fn sample(&self) -> Option<Sample> {
-    self.inner.result().ok().map(|s| Sample::from(s.clone()))
-  }
-
-  #[napi(getter)]
-  pub fn error(&self) -> Option<ReplyError> {
-    self.inner.result().err().map(|e| e.clone().into())
-  }
-
-  #[napi(getter)]
   pub fn replier_id(&self) -> Option<EntityGlobalId> {
     self.inner.replier_id().map(EntityGlobalId::from)
   }
 
   #[napi(getter)]
-  pub fn is_sample(&self) -> bool {
-    self.inner.result().is_ok()
-  }
-
-  #[napi(getter)]
-  pub fn is_error(&self) -> bool {
-    self.inner.result().is_err()
-  }
-
-  #[napi(getter, ts_return_type = "ReplyResult")]
-  pub fn result(&self) -> Reply {
-    self.inner.clone().into()
+  pub fn result<'env>(&self, env: &'env Env) -> napi::Result<ReplyResult<'env>> {
+    match self.inner.result() {
+      Ok(sample) => Ok(Either::A(ReplyResultSample {
+        sample: Sample::from(sample.clone()).into_instance(env)?,
+        error: Null,
+      })),
+      Err(error) => Ok(Either::B(ReplyResultError {
+        sample: Null,
+        error: ReplyError::from(error.clone()).into_instance(env)?,
+      })),
+    }
   }
 }
 
-#[allow(dead_code)]
 #[napi(object)]
-pub struct ReplySample<'env> {
-  #[napi(ts_type = "true")]
-  pub is_sample: bool,
-  #[napi(ts_type = "false")]
-  pub is_error: bool,
+pub struct ReplyResultSample<'env> {
   pub sample: ClassInstance<'env, Sample>,
+  pub error: Null,
 }
 
-#[allow(dead_code)]
 #[napi(object)]
-pub struct ReplyErrored<'env> {
-  #[napi(ts_type = "false")]
-  pub is_sample: bool,
-  #[napi(ts_type = "true")]
-  pub is_error: bool,
+pub struct ReplyResultError<'env> {
+  pub sample: Null,
   pub error: ClassInstance<'env, ReplyError>,
 }
 
-#[allow(dead_code)]
 #[napi]
-pub type ReplyResult<'env> = Either<ReplySample<'env>, ReplyErrored<'env>>;
+pub type ReplyResult<'env> = Either<ReplyResultSample<'env>, ReplyResultError<'env>>;
 
 wrapper!(zquery::ReplyError);
 

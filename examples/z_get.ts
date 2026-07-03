@@ -36,7 +36,7 @@ async function main() {
 
   for await (const reply of replies.stream()) {
     const { result } = reply
-    if (result.isError) {
+    if (result.error) {
       // Refer to z_bytes.ts to see how to deserialize different types of message.
       console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
     } else {

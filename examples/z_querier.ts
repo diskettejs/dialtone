@@ -65,7 +65,7 @@ async function main() {
     const replies = await querier.get(options)
     for await (const reply of replies.stream()) {
       const { result } = reply
-      if (result.isError) {
+      if (result.error) {
         console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
       } else {
         console.log(

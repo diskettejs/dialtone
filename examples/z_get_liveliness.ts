@@ -20,7 +20,7 @@ async function main() {
 
   for await (const reply of replies.stream()) {
     const { result } = reply
-    if (result.isError) {
+    if (result.error) {
       console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
     } else {
       console.log(`>> Alive token ('${result.sample.keyExpr}')`)

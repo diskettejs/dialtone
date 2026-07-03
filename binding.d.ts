@@ -313,11 +313,7 @@ export declare class QueryStream {
 }
 
 export declare class Reply {
-  get sample(): Sample | null
-  get error(): ReplyError | null
   get replierId(): EntityGlobalId | null
-  get isSample(): boolean
-  get isError(): boolean
   get result(): ReplyResult
 }
 
@@ -672,12 +668,6 @@ export interface ReplyErrOptions {
   encoding?: string
 }
 
-export interface ReplyErrored {
-  isSample: false
-  isError: true
-  error: ReplyError
-}
-
 export type ReplyKeyExpr =  'Any'|
 'MatchingQuery';
 
@@ -690,12 +680,16 @@ export interface ReplyOptions {
 }
 
 export type ReplyResult =
-  ReplySample | ReplyErrored
+  ReplyResultSample | ReplyResultError
 
-export interface ReplySample {
-  isSample: true
-  isError: false
+export interface ReplyResultError {
+  sample: null
+  error: ReplyError
+}
+
+export interface ReplyResultSample {
   sample: Sample
+  error: null
 }
 
 export type SampleKind =  'Put'|
