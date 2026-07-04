@@ -286,7 +286,7 @@ export declare class Query {
   get congestionControl(): CongestionControl
   get express(): boolean
   get parameters(): Parameters
-  get acceptReplies(): ReplyKeyExpr
+  get acceptsReplies(): ReplyKeyExpr
   reply(keyExpr: KeyExprArg, payload: Payload, options?: ReplyOptions | undefined | null): Promise<void>
   replyErr(payload: Payload, options?: ReplyErrOptions | undefined | null): Promise<void>
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>

@@ -65,7 +65,7 @@ impl Query {
   }
 
   #[napi(getter)]
-  pub fn accept_replies(&self) -> napi::Result<ReplyKeyExpr> {
+  pub fn accepts_replies(&self) -> napi::Result<ReplyKeyExpr> {
     Ok(self.get_ref()?.accepts_replies().into())
   }
 
@@ -78,7 +78,7 @@ impl Query {
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
-    let query = self.get_ref()?.clone();
+    let query = self.get_ref()?;
 
     let ReplyOptions {
       encoding,
@@ -108,10 +108,12 @@ impl Query {
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();
     let ReplyErrOptions { encoding } = options.unwrap_or_default();
+    let mut builder = self.get_ref()?.reply_err(payload);
+    if let Some(e) = encoding {
+      builder = builder.encoding(e);
+    }
 
-    build!(self.get_ref()?.reply_err(payload), encoding)
-      .await
-      .map_napi_err()
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -121,7 +123,6 @@ impl Query {
     options: Option<ReplyDelOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let query = self.get_ref()?.clone();
 
     let ReplyDelOptions {
       express,
@@ -131,7 +132,7 @@ impl Query {
     } = options.unwrap_or_default();
 
     build!(
-      query.reply_del(expr),
+      self.get_ref()?.reply_del(expr),
       express,
       timestamp,
       attachment,
