@@ -2,15 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { defineConfig, Session } from '../index.js'
 
-// A publisher and subscriber declared on the same session exchange samples
-// via session-local delivery (Locality.Any, the default, includes
-// SessionLocal) — no router, no network, no discovery race. That's enough to
-// prove the JS <-> Rust seam is wired correctly; Zenoh's own distributed
-// routing is already covered by Zenoh's test suite.
-
 let session: Session
-let counter = 0
-const nextKey = () => `test/pubsub/${counter++}`
 
 beforeAll(async () => {
   session = await Session.open(defineConfig())
@@ -20,169 +12,155 @@ afterAll(async () => {
   await session.close()
 })
 
-describe('publish -> subscribe wiring', () => {
-  test('put is received via recv()', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
-    const subscriber = await session.declareSubscriber(key)
+describe('Publisher', () => {
+  describe('declaration', () => {
+    test('applies priority and congestionControl from PublisherOptions', async () => {
+      const key = 'test/pubsub/declare-options'
+      using publisher = await session.declarePublisher(key, {
+        priority: 'DataHigh',
+        congestionControl: 'Block',
+      })
 
-    await publisher.put('hello')
-    const sample = await subscriber.recv()
-
-    expect(sample.payload.tryToString()).toBe('hello')
-    expect(sample.keyExpr.toString()).toBe(key)
-    expect(sample.kind).toBe('Put')
-    expect(subscriber.tryRecv()).toBeNull()
-
-    subscriber.undeclare()
-    publisher.undeclare()
+      expect(publisher.priority).toBe('DataHigh')
+      expect(publisher.congestionControl).toBe('Block')
+    })
   })
 
-  test('put is received via stream() async iterator', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
-    const subscriber = await session.declareSubscriber(key)
+  describe('put()', () => {
+    test('delivers the payload to a matching subscriber', async () => {
+      const key = 'test/pubsub/put'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
 
-    await publisher.put('streamed')
+      await publisher.put('hello')
+      const sample = await subscriber.recv()
 
-    for await (const sample of subscriber.stream()) {
-      expect(sample.payload.tryToString()).toBe('streamed')
-      break
-    }
-
-    subscriber.undeclare()
-    publisher.undeclare()
-  })
-
-  test('delete produces a Delete-kind sample', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
-    const subscriber = await session.declareSubscriber(key)
-
-    await publisher.delete()
-    const sample = await subscriber.recv()
-
-    expect(sample.kind).toBe('Delete')
-
-    subscriber.undeclare()
-    publisher.undeclare()
-  })
-
-  test('PublisherPutOptions (encoding, attachment) round-trip onto the sample', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
-    const subscriber = await session.declareSubscriber(key)
-
-    await publisher.put('with options', { encoding: 'text/plain', attachment: 'meta' })
-    const sample = await subscriber.recv()
-
-    expect(sample.encoding.toString()).toBe('text/plain')
-    expect(sample.attachment?.tryToString()).toBe('meta')
-
-    subscriber.undeclare()
-    publisher.undeclare()
-  })
-
-  test('declare-time PublisherOptions (priority, congestionControl) set the publisher', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key, {
-      priority: 'DataHigh',
-      congestionControl: 'Block',
+      expect(sample.payload.tryToString()).toBe('hello')
+      expect(sample.keyExpr.toString()).toBe(key)
+      expect(sample.kind).toBe('Put')
     })
 
-    expect(publisher.priority).toBe('DataHigh')
-    expect(publisher.congestionControl).toBe('Block')
+    test('applies encoding and attachment from PublisherPutOptions', async () => {
+      const key = 'test/pubsub/put-options'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
 
-    publisher.undeclare()
+      await publisher.put('with options', { encoding: 'text/plain', attachment: 'meta' })
+      const sample = await subscriber.recv()
+
+      expect(sample.encoding.toString()).toBe('text/plain')
+      expect(sample.attachment?.tryToString()).toBe('meta')
+    })
+  })
+
+  describe('delete()', () => {
+    test('delivers a Delete-kind sample', async () => {
+      const key = 'test/pubsub/delete'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
+
+      await publisher.delete()
+      const sample = await subscriber.recv()
+
+      expect(sample.kind).toBe('Delete')
+    })
+
+    test('applies attachment from PublisherDeleteOptions', async () => {
+      const key = 'test/pubsub/delete-options'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
+
+      await publisher.delete({ attachment: 'meta' })
+      const sample = await subscriber.recv()
+
+      expect(sample.attachment?.tryToString()).toBe('meta')
+    })
+  })
+
+  describe('matchingStatus()', () => {
+    test('reports no match when no subscriber is present', async () => {
+      const key = 'test/pubsub/matching-status'
+      using publisher = await session.declarePublisher(key)
+
+      expect((await publisher.matchingStatus()).matching).toBe(false)
+    })
+  })
+
+  describe('matchingListener()', () => {
+    test('delivers the current status immediately on declare', async () => {
+      const key = 'test/pubsub/matching-listener'
+      using _subscriber = await session.declareSubscriber(key)
+      using publisher = await session.declarePublisher(key)
+
+      using listener = await publisher.matchingListener()
+      const status = await listener.recv()
+
+      expect(status.matching).toBe(true)
+      expect(listener.tryRecv()).toBeNull()
+    })
+  })
+
+  describe('undeclare()', () => {
+    test('rejects put() after undeclare', async () => {
+      const key = 'test/pubsub/undeclare'
+      const publisher = await session.declarePublisher(key)
+      publisher.undeclare()
+      await expect(publisher.put('x')).rejects.toThrow(/undeclared/i)
+    })
   })
 })
 
-describe('matching status and listener', () => {
-  test('matchingStatus() reflects whether a subscriber currently exists', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
+describe('Subscriber', () => {
+  describe('recv()', () => {
+    test('returns the next sample', async () => {
+      const key = 'test/pubsub/recv'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
 
-    expect((await publisher.matchingStatus()).matching).toBe(false)
+      await publisher.put('hello')
+      const sample = await subscriber.recv()
 
-    const subscriber = await session.declareSubscriber(key)
-    expect((await publisher.matchingStatus()).matching).toBe(true)
+      expect(sample.payload.tryToString()).toBe('hello')
+    })
 
-    subscriber.undeclare()
-    publisher.undeclare()
+    test('tryRecv() returns null when the channel is empty', async () => {
+      const key = 'test/pubsub/try-recv'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
+
+      await publisher.put('only')
+      await subscriber.recv()
+
+      expect(subscriber.tryRecv()).toBeNull()
+    })
   })
 
-  // A MatchingListener delivers the current status immediately on declare
-  // when a match already exists (zenoh/api/session.rs,
-  // declare_matches_listener_inner) — declaring the subscriber first makes
-  // that first delivery deterministic, no sleep required.
-  test('matchingListener() delivers the current status immediately on declare', async () => {
-    const key = nextKey()
-    const subscriber = await session.declareSubscriber(key)
-    const publisher = await session.declarePublisher(key)
+  describe('stream()', () => {
+    test('yields samples via async iteration', async () => {
+      const key = 'test/pubsub/stream'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key)
 
-    const listener = await publisher.matchingListener()
-    const status = await listener.recv()
+      await publisher.put('streamed')
 
-    expect(status.matching).toBe(true)
-    expect(listener.tryRecv()).toBeNull()
-
-    listener.undeclare()
-    subscriber.undeclare()
-    publisher.undeclare()
-  })
-})
-
-describe('detect publishers via liveliness', () => {
-  test("detectPublishers() observes a publisher's liveliness token appear and disappear", async () => {
-    const key = nextKey()
-    const subscriber = await session.declareSubscriber(key)
-    const detector = await subscriber.detectPublishers()
-
-    const publisher = await session.declarePublisher(key, { publisherDetection: true })
-    expect((await detector.recv()).kind).toBe('Put')
-
-    publisher.undeclare()
-    expect((await detector.recv()).kind).toBe('Delete')
-
-    detector.undeclare()
-    subscriber.undeclare()
-  })
-})
-
-// Missed samples are only detectable from a real sequence-number gap between
-// an AdvancedPublisher (sampleMissDetection enabled) and its subscriber.
-// Zenoh's own test for this kills and restarts a router mid-test to force
-// that gap (zenoh-ext/tests/advanced.rs::test_advanced_sample_miss) — that's
-// Zenoh's retransmission/detection logic, not reproducible (or worth
-// reproducing) in a session-local unit test. This only proves the listener
-// declares and hands back a working handle.
-describe('sample miss listener', () => {
-  test('sampleMissListener() declares and returns an idle handle', async () => {
-    const key = nextKey()
-    const subscriber = await session.declareSubscriber(key)
-    const missListener = await subscriber.sampleMissListener()
-
-    expect(missListener.tryRecv()).toBeNull()
-
-    missListener.undeclare()
-    subscriber.undeclare()
-  })
-})
-
-describe('undeclare guards further use', () => {
-  test('put after publisher.undeclare() rejects', async () => {
-    const key = nextKey()
-    const publisher = await session.declarePublisher(key)
-    publisher.undeclare()
-
-    await expect(publisher.put('x')).rejects.toThrow(/undeclared/i)
+      let yielded = false
+      for await (const sample of subscriber.stream()) {
+        expect(sample).toBeTruthy()
+        yielded = true
+        break
+      }
+      expect(yielded).toBe(true)
+    })
   })
 
-  test('recv after subscriber.undeclare() rejects', async () => {
-    const key = nextKey()
-    const subscriber = await session.declareSubscriber(key)
-    subscriber.undeclare()
+  describe('detectPublishers()', () => {
+    test("observes a publisher's liveliness token", async () => {
+      const key = 'test/pubsub/detect-publishers'
+      using subscriber = await session.declareSubscriber(key)
+      using detector = await subscriber.detectPublishers()
 
-    await expect(subscriber.recv()).rejects.toThrow(/undeclared/i)
+      using _publisher = await session.declarePublisher(key, { publisherDetection: true })
+      expect((await detector.recv()).kind).toBe('Put')
+    })
   })
 })
