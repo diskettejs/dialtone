@@ -602,6 +602,9 @@ export { Hello }
 export { HelloStream }
 export { KeyExpr }
 export { Link }
+export { LinkEvent }
+export { LinkEventsListener }
+export { LinkEventStream }
 export { Liveliness }
 export { LivelinessSampleStream }
 export { LivelinessSubscriber }
@@ -636,6 +639,9 @@ export { SourceInfo }
 export { Subscriber }
 export { Timestamp }
 export { Transport }
+export { TransportEvent }
+export { TransportEventsListener }
+export { TransportEventStream }
 export { WhatAmIMatcher }
 export { CongestionControl }
 export { ConsolidationMode }

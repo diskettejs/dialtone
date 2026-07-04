@@ -155,6 +155,28 @@ export declare class Link {
   get reliability(): Reliability | null
 }
 
+export declare class LinkEvent {
+  get kind(): SampleKind
+  get link(): Link
+}
+
+export declare class LinkEventsListener {
+  undeclare(): void
+  recv(): Promise<LinkEvent>
+  tryRecv(): LinkEvent | null
+  stream(): LinkEventStream
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class LinkEventStream {
+  [Symbol.asyncIterator](): AsyncGenerator<LinkEvent, void, undefined>
+}
+
 export declare class Liveliness {
   declareToken(keyExpr: KeyExprArg): Promise<LivelinessToken>
   declareSubscriber(keyExpr: KeyExprArg, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
@@ -422,6 +444,8 @@ export declare class SessionInfo {
   peersZid(): Promise<Array<string>>
   transports(): Promise<Array<Transport>>
   links(): Promise<Array<Link>>
+  transportEventsListener(options?: TransportEventsListenerOptions | undefined | null): Promise<TransportEventsListener>
+  linkEventsListener(options?: LinkEventsListenerOptions | undefined | null): Promise<LinkEventsListener>
 }
 
 export declare class SourceInfo {
@@ -454,6 +478,28 @@ export declare class Transport {
   get whatami(): WhatAmI
   get isQos(): boolean
   get isMulticast(): boolean
+}
+
+export declare class TransportEvent {
+  get kind(): SampleKind
+  get transport(): Transport
+}
+
+export declare class TransportEventsListener {
+  undeclare(): void
+  recv(): Promise<TransportEvent>
+  tryRecv(): TransportEvent | null
+  stream(): TransportEventStream
+}
+
+/**
+ * This type implements JavaScript's async iterable protocol.
+ * It can be used with `for await...of` loops.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#the_async_iterator_and_async_iterable_protocols
+ */
+export declare class TransportEventStream {
+  [Symbol.asyncIterator](): AsyncGenerator<TransportEvent, void, undefined>
 }
 
 export declare class WhatAmIMatcher {
@@ -534,6 +580,12 @@ export interface HistoryConfig {
 
 export type KeyExprArg =
   string | KeyExpr
+
+export interface LinkEventsListenerOptions {
+  history?: boolean
+  transport?: Transport
+  channel?: FifoChannel | RingChannel
+}
 
 export interface LinkPriorities {
   min: number
@@ -718,6 +770,11 @@ export interface SubscriberOptions {
   subscriberDetection?: boolean
   subscriberDetectionMetadata?: string
   queryTimeoutMs?: number
+  channel?: FifoChannel | RingChannel
+}
+
+export interface TransportEventsListenerOptions {
+  history?: boolean
   channel?: FifoChannel | RingChannel
 }
 

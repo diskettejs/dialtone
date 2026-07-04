@@ -3,7 +3,8 @@ use std::time::Duration;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, cancellation::*, handlers::*, qos::*, query::*, sample::*, time::*, utils::*,
+  bytes::*, cancellation::*, handlers::*, qos::*, query::*, sample::*, session::*, time::*,
+  utils::*,
 };
 
 /// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
@@ -52,6 +53,7 @@ via_from!(Instance:
   SourceInfo => zenoh::sample::SourceInfo,
   CancellationToken => zenoh::cancellation::CancellationToken,
   Parameters => zenoh::query::Parameters<'static>,
+  Transport => zenoh::session::Transport,
 );
 
 impl IntoZenoh for napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery> {
@@ -222,6 +224,24 @@ pub struct MatchingListenerOptions {
 pub struct SampleMissListenerOptions {
   #[napi(ts_type = "FifoChannel | RingChannel")]
   pub channel: Option<ChannelHandler<zenoh_ext::Miss>>,
+}
+
+#[derive(Default)]
+#[napi(object, object_to_js = false)]
+pub struct TransportEventsListenerOptions {
+  pub history: Option<bool>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::session::TransportEvent>>,
+}
+
+#[derive(Default)]
+#[napi(object, object_to_js = false)]
+pub struct LinkEventsListenerOptions {
+  pub history: Option<bool>,
+  #[napi(ts_type = "Transport")]
+  pub transport: Option<Instance<Transport>>,
+  #[napi(ts_type = "FifoChannel | RingChannel")]
+  pub channel: Option<ChannelHandler<zenoh::session::LinkEvent>>,
 }
 
 #[derive(Default)]

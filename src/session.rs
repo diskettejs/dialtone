@@ -1,10 +1,11 @@
+use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{config as zconfig, session as zsession};
+use zenoh::{Wait, config as zconfig, session as zsession};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
   bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, macros::*, options::*, pubsub::*,
-  qos::Reliability, query::*, time::*, utils::*,
+  qos::Reliability, query::*, sample::SampleKind, time::*, utils::*,
 };
 
 wrapper!(zenoh::Session);
@@ -381,9 +382,50 @@ impl SessionInfo {
   pub async fn links(&self) -> Vec<Link> {
     self.inner.links().await.map(Link::from).collect()
   }
+
+  #[napi]
+  pub async fn transport_events_listener(
+    &self,
+    options: Option<TransportEventsListenerOptions>,
+  ) -> napi::Result<TransportEventsListener> {
+    let TransportEventsListenerOptions { history, channel } = options.unwrap_or_default();
+    let handler = into_handler(channel);
+
+    let listener = build!(
+      self.inner.transport_events_listener().with(handler),
+      history,
+    )
+    .await
+    .map_napi_err()?;
+
+    Ok(listener.into())
+  }
+
+  #[napi]
+  pub async fn link_events_listener(
+    &self,
+    options: Option<LinkEventsListenerOptions>,
+  ) -> napi::Result<LinkEventsListener> {
+    let LinkEventsListenerOptions {
+      history,
+      transport,
+      channel,
+    } = options.unwrap_or_default();
+    let handler = into_handler(channel);
+
+    let listener = build!(
+      self.inner.link_events_listener().with(handler),
+      history,
+      transport,
+    )
+    .await
+    .map_napi_err()?;
+
+    Ok(listener.into())
+  }
 }
 
-wrapper!(zsession::Transport);
+wrapper!(zsession::Transport: Clone);
 
 #[napi]
 impl Transport {
@@ -407,6 +449,37 @@ impl Transport {
     self.inner.is_multicast()
   }
 }
+
+wrapper!(zsession::TransportEvent);
+
+#[napi]
+impl TransportEvent {
+  #[napi(getter)]
+  pub fn kind(&self) -> SampleKind {
+    self.inner.kind().into()
+  }
+
+  #[napi(getter)]
+  pub fn transport(&self) -> Transport {
+    self.inner.transport().clone().into()
+  }
+}
+
+option_wrapper!(
+  zsession::TransportEventsListener<HandlerImpl<zsession::TransportEvent>>,
+  "Undeclared transport events listener"
+);
+
+#[napi]
+impl TransportEventsListener {
+  #[napi]
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
+  }
+}
+
+recv_handler!(TransportEventsListener => TransportEvent);
+async_stream!(TransportEventsListener => TransportEventStream yields TransportEvent from zsession::TransportEvent);
 
 #[napi(object)]
 pub struct LinkPriorities {
@@ -471,6 +544,37 @@ impl Link {
     self.inner.reliability().map(Into::into)
   }
 }
+
+wrapper!(zsession::LinkEvent);
+
+#[napi]
+impl LinkEvent {
+  #[napi(getter)]
+  pub fn kind(&self) -> SampleKind {
+    self.inner.kind().into()
+  }
+
+  #[napi(getter)]
+  pub fn link(&self) -> Link {
+    self.inner.link().clone().into()
+  }
+}
+
+option_wrapper!(
+  zsession::LinkEventsListener<HandlerImpl<zsession::LinkEvent>>,
+  "Undeclared link events listener"
+);
+
+#[napi]
+impl LinkEventsListener {
+  #[napi]
+  pub fn undeclare(&mut self) -> napi::Result<()> {
+    Wait::wait(self.take()?.undeclare()).map_napi_err()
+  }
+}
+
+recv_handler!(LinkEventsListener => LinkEvent);
+async_stream!(LinkEventsListener => LinkEventStream yields LinkEvent from zsession::LinkEvent);
 
 wrapper!(zconfig::Locator);
 
