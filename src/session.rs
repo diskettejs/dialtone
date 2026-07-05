@@ -58,7 +58,7 @@ impl Session {
   pub async fn put(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: Payload,
+    payload: BytesLike,
     options: Option<PutOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;

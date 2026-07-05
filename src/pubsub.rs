@@ -39,7 +39,7 @@ impl Publisher {
   #[napi]
   pub async fn put(
     &self,
-    payload: Payload,
+    payload: BytesLike,
     options: Option<PublisherPutOptions>,
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();

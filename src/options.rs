@@ -78,7 +78,7 @@ pub struct PublisherPutOptions {
   pub encoding: Option<String>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
 }
 
 #[derive(Default)]
@@ -86,7 +86,7 @@ pub struct PublisherPutOptions {
 pub struct PublisherDeleteOptions {
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
 }
 
 #[derive(Default)]
@@ -128,7 +128,7 @@ pub struct PutOptions {
   pub allowed_destination: Option<Locality>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -143,7 +143,7 @@ pub struct DeleteOptions {
   pub allowed_destination: Option<Locality>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -337,7 +337,7 @@ pub struct ReplyOptions {
   pub express: Option<bool>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -354,7 +354,7 @@ pub struct ReplyDelOptions {
   pub express: Option<bool>,
   #[napi(ts_type = "Timestamp")]
   pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
 }
@@ -364,9 +364,9 @@ pub struct ReplyDelOptions {
 pub struct QuerierGetOptions {
   #[napi(ts_type = "Parameters")]
   pub parameters: Option<Instance<Parameters>>,
-  pub payload: Option<Payload>,
+  pub payload: Option<BytesLike>,
   pub encoding: Option<String>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]
@@ -409,9 +409,9 @@ pub struct GetOptions {
   pub express: Option<bool>,
   pub allowed_destination: Option<Locality>,
   pub timeout: Option<f64>,
-  pub payload: Option<Payload>,
+  pub payload: Option<BytesLike>,
   pub encoding: Option<String>,
-  pub attachment: Option<Payload>,
+  pub attachment: Option<BytesLike>,
   #[napi(ts_type = "SourceInfo")]
   pub source_info: Option<Instance<SourceInfo>>,
   #[napi(ts_type = "CancellationToken")]

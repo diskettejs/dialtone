@@ -73,7 +73,7 @@ impl Query {
   pub async fn reply(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: Payload,
+    payload: BytesLike,
     options: Option<ReplyOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
@@ -103,7 +103,7 @@ impl Query {
   #[napi]
   pub async fn reply_err(
     &self,
-    payload: Payload,
+    payload: BytesLike,
     options: Option<ReplyErrOptions>,
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();

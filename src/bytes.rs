@@ -5,13 +5,13 @@ use zenoh::bytes as zbytes;
 use crate::{macros::*, utils::*};
 
 #[napi]
-pub type Payload = napi::Either<String, Uint8Array>;
+pub type BytesLike = napi::Either<String, Uint8Array>;
 
 pub(crate) trait IntoZBytes {
   fn into_zbytes(self) -> zbytes::ZBytes;
 }
 
-impl IntoZBytes for Payload {
+impl IntoZBytes for BytesLike {
   fn into_zbytes(self) -> zbytes::ZBytes {
     match self {
       napi::Either::A(s) => zbytes::ZBytes::from(s),
@@ -20,7 +20,7 @@ impl IntoZBytes for Payload {
   }
 }
 
-impl IntoZenoh for Payload {
+impl IntoZenoh for BytesLike {
   type Into = zenoh::bytes::ZBytes;
   fn into_zenoh(self) -> zenoh::bytes::ZBytes {
     self.into_zbytes()
@@ -45,7 +45,7 @@ impl Bytes {
   }
 
   #[napi(factory)]
-  pub fn from(value: Payload) -> Self {
+  pub fn from(value: BytesLike) -> Self {
     value.into_zbytes().into()
   }
 

@@ -2,7 +2,7 @@
 /* eslint-disable */
 export declare class Bytes {
   constructor()
-  static from(value: Payload): Bytes
+  static from(value: BytesLike): Bytes
   get isEmpty(): boolean
   get len(): number
   toBytes(): Uint8Array
@@ -277,7 +277,7 @@ export declare class Publisher {
   get encoding(): Encoding
   get congestionControl(): CongestionControl
   get priority(): Priority
-  put(payload: Payload, options?: PublisherPutOptions | undefined | null): Promise<void>
+  put(payload: BytesLike, options?: PublisherPutOptions | undefined | null): Promise<void>
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
@@ -308,8 +308,8 @@ export declare class Query {
   get express(): boolean
   get parameters(): Parameters
   get acceptsReplies(): ReplyKeyExpr
-  reply(keyExpr: KeyExprArg, payload: Payload, options?: ReplyOptions | undefined | null): Promise<void>
-  replyErr(payload: Payload, options?: ReplyErrOptions | undefined | null): Promise<void>
+  reply(keyExpr: KeyExprArg, payload: BytesLike, options?: ReplyOptions | undefined | null): Promise<void>
+  replyErr(payload: BytesLike, options?: ReplyErrOptions | undefined | null): Promise<void>
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
   drop(): void
 }
@@ -418,7 +418,7 @@ export declare class Session {
   info(): SessionInfo
   config(): SessionConfig
   close(): Promise<void>
-  put(keyExpr: KeyExprArg, payload: Payload, options?: PutOptions | undefined | null): Promise<void>
+  put(keyExpr: KeyExprArg, payload: BytesLike, options?: PutOptions | undefined | null): Promise<void>
   get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<ReplyHandler>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
@@ -511,6 +511,9 @@ export declare class WhatAmIMatcher {
   toStr(): string
 }
 
+export type BytesLike =
+  string | Uint8Array
+
 export interface CacheConfig {
   maxSamples?: number
   repliesConfig?: RepliesConfig
@@ -532,7 +535,7 @@ export interface DeleteOptions {
   reliability?: Reliability
   allowedDestination?: Locality
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
 }
 
@@ -552,9 +555,9 @@ export interface GetOptions {
   express?: boolean
   allowedDestination?: Locality
   timeout?: number
-  payload?: Payload
+  payload?: BytesLike
   encoding?: string
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
   channel?: FifoChannel | RingChannel
@@ -641,9 +644,6 @@ export interface MissDetectionConfig {
   heartbeat?: HeartbeatConfig
 }
 
-export type Payload =
-  string | Uint8Array
-
 export type PeriodicQueriesMode =  'PeriodicQueries';
 
 export interface PeriodicQueriesRecovery {
@@ -661,7 +661,7 @@ export type Priority =  'RealTime'|
 
 export interface PublisherDeleteOptions {
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
 }
 
 export interface PublisherOptions {
@@ -680,7 +680,7 @@ export interface PublisherOptions {
 export interface PublisherPutOptions {
   encoding?: string
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
 }
 
 export interface PutOptions {
@@ -691,15 +691,15 @@ export interface PutOptions {
   reliability?: Reliability
   allowedDestination?: Locality
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
 }
 
 export interface QuerierGetOptions {
   parameters?: Parameters
-  payload?: Payload
+  payload?: BytesLike
   encoding?: string
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
   cancellationToken?: CancellationToken
   channel?: FifoChannel | RingChannel
@@ -738,7 +738,7 @@ export interface RepliesConfig {
 export interface ReplyDelOptions {
   express?: boolean
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
 }
 
@@ -753,7 +753,7 @@ export interface ReplyOptions {
   encoding?: string
   express?: boolean
   timestamp?: Timestamp
-  attachment?: Payload
+  attachment?: BytesLike
   sourceInfo?: SourceInfo
 }
 
