@@ -578,6 +578,8 @@ export interface HistoryConfig {
   maxAgeSecs?: number
 }
 
+export declare function initLog(callback: LogCallback, level: LogLevel): boolean
+
 export type KeyExprArg =
   string | KeyExpr
 
@@ -606,6 +608,31 @@ export interface LivelinessSubscriberOptions {
 export type Locality =  'SessionLocal'|
 'Remote'|
 'Any';
+
+export interface LogAttribute {
+  key: string
+  value: string
+}
+
+export type LogCallback =
+  ((arg: LogRecord) => void)
+
+export type LogLevel =  'Trace'|
+'Debug'|
+'Info'|
+'Warn'|
+'Error';
+
+export interface LogRecord {
+  level: LogLevel
+  target: string
+  message?: string
+  file?: string
+  line?: number
+  threadId: string
+  threadName?: string
+  attributes: Array<LogAttribute>
+}
 
 export interface MatchingListenerOptions {
   channel?: FifoChannel | RingChannel

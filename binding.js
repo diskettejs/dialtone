@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, HelloStream, KeyExpr, Link, Liveliness, LivelinessSampleStream, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyHandler, ReplyStream, RingChannel, Sample, SampleMissListener, SampleStream, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, HelloStream, KeyExpr, Link, LinkEvent, LinkEventsListener, LinkEventStream, Liveliness, LivelinessSampleStream, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyHandler, ReplyStream, RingChannel, Sample, SampleMissListener, SampleStream, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, TransportEventStream, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -646,7 +646,9 @@ export { WhatAmIMatcher }
 export { CongestionControl }
 export { ConsolidationMode }
 export { HeartbeatMode }
+export { initLog }
 export { Locality }
+export { LogLevel }
 export { PeriodicQueriesMode }
 export { Priority }
 export { QueryTarget }
