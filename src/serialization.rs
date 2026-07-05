@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![cfg_attr(test, allow(dead_code))]
 use napi::Unknown;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
