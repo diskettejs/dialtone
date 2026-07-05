@@ -298,7 +298,6 @@ impl Queryable {
 }
 
 recv_handler!(Queryable => Query);
-async_stream!(Queryable => QueryStream yields Query from zquery::Query);
 
 option_wrapper!(zquery::Querier<'static>, "Undeclared querier");
 
@@ -330,7 +329,7 @@ impl Querier {
   }
 
   #[napi]
-  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<ReplyHandler> {
+  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<Handler> {
     let QuerierGetOptions {
       parameters,
       payload,

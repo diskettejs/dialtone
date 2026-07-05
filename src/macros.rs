@@ -147,113 +147,46 @@ macro_rules! option_wrapper {
 }
 pub(crate) use option_wrapper;
 
-/// Emits a `#[napi] impl` block exposing a channel receiver as `recv` (async) / `try_recv`,
-/// mapping each received `T` into its napi wrapper via `Into`. Two forms:
-///
-/// - `recv_handler!(Entity => Item)` — an `option_wrapper!` entity whose Zenoh type derefs to
-///   `HandlerImpl<T>` (subscribers, queryables, listeners, scout); reached via `get_ref()`.
-/// - `recv_handler!(Wrapper.field => Item)` — a newtype holding a `HandlerImpl<T>` in `field`
-///   directly (e.g. `ReplyHandler.0`, the receiver returned by one-shot `get`s).
+/// Emits a `#[napi] impl` block exposing an entity's channel surface: async `recv`,
+/// sync `try_recv`, a `stream()` async-iterator cursor, and a `handler()` method returning
+/// the detachable erased `Handler`. `handler` is a method rather than a getter so the TS
+/// facade can narrow it — interface merging overloads same-name methods but rejects
+/// property (getter) retyping. The entity's Zenoh type must deref to `HandlerImpl<T>`
+/// (reached via `get_ref()`). Every method returns erased `DeferredJs` values — payload
+/// typing lives in the handwritten TS facade; `$Item` documents the payload the channel
+/// carries.
 ///
 /// Lives in a separate impl block because a proc-macro attribute can't expand an inner
 /// `macro_rules!` call inside the type's own `#[napi] impl`.
 ///
 /// recv_handler!(Subscriber => Sample);
-/// recv_handler!(ReplyHandler.0 => Reply);
 macro_rules! recv_handler {
   ($Entity:ident => $Item:ty) => {
     #[napi]
     impl $Entity {
       #[napi]
-      pub async fn recv(&self) -> napi::Result<$Item> {
-        Ok(self.get_ref()?.recv().await?.into())
+      pub async fn recv(&self) -> napi::Result<$crate::handlers::DeferredJs> {
+        self.get_ref()?.recv().await
       }
 
       #[napi]
-      pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
-        Ok(self.get_ref()?.try_recv()?.map(Into::into))
-      }
-    }
-  };
-  ($Wrapper:ident . $field:tt => $Item:ty) => {
-    #[napi]
-    impl $Wrapper {
-      #[napi]
-      pub async fn recv(&self) -> napi::Result<$Item> {
-        Ok(self.$field.recv().await?.into())
+      pub fn try_recv(&self) -> napi::Result<Option<$crate::handlers::DeferredJs>> {
+        self.get_ref()?.try_recv()
       }
 
       #[napi]
-      pub fn try_recv(&self) -> napi::Result<Option<$Item>> {
-        Ok(self.$field.try_recv()?.map(Into::into))
+      pub fn stream(&self) -> napi::Result<$crate::handlers::Stream> {
+        Ok(self.get_ref()?.stream())
+      }
+
+      #[napi]
+      pub fn handler(&self) -> napi::Result<$crate::handlers::Handler> {
+        Ok(self.get_ref()?.share())
       }
     }
   };
 }
 pub(crate) use recv_handler;
-
-/// Emits an async iterator over a `HandlerImpl<T>`: a `#[napi(async_iterator)]` newtype whose
-/// `[Symbol.asyncIterator]` yields each received item's napi wrapper, plus a `stream()` accessor
-/// on the owning entity that hands out a shared cursor. Mirrors `recv_handler!`'s two forms:
-///
-/// - `async_stream!(Entity => Stream yields Wrapper from RawItem)` — an entity whose Zenoh type
-///   derefs to `HandlerImpl<RawItem>`; reached via `get_ref()`.
-/// - `async_stream!(Wrapper.field => Stream yields Item from RawItem)` — a newtype holding the
-///   `HandlerImpl<RawItem>` in `field` directly (e.g. `ReplyHandler.0`).
-///
-/// `Wrapper` must be a bare identifier, not a path: napi reads the `AsyncGenerator::Yield` type
-/// with a strict `Type::Path` match, and a `:ty` metavariable (wrapped in invisible delimiters)
-/// parses as `Type::Group`, which silently drops the `[Symbol.asyncIterator]` type-def.
-///
-/// async_stream!(Subscriber => SampleStream yields Sample from zsample::Sample);
-macro_rules! async_stream {
-  ($Entity:ident => $Stream:ident yields $Item:ident from $Raw:ty) => {
-    #[napi]
-    impl $Entity {
-      #[napi]
-      pub fn stream(&self) -> napi::Result<$Stream> {
-        Ok(self.get_ref()?.share().into())
-      }
-    }
-    async_stream!(@def $Stream yields $Item from $Raw);
-  };
-  ($Wrapper:ident . $field:tt => $Stream:ident yields $Item:ident from $Raw:ty) => {
-    #[napi]
-    impl $Wrapper {
-      #[napi]
-      pub fn stream(&self) -> napi::Result<$Stream> {
-        Ok(self.$field.share().into())
-      }
-    }
-    async_stream!(@def $Stream yields $Item from $Raw);
-  };
-  (@def $Stream:ident yields $Item:ident from $Raw:ty) => {
-    #[napi(async_iterator)]
-    pub struct $Stream(HandlerImpl<$Raw>);
-
-    impl From<HandlerImpl<$Raw>> for $Stream {
-      fn from(handler: HandlerImpl<$Raw>) -> Self {
-        Self(handler)
-      }
-    }
-
-    #[napi]
-    impl AsyncGenerator for $Stream {
-      type Yield = $Item;
-      type Next = ();
-      type Return = ();
-
-      fn next(
-        &mut self,
-        _value: Option<()>,
-      ) -> impl std::future::Future<Output = napi::Result<Option<$Item>>> + Send + 'static {
-        let handler = self.0.share();
-        async move { Ok(handler.recv().await.ok().map(Into::into)) }
-      }
-    }
-  };
-}
-pub(crate) use async_stream;
 
 /// Generates `#[napi(string_enum)] pub enum $Name { variants }` plus both `From` conversions
 /// between it and the mirrored `$path` enum. Variant names must match exactly on both sides.

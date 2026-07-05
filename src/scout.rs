@@ -1,4 +1,3 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{config as zconfig, scouting as zscouting};
 
@@ -41,7 +40,6 @@ impl Scout {
 }
 
 recv_handler!(Scout => Hello);
-async_stream!(Scout => HelloStream yields Hello from zscouting::Hello);
 
 wrapper!(zscouting::Hello);
 

@@ -1,8 +1,7 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
 
-use crate::{config::*, handlers::*, key_expr::*, macros::*, options::*, sample::*, utils::*};
+use crate::{config::*, handlers::*, key_expr::*, macros::*, options::*, utils::*};
 
 wrapper!(zenoh::Session as Liveliness);
 
@@ -48,7 +47,7 @@ impl Liveliness {
     &self,
     key_expr: KeyExprArg<'_>,
     options: Option<LivelinessGetOptions>,
-  ) -> napi::Result<ReplyHandler> {
+  ) -> napi::Result<Handler> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
@@ -106,4 +105,3 @@ impl LivelinessSubscriber {
 }
 
 recv_handler!(LivelinessSubscriber => Sample);
-async_stream!(LivelinessSubscriber => LivelinessSampleStream yields Sample from zsample::Sample);

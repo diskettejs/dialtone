@@ -590,7 +590,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Hello, HelloStream, KeyExpr, Link, LinkEvent, LinkEventsListener, LinkEventStream, Liveliness, LivelinessSampleStream, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusStream, Metadata, Miss, MissStream, Parameters, Publisher, Querier, Query, Queryable, QueryStream, Reply, ReplyError, ReplyHandler, ReplyStream, RingChannel, Sample, SampleMissListener, SampleStream, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, TransportEventStream, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Handler, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Stream, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -598,50 +598,42 @@ export { Encoding }
 export { EndPoint }
 export { EntityGlobalId }
 export { FifoChannel }
+export { Handler }
 export { Hello }
-export { HelloStream }
 export { KeyExpr }
 export { Link }
 export { LinkEvent }
 export { LinkEventsListener }
-export { LinkEventStream }
 export { Liveliness }
-export { LivelinessSampleStream }
 export { LivelinessSubscriber }
 export { LivelinessToken }
 export { Locator }
 export { MatchingListener }
 export { MatchingStatus }
-export { MatchingStatusStream }
 export { Metadata }
 export { Miss }
-export { MissStream }
 export { Parameters }
 export { Publisher }
 export { Querier }
 export { Query }
 export { Queryable }
-export { QueryStream }
 export { Reply }
 export { ReplyError }
-export { ReplyHandler }
-export { ReplyStream }
 export { RingChannel }
 export { Sample }
 export { SampleMissListener }
-export { SampleStream }
 export { Scout }
 export { Selector }
 export { Session }
 export { SessionConfig }
 export { SessionInfo }
 export { SourceInfo }
+export { Stream }
 export { Subscriber }
 export { Timestamp }
 export { Transport }
 export { TransportEvent }
 export { TransportEventsListener }
-export { TransportEventStream }
 export { WhatAmIMatcher }
 export { CongestionControl }
 export { ConsolidationMode }

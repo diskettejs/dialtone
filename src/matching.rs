@@ -1,4 +1,3 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, matching as zmatching};
 
@@ -28,4 +27,3 @@ impl MatchingListener {
 }
 
 recv_handler!(MatchingListener => MatchingStatus);
-async_stream!(MatchingListener => MatchingStatusStream yields MatchingStatus from zmatching::MatchingStatus);

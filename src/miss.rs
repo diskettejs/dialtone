@@ -1,4 +1,3 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::Wait;
 
@@ -33,4 +32,3 @@ impl SampleMissListener {
 }
 
 recv_handler!(SampleMissListener => Miss);
-async_stream!(SampleMissListener => MissStream yields Miss from zenoh_ext::Miss);

@@ -1,4 +1,3 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, config as zconfig, session as zsession};
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
@@ -97,7 +96,7 @@ impl Session {
     &self,
     selector: SelectorArg<'_>,
     options: Option<GetOptions>,
-  ) -> napi::Result<ReplyHandler> {
+  ) -> napi::Result<Handler> {
     let GetOptions {
       parameters,
       target,
@@ -479,7 +478,6 @@ impl TransportEventsListener {
 }
 
 recv_handler!(TransportEventsListener => TransportEvent);
-async_stream!(TransportEventsListener => TransportEventStream yields TransportEvent from zsession::TransportEvent);
 
 #[napi(object)]
 pub struct LinkPriorities {
@@ -574,7 +572,6 @@ impl LinkEventsListener {
 }
 
 recv_handler!(LinkEventsListener => LinkEvent);
-async_stream!(LinkEventsListener => LinkEventStream yields LinkEvent from zsession::LinkEvent);
 
 wrapper!(zconfig::Locator);
 

@@ -1,10 +1,9 @@
-use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::{Wait, sample as zsample};
 
 use crate::{
   bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, macros::*, matching::*, miss::*,
-  options::*, qos::*, sample::*, utils::*,
+  options::*, qos::*, utils::*,
 };
 
 option_wrapper!(zenoh_ext::AdvancedPublisher<'static> as Publisher, "Undeclared publisher");
@@ -155,4 +154,3 @@ impl Subscriber {
 }
 
 recv_handler!(Subscriber => Sample);
-async_stream!(Subscriber => SampleStream yields Sample from zsample::Sample);

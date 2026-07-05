@@ -5,40 +5,109 @@ import * as binding from './binding.js'
 declare module './binding.js' {
   interface Session {
     [Symbol.asyncDispose](): Promise<void>
+    get(
+      selector: binding.SelectorArg,
+      options?: binding.GetOptions | undefined | null,
+    ): Promise<TypedHandler<binding.Reply>>
   }
   interface Subscriber {
     [Symbol.dispose](): void
+    recv(): Promise<binding.Sample>
+    tryRecv(): binding.Sample | null
+    stream(): TypedStream<binding.Sample>
+    handler(): TypedHandler<binding.Sample>
   }
   interface Publisher {
     [Symbol.dispose](): void
   }
   interface MatchingListener {
     [Symbol.dispose](): void
+    recv(): Promise<binding.MatchingStatus>
+    tryRecv(): binding.MatchingStatus | null
+    stream(): TypedStream<binding.MatchingStatus>
+    handler(): TypedHandler<binding.MatchingStatus>
   }
   interface SampleMissListener {
     [Symbol.dispose](): void
+    recv(): Promise<binding.Miss>
+    tryRecv(): binding.Miss | null
+    stream(): TypedStream<binding.Miss>
+    handler(): TypedHandler<binding.Miss>
   }
   interface Scout {
     [Symbol.dispose](): void
+    recv(): Promise<binding.Hello>
+    tryRecv(): binding.Hello | null
+    stream(): TypedStream<binding.Hello>
+    handler(): TypedHandler<binding.Hello>
   }
   interface LivelinessToken {
     [Symbol.dispose](): void
   }
+  interface Liveliness {
+    get(
+      keyExpr: binding.KeyExprArg,
+      options?: binding.LivelinessGetOptions | undefined | null,
+    ): Promise<TypedHandler<binding.Reply>>
+  }
   interface LivelinessSubscriber {
     [Symbol.dispose](): void
+    recv(): Promise<binding.Sample>
+    tryRecv(): binding.Sample | null
+    stream(): TypedStream<binding.Sample>
+    handler(): TypedHandler<binding.Sample>
   }
   interface Querier {
     [Symbol.dispose](): void
+    get(
+      options?: binding.QuerierGetOptions | undefined | null,
+    ): Promise<TypedHandler<binding.Reply>>
   }
   interface Queryable {
     [Symbol.dispose](): void
+    recv(): Promise<binding.Query>
+    tryRecv(): binding.Query | null
+    stream(): TypedStream<binding.Query>
+    handler(): TypedHandler<binding.Query>
   }
   interface LinkEventsListener {
     [Symbol.dispose](): void
+    recv(): Promise<binding.LinkEvent>
+    tryRecv(): binding.LinkEvent | null
+    stream(): TypedStream<binding.LinkEvent>
+    handler(): TypedHandler<binding.LinkEvent>
   }
   interface TransportEventsListener {
     [Symbol.dispose](): void
+    recv(): Promise<binding.TransportEvent>
+    tryRecv(): binding.TransportEvent | null
+    stream(): TypedStream<binding.TransportEvent>
+    handler(): TypedHandler<binding.TransportEvent>
   }
+}
+
+export interface Handler<T> extends binding.Handler {
+  recv(): Promise<T>
+  tryRecv(): T | null
+  stream(): Stream<T>
+}
+
+/**
+ * File-scope aliases for use inside the `declare module './binding.js'` block
+ * above: bare `Handler`/`Stream` there resolve to the augmented module's own
+ * monomorphic classes (module-local names shadow this file's generics), and
+ * `skipLibCheck` would silently turn the bogus instantiation into `any`.
+ */
+type TypedHandler<T> = Handler<T>
+type TypedStream<T> = Stream<T>
+
+/**
+ * A native {@link binding.Stream} async-iterator cursor that carries its
+ * payload type `T` at compile time. `T` is erased at runtime; every cursor is
+ * the same monomorphic native `Stream`.
+ */
+export interface Stream<T> extends binding.Stream {
+  [Symbol.asyncIterator](): AsyncGenerator<T, void, undefined>
 }
 
 /**

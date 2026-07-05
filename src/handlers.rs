@@ -1,6 +1,4 @@
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 
 use async_trait::async_trait;
 use napi::Unknown;
@@ -8,7 +6,7 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh::handlers::{self as zhandlers, IntoHandler};
 
-use crate::{macros::*, query::Reply, utils::MapNapiErr};
+use crate::utils::MapNapiErr;
 
 #[derive(Clone, Default)]
 #[napi]
@@ -58,71 +56,160 @@ impl<T: Send + 'static> IntoHandler<T> for RingChannel {
   }
 }
 
-type RecvFuture<'a, T> = Pin<Box<dyn Future<Output = napi::Result<T>> + Send + 'a>>;
+/// Maps a raw Zenoh payload type to its napi wrapper class, converted only at the JS boundary.
+pub(crate) trait IntoJs: Sized + Send + Sync + 'static {
+  type Into: ToNapiValue;
 
-pub struct HandlerImpl<T>(Arc<dyn Receiver<T>>);
-
-impl<T> Clone for HandlerImpl<T> {
-  fn clone(&self) -> Self {
-    Self(self.0.clone())
-  }
+  fn into_js(self) -> Self::Into;
 }
 
-impl<T> HandlerImpl<T> {
-  pub(crate) fn recv(&self) -> RecvFuture<'_, T> {
-    self.0.recv()
-  }
+macro_rules! into_js {
+  ($($raw:ty => $wrapper:ty),* $(,)?) => {$(
+    impl IntoJs for $raw {
+      type Into = $wrapper;
 
-  pub(crate) fn try_recv(&self) -> napi::Result<Option<T>> {
-    self.0.try_recv()
-  }
-
-  pub(crate) fn share(&self) -> HandlerImpl<T> {
-    self.clone()
-  }
-}
-
-#[async_trait]
-pub(crate) trait Receiver<T>: Send + Sync {
-  async fn recv(&self) -> napi::Result<T>;
-  fn try_recv(&self) -> napi::Result<Option<T>>;
-}
-
-#[napi]
-pub struct ReplyHandler(HandlerImpl<zenoh::query::Reply>);
-
-impl From<HandlerImpl<zenoh::query::Reply>> for ReplyHandler {
-  fn from(value: HandlerImpl<zenoh::query::Reply>) -> Self {
-    Self(value)
-  }
-}
-
-recv_handler!(ReplyHandler.0 => Reply);
-async_stream!(ReplyHandler.0 => ReplyStream yields Reply from zenoh::query::Reply);
-
-macro_rules! impl_receiver {
-  ($($handler:ident),* $(,)?) => {$(
-    #[async_trait]
-    impl<T: Send + 'static> Receiver<T> for zhandlers::$handler<T> {
-      async fn recv(&self) -> napi::Result<T> {
-        self.recv_async().await.map_napi_err()
-      }
-
-      fn try_recv(&self) -> napi::Result<Option<T>> {
-        Self::try_recv(self).map_napi_err()
+      fn into_js(self) -> Self::Into {
+        self.into()
       }
     }
   )*};
 }
-impl_receiver!(FifoChannelHandler, RingChannelHandler,);
+into_js! {
+  zenoh::sample::Sample => crate::sample::Sample,
+  zenoh::query::Reply => crate::query::Reply,
+  zenoh::query::Query => crate::query::Query,
+  zenoh::scouting::Hello => crate::scout::Hello,
+  zenoh::matching::MatchingStatus => crate::matching::MatchingStatus,
+  zenoh_ext::Miss => crate::miss::Miss,
+  zenoh::session::TransportEvent => crate::session::TransportEvent,
+  zenoh::session::LinkEvent => crate::session::LinkEvent,
+}
+
+/// A received payload, type-erased, carrying its own deferred wrapper conversion.
+/// napi invokes `ToNapiValue` on the JS thread — at promise resolution for async
+/// returns, immediately for sync returns — so no `Env` is needed anywhere upstream.
+/// Appears as `DeferredJs` in the generated d.ts (declared `unknown` via dts header);
+/// payload typing lives in the handwritten TS facade.
+pub struct DeferredJs(Box<dyn FnOnce(sys::napi_env) -> Result<sys::napi_value> + Send>);
+
+impl DeferredJs {
+  fn new<T: IntoJs>(value: T) -> Self {
+    Self(Box::new(move |env| unsafe {
+      <T::Into as ToNapiValue>::to_napi_value(env, value.into_js())
+    }))
+  }
+}
+
+impl ToNapiValue for DeferredJs {
+  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+    (val.0)(env)
+  }
+}
+
+#[async_trait]
+pub(crate) trait Receiver: Send + Sync {
+  async fn recv(&self) -> napi::Result<DeferredJs>;
+  fn try_recv(&self) -> napi::Result<Option<DeferredJs>>;
+}
+
+macro_rules! impl_receiver {
+  ($($handler:ident),* $(,)?) => {$(
+    #[async_trait]
+    impl<T: IntoJs> Receiver for zhandlers::$handler<T> {
+      async fn recv(&self) -> napi::Result<DeferredJs> {
+        Ok(DeferredJs::new(self.recv_async().await.map_napi_err()?))
+      }
+
+      fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+        Ok(Self::try_recv(self).map_napi_err()?.map(DeferredJs::new))
+      }
+    }
+  )*};
+}
+impl_receiver!(FifoChannelHandler, RingChannelHandler);
+
+#[derive(Clone)]
+#[napi]
+pub struct Handler(Arc<dyn Receiver>);
+
+#[napi]
+impl Handler {
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> Stream {
+    Stream(self.clone())
+  }
+}
+
+#[napi(async_iterator)]
+pub struct Stream(Handler);
+
+#[napi]
+impl AsyncGenerator for Stream {
+  type Yield = DeferredJs;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<()>,
+  ) -> impl std::future::Future<Output = napi::Result<Option<DeferredJs>>> + Send + 'static {
+    let handler = self.0.clone();
+    async move { Ok(handler.recv().await.ok()) }
+  }
+}
+
+pub struct HandlerImpl<T>(Handler, PhantomData<T>);
+
+impl<T> Clone for HandlerImpl<T> {
+  fn clone(&self) -> Self {
+    Self(self.0.clone(), PhantomData)
+  }
+}
+
+impl<T> HandlerImpl<T> {
+  pub(crate) async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.recv().await
+  }
+
+  pub(crate) fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.try_recv()
+  }
+
+  pub(crate) fn stream(&self) -> Stream {
+    self.0.stream()
+  }
+
+  pub(crate) fn share(&self) -> Handler {
+    self.0.clone()
+  }
+}
+
+impl<T> From<HandlerImpl<T>> for Handler {
+  fn from(value: HandlerImpl<T>) -> Self {
+    value.0
+  }
+}
 
 fn erased<C, T>(channel: C) -> (zhandlers::Callback<T>, HandlerImpl<T>)
 where
   C: IntoHandler<T>,
-  C::Handler: Receiver<T> + 'static,
+  C::Handler: Receiver + 'static,
 {
   let (callback, handler) = channel.into_handler();
-  (callback, HandlerImpl(Arc::new(handler)))
+  (
+    callback,
+    HandlerImpl(Handler(Arc::new(handler)), PhantomData),
+  )
 }
 
 /// Owned, `Send`, `Env`-free channel resolved during argument conversion.
@@ -133,7 +220,7 @@ where
 /// run as a plain `async fn` without `spawn_future`.
 pub struct ChannelHandler<T>(zhandlers::Callback<T>, HandlerImpl<T>);
 
-impl<T: Send + 'static> FromNapiValue for ChannelHandler<T> {
+impl<T: IntoJs> FromNapiValue for ChannelHandler<T> {
   unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> napi::Result<Self> {
     let obj = unsafe { Unknown::from_napi_value(env, napi_val)? };
     let (callback, handler) = match Either::<
@@ -150,7 +237,7 @@ impl<T: Send + 'static> FromNapiValue for ChannelHandler<T> {
   }
 }
 
-pub(crate) fn into_handler<T: Send + 'static>(
+pub(crate) fn into_handler<T: IntoJs>(
   handler: Option<ChannelHandler<T>>,
 ) -> impl IntoHandler<T, Handler = HandlerImpl<T>> {
   match handler {
