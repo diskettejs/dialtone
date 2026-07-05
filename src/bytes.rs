@@ -37,7 +37,7 @@ impl AsRef<zbytes::ZBytes> for Bytes {
 
 #[napi]
 impl Bytes {
-  #[napi]
+  #[napi(constructor)]
   pub fn new() -> Self {
     Self {
       inner: zbytes::ZBytes::new(),
