@@ -33,6 +33,12 @@ declare module './binding.js' {
   interface Queryable {
     [Symbol.dispose](): void
   }
+  interface LinkEventsListener {
+    [Symbol.dispose](): void
+  }
+  interface TransportEventsListener {
+    [Symbol.dispose](): void
+  }
 }
 
 /**

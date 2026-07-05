@@ -1,5 +1,6 @@
 import {
   Config,
+  LinkEventsListener,
   LivelinessSubscriber,
   LivelinessToken,
   MatchingListener,
@@ -10,6 +11,7 @@ import {
   Scout,
   Session,
   Subscriber,
+  TransportEventsListener,
 } from './binding.js'
 
 Session.prototype[Symbol.asyncDispose] = async function () {
@@ -50,6 +52,14 @@ Queryable.prototype[Symbol.dispose] = function () {
 
 Scout.prototype[Symbol.dispose] = function () {
   return this.stop()
+}
+
+LinkEventsListener.prototype[Symbol.dispose] = function () {
+  return this.undeclare()
+}
+
+TransportEventsListener.prototype[Symbol.dispose] = function () {
+  return this.undeclare()
 }
 
 export function defineConfig(config = {}) {
