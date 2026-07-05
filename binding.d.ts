@@ -10,10 +10,10 @@ export declare class Bytes {
   /**
    * Decodes the payload as a UTF-8 string.
    *
-   * @throws If the payload contains non-UTF-8 bytes. Zenoh does not guarantee
-   * UTF-8, so this can fail; use {@link Bytes.toBytes} for arbitrary bytes.
+   * @returns The decoded string, or `null` if the payload contains non-UTF-8
+   * bytes. use {@link Bytes.toBytes} for arbitrary bytes.
    */
-  tryToString(): string
+  tryToString(): string | null
 }
 
 export declare class CancellationToken {

@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { Session } from '../index.js'
-import { bytesToString, commonOptions, configFromArgs } from './common.ts'
+import { commonOptions, configFromArgs } from './common.ts'
 
 async function main() {
   const { values } = parseArgs({
@@ -29,7 +29,7 @@ async function main() {
     } else {
       // Refer to z_bytes.ts to see how to deserialize different types of message.
       console.log(
-        `>> [Queryable] Received Query '${selector}' with payload '${bytesToString(payload)}'`,
+        `>> [Queryable] Received Query '${selector}' with payload '${payload.tryToString() ?? ''}'`,
       )
     }
 

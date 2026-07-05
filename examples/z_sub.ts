@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { Session } from '../index.js'
-import { bytesToString, commonOptions, configFromArgs } from './common.ts'
+import { commonOptions, configFromArgs } from './common.ts'
 
 async function main() {
   const { values } = parseArgs({
@@ -18,15 +18,15 @@ async function main() {
 
   console.log('Press CTRL-C to quit...')
   for await (const sample of subscriber.stream()) {
-    let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
-    if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`
+    let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload.tryToString() ?? ''}')`
+    if (sample.attachment) line += ` (${sample.attachment.tryToString() ?? ''})`
     console.log(line)
   }
   // while (true) {
   //   const sample = await subscriber.recv()
   //   // Refer to z_bytes.ts to see how to deserialize different types of message.
-  //   let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${bytesToString(sample.payload)}')`
-  //   if (sample.attachment) line += ` (${bytesToString(sample.attachment)})`
+  //   let line = `>> [Subscriber] Received ${sample.kind} ('${sample.keyExpr}': '${sample.payload.tryToString() ?? ''}')`
+  //   if (sample.attachment) line += ` (${sample.attachment.tryToString() ?? ''})`
   //   console.log(line)
   // }
 }

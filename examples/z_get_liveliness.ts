@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util'
 import { Session } from '../index.js'
-import { bytesToString, commonOptions, configFromArgs } from './common.ts'
+import { commonOptions, configFromArgs } from './common.ts'
 
 async function main() {
   const { values } = parseArgs({
@@ -21,7 +21,7 @@ async function main() {
   for await (const reply of replies.stream()) {
     const { result } = reply
     if (result.error) {
-      console.log(`>> Received (ERROR: '${bytesToString(result.error.payload)}')`)
+      console.log(`>> Received (ERROR: '${result.error.payload.tryToString() ?? ''}')`)
     } else {
       console.log(`>> Alive token ('${result.sample.keyExpr}')`)
     }

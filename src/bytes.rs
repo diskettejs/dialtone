@@ -71,15 +71,11 @@ impl Bytes {
 
   /// Decodes the payload as a UTF-8 string.
   ///
-  /// @throws If the payload contains non-UTF-8 bytes. Zenoh does not guarantee
-  /// UTF-8, so this can fail; use {@link Bytes.toBytes} for arbitrary bytes.
+  /// @returns The decoded string, or `null` if the payload contains non-UTF-8
+  /// bytes. use {@link Bytes.toBytes} for arbitrary bytes.
   #[napi]
-  pub fn try_to_string(&self) -> napi::Result<String> {
-    self
-      .inner
-      .try_to_string()
-      .map(|s| s.into_owned())
-      .map_napi_err()
+  pub fn try_to_string(&self) -> Option<String> {
+    self.inner.try_to_string().ok().map(|s| s.into_owned())
   }
 }
 
