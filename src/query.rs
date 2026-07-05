@@ -26,7 +26,7 @@ impl Query {
 
   #[napi(getter)]
   pub fn payload(&self) -> napi::Result<Option<Bytes>> {
-    Ok(self.get_ref()?.payload().cloned().map(Bytes::from))
+    Ok(self.get_ref()?.payload().cloned().map(Into::into))
   }
 
   #[napi(getter)]
@@ -36,12 +36,12 @@ impl Query {
 
   #[napi(getter)]
   pub fn attachment(&self) -> napi::Result<Option<Bytes>> {
-    Ok(self.get_ref()?.attachment().cloned().map(Bytes::from))
+    Ok(self.get_ref()?.attachment().cloned().map(Into::into))
   }
 
   #[napi(getter)]
   pub fn source_info(&self) -> napi::Result<Option<SourceInfo>> {
-    Ok(self.get_ref()?.source_info().cloned().map(SourceInfo::from))
+    Ok(self.get_ref()?.source_info().cloned().map(Into::into))
   }
 
   #[napi(getter)]

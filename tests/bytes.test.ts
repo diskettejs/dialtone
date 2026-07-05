@@ -5,31 +5,29 @@ import { Bytes } from '../index.js'
 const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
 
 describe('Bytes', () => {
-  describe('fromString()', () => {
-    test('round-trips through tryToString', () => {
-      expect(Bytes.fromString('hello').tryToString()).toBe('hello')
-      expect(Bytes.fromString('héllo 🌍').tryToString()).toBe('héllo 🌍')
+  describe('from()', () => {
+    test('accepts a string and round-trips through tryToString', () => {
+      expect(Bytes.from('hello').tryToString()).toBe('hello')
+      expect(Bytes.from('héllo 🌍').tryToString()).toBe('héllo 🌍')
     })
 
-    test('stores the UTF-8 encoding, readable via toBytes', () => {
-      expect(Bytes.fromString('héllo 🌍').toBytes()).toEqual(utf8('héllo 🌍'))
+    test('stores a string as its UTF-8 encoding, readable via toBytes', () => {
+      expect(Bytes.from('héllo 🌍').toBytes()).toEqual(utf8('héllo 🌍'))
     })
-  })
 
-  describe('fromBytes()', () => {
-    test('round-trips arbitrary bytes through toBytes', () => {
+    test('accepts raw bytes and round-trips them through toBytes', () => {
       const raw = new Uint8Array([0, 1, 2, 254, 255])
-      expect(Bytes.fromBytes(raw).toBytes()).toEqual(raw)
+      expect(Bytes.from(raw).toBytes()).toEqual(raw)
     })
 
-    test('decodes valid UTF-8 via tryToString', () => {
-      expect(Bytes.fromBytes(utf8('héllo 🌍')).tryToString()).toBe('héllo 🌍')
+    test('decodes valid UTF-8 bytes via tryToString', () => {
+      expect(Bytes.from(utf8('héllo 🌍')).tryToString()).toBe('héllo 🌍')
     })
   })
 
   describe('toBytes()', () => {
     test('is non-consuming — repeatable', () => {
-      const bytes = Bytes.fromBytes(new Uint8Array([1, 2, 3]))
+      const bytes = Bytes.from(new Uint8Array([1, 2, 3]))
       expect(bytes.toBytes()).toEqual(new Uint8Array([1, 2, 3]))
       expect(bytes.toBytes()).toEqual(new Uint8Array([1, 2, 3]))
     })
@@ -37,30 +35,30 @@ describe('Bytes', () => {
 
   describe('tryToString()', () => {
     test('returns null for a lone 0xFF (invalid UTF-8)', () => {
-      expect(Bytes.fromBytes(new Uint8Array([0xff])).tryToString()).toBeNull()
+      expect(Bytes.from(new Uint8Array([0xff])).tryToString()).toBeNull()
     })
 
     test('returns null for a valid prefix followed by a bare continuation byte', () => {
       // "hi" then 0x80, a continuation byte with no leading byte
-      expect(Bytes.fromBytes(new Uint8Array([0x68, 0x69, 0x80])).tryToString()).toBeNull()
+      expect(Bytes.from(new Uint8Array([0x68, 0x69, 0x80])).tryToString()).toBeNull()
     })
 
     test('never throws regardless of contents', () => {
-      expect(() => Bytes.fromBytes(new Uint8Array([0xff, 0xfe, 0xfd])).tryToString()).not.toThrow()
+      expect(() => Bytes.from(new Uint8Array([0xff, 0xfe, 0xfd])).tryToString()).not.toThrow()
     })
 
     test('decodes an empty payload to the empty string', () => {
       expect(new Bytes().tryToString()).toBe('')
-      expect(Bytes.fromString('').tryToString()).toBe('')
-      expect(Bytes.fromBytes(new Uint8Array([])).tryToString()).toBe('')
+      expect(Bytes.from('').tryToString()).toBe('')
+      expect(Bytes.from(new Uint8Array([])).tryToString()).toBe('')
     })
   })
 
   describe('len', () => {
     test('reports byte length, not code-point count', () => {
-      expect(Bytes.fromString('abc').len).toBe(3)
-      expect(Bytes.fromString('é').len).toBe(2) // one code point, two UTF-8 bytes
-      expect(Bytes.fromString('🌍').len).toBe(4) // one code point, four UTF-8 bytes
+      expect(Bytes.from('abc').len).toBe(3)
+      expect(Bytes.from('é').len).toBe(2) // one code point, two UTF-8 bytes
+      expect(Bytes.from('🌍').len).toBe(4) // one code point, four UTF-8 bytes
     })
   })
 
@@ -73,8 +71,8 @@ describe('Bytes', () => {
     })
 
     test('is false for non-empty payloads', () => {
-      expect(Bytes.fromString('x').isEmpty).toBe(false)
-      expect(Bytes.fromBytes(new Uint8Array([0])).isEmpty).toBe(false)
+      expect(Bytes.from('x').isEmpty).toBe(false)
+      expect(Bytes.from(new Uint8Array([0])).isEmpty).toBe(false)
     })
   })
 })

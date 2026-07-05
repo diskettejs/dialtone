@@ -31,7 +31,7 @@ impl Sample {
 
   #[napi(getter)]
   pub fn timestamp(&self) -> Option<Timestamp> {
-    self.inner.timestamp().cloned().map(Timestamp::from)
+    self.inner.timestamp().cloned().map(Into::into)
   }
 
   #[napi(getter)]
@@ -56,12 +56,12 @@ impl Sample {
 
   #[napi(getter)]
   pub fn attachment(&self) -> Option<Bytes> {
-    self.inner.attachment().cloned().map(Bytes::from)
+    self.inner.attachment().cloned().map(Into::into)
   }
 
   #[napi(getter)]
   pub fn source_info(&self) -> Option<SourceInfo> {
-    self.inner.source_info().cloned().map(SourceInfo::from)
+    self.inner.source_info().cloned().map(Into::into)
   }
 }
 

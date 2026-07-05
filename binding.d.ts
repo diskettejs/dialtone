@@ -2,8 +2,7 @@
 /* eslint-disable */
 export declare class Bytes {
   constructor()
-  static fromBytes(data: Uint8Array): Bytes
-  static fromString(value: string): Bytes
+  static from(value: Payload): Bytes
   get isEmpty(): boolean
   get len(): number
   toBytes(): Uint8Array

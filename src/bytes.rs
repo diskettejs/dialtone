@@ -45,13 +45,8 @@ impl Bytes {
   }
 
   #[napi(factory)]
-  pub fn from_bytes(data: Uint8Array) -> Self {
-    zbytes::ZBytes::from(data.to_vec()).into()
-  }
-
-  #[napi(factory)]
-  pub fn from_string(value: String) -> Self {
-    zbytes::ZBytes::from(value).into()
+  pub fn from(value: Payload) -> Self {
+    value.into_zbytes().into()
   }
 
   #[napi(getter)]
