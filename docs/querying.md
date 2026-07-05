@@ -354,4 +354,3 @@ for await (const reply of replies.stream()) {
   `Bytes`, `Encoding`, and `zd`.
 - [Lifecycle & Cleanup](./lifecycle.md) — finalizing queries with `drop()`, and releasing
   queryables and queriers.
-</content>

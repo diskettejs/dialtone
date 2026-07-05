@@ -232,4 +232,3 @@ console.log('encoding:', sample.encoding.toString())
 - [Querying Guide](./querying.md) — query/reply payloads and attachments.
 - [Configuration & Sessions](./configuration.md) — building configs and sessions.
 - [Lifecycle & Cleanup](./lifecycle.md) — releasing the entities these payloads flow through.
-</content>

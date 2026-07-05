@@ -340,4 +340,3 @@ console.log(`ring kept ${kept}, last: ${last}`)
 - [Configuration & Sessions](./configuration.md) — modes, endpoints, scouting, and enabling `timestamping`.
 - [Serialization & Payloads](./serialization.md) — `Bytes`, `Encoding`, and the `zd` schema system.
 - [Lifecycle & Cleanup](./lifecycle.md) — releasing entities with `using` / `await using` or by hand.
-</content>

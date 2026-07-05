@@ -229,4 +229,3 @@ console.log('mode:', session.config().get('mode')) // "peer"
 - [Querying Guide](./querying.md) — `get`, queryables, and queriers.
 - [Serialization & Payloads](./serialization.md) — `Bytes`, `Encoding`, and the `zd` schema system.
 - [Lifecycle & Cleanup](./lifecycle.md) — opening, closing, and owning sessions and entities.
-</content>

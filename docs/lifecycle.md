@@ -236,5 +236,3 @@ See the [Querying Guide](./querying.md) for the full request/response model.
 - [Publish & Subscribe Guide](./pub-sub.md) — publishers, subscribers, and listeners.
 - [Querying Guide](./querying.md) — queryables, queriers, and `query.drop()`.
 - [Configuration & Sessions](./configuration.md) — opening and closing sessions.
-</content>
-</invoke>

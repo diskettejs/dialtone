@@ -214,5 +214,3 @@ function boundaries, and disposal ordering in depth.
   option when declaring a subscriber.
 - Observe matching subscribers with `publisher.matchingStatus()` /
   `publisher.matchingListener()`.
-  </content>
-  </invoke>

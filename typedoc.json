@@ -1,0 +1,14 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["index.d.ts"],
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "out": "docs/api",
+  "docsRoot": "docs",
+  "readme": "none",
+  "githubPages": false,
+  "excludeExternals": true,
+  "hideGenerator": true,
+  "sort": ["source-order"],
+  "outputFileStrategy": "members",
+  "membersWithOwnFile": ["Class", "Interface", "Enum", "TypeAlias", "Function", "Variable"]
+}
