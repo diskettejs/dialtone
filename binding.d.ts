@@ -746,34 +746,3 @@ export interface TransportEventsListenerOptions {
 export type WhatAmI =  'Router'|
 'Peer'|
 'Client';
-
-export declare namespace zd {
-  /**
-   * An immutable schema value: build once with the `zd.*` builders, then call
-   * `serialize`/`deserialize` as many times as needed. No lifecycle.
-   */
-  export class Schema {
-    serialize(data: unknown): Bytes
-    deserialize(bytes: Bytes): unknown
-  }
-  export function array(item: zd.Schema): zd.Schema
-  export function bool(): zd.Schema
-  export function bytes(): zd.Schema
-  export function deserialize(schema: zd.Schema, bytes: Bytes): unknown
-  export function f32(): zd.Schema
-  export function f64(): zd.Schema
-  export function i16(): zd.Schema
-  export function i32(): zd.Schema
-  export function i64(): zd.Schema
-  export function i8(): zd.Schema
-  export function map(key: zd.Schema, value: zd.Schema): zd.Schema
-  export function object(fields: object): zd.Schema
-  export function serialize(schema: zd.Schema, data: unknown): Bytes
-  export function set(item: zd.Schema): zd.Schema
-  export function string(): zd.Schema
-  export function tuple(items: Array<zd.Schema>): zd.Schema
-  export function u16(): zd.Schema
-  export function u32(): zd.Schema
-  export function u64(): zd.Schema
-  export function u8(): zd.Schema
-}

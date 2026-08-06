@@ -110,53 +110,6 @@ export interface Stream<T> extends binding.Stream {
   [Symbol.asyncIterator](): AsyncGenerator<T, void, undefined>
 }
 
-/**
- * A native {@link binding.zd.Schema} that carries its decoded type `T` at
- * compile time. `T` is erased at runtime — every `zd.*()` builder returns the
- * same monomorphic native `Schema`; this interface only narrows
- * `serialize`/`deserialize` for inference.
- */
-export interface ZSchema<T> extends binding.zd.Schema {
-  serialize(data: T): binding.Bytes
-  deserialize(bytes: binding.Bytes): T
-}
-
-/**
- * Schema builders and the free `serialize`/`deserialize` functions. A generic
- * facade over the native `zd` namespace, which napi-rs generates
- * non-generically; the runtime object is re-exported unchanged from
- * `./binding.js`.
- *
- * @example
- * const point = zd.object({ x: zd.f64(), y: zd.f64() })
- * const bytes = point.serialize({ x: 1.5, y: -2 })
- * const value = point.deserialize(bytes) // { x: number, y: number }
- */
-export declare const zd: {
-  bool(): ZSchema<boolean>
-  string(): ZSchema<string>
-  bytes(): ZSchema<Uint8Array>
-  i8(): ZSchema<number>
-  i16(): ZSchema<number>
-  i32(): ZSchema<number>
-  u8(): ZSchema<number>
-  u16(): ZSchema<number>
-  u32(): ZSchema<number>
-  i64(): ZSchema<bigint>
-  u64(): ZSchema<bigint>
-  f32(): ZSchema<number>
-  f64(): ZSchema<number>
-  array<T>(item: ZSchema<T>): ZSchema<T[]>
-  set<T>(item: ZSchema<T>): ZSchema<Set<T>>
-  map<K, V>(key: ZSchema<K>, value: ZSchema<V>): ZSchema<Map<K, V>>
-  tuple<T extends unknown[]>(items: { [K in keyof T]: ZSchema<T[K]> }): ZSchema<T>
-  object<T extends Record<string, unknown>>(fields: {
-    [K in keyof T]: ZSchema<T[K]>
-  }): ZSchema<T>
-  serialize<T>(schema: ZSchema<T>, data: T): binding.Bytes
-  deserialize<T>(schema: ZSchema<T>, bytes: binding.Bytes): T
-}
-
 /** Node operating mode. Maps to Zenoh's `mode` key. */
 export type WhatAmI = 'router' | 'peer' | 'client'
 

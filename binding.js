@@ -703,7 +703,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Handler, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Stream, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI, zd } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Handler, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Stream, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -761,4 +761,3 @@ export { Reliability }
 export { ReplyKeyExpr }
 export { SampleKind }
 export { WhatAmI }
-export { zd }

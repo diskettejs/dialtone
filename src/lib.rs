@@ -14,7 +14,6 @@ mod qos;
 mod query;
 mod sample;
 mod scout;
-mod serialization;
 mod session;
 mod time;
 mod utils;
