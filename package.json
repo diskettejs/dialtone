@@ -36,11 +36,11 @@
     "fmt:rs": "cargo fmt"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.7.2",
-    "@types/node": "^26.0.1",
-    "oxfmt": "^0.56.0",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "@napi-rs/cli": "^3.8.2",
+    "@types/node": "^26.1.2",
+    "oxfmt": "^0.62.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "napi": {
     "binaryName": "dialtone",
