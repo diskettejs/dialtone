@@ -19,6 +19,35 @@ pub(crate) trait IntoZenoh: 'static {
   fn into_zenoh(self) -> Self::Into;
 }
 
+/// Holds a Zenoh entity that can be undeclared, dropped or stopped exactly once.
+///
+/// `get` borrows the entity and `take` consumes it; both fail once the entity is gone.
+pub struct Declared<T>(Option<T>);
+
+impl<T> From<T> for Declared<T> {
+  fn from(value: T) -> Self {
+    Self(Some(value))
+  }
+}
+
+impl<T> Declared<T> {
+  pub fn get(&self) -> Result<&T> {
+    self.0.as_ref().ok_or_else(Self::gone)
+  }
+
+  pub fn take(&mut self) -> Result<T> {
+    self.0.take().ok_or_else(Self::gone)
+  }
+
+  fn gone() -> napi::Error {
+    let name = std::any::type_name::<T>();
+    let name = name.split('<').next().unwrap_or(name);
+    let name = name.rsplit("::").next().unwrap_or(name);
+
+    napi::Error::from_reason(format!("{name} is no longer available"))
+  }
+}
+
 /// Owned, `Send` replacement for `ClassInstance<'a, N>` in options structs.
 ///
 /// `ClassInstance<'env, N>` borrows the JS object: it carries the `'env` lifetime and is
@@ -64,3 +93,23 @@ impl<N: Clone + 'static> AsRef<N> for Instance<N> {
     &self.inner
   }
 }
+
+/// Applies optional builder setters in one shot (ported from zenoh-python's `build!`).
+/// Each `$value` is an `Option<T: IntoZenoh>` local whose name matches the builder setter;
+/// present values are converted via `IntoZenoh` and applied, `None`s are skipped, and the
+/// finished builder is returned. Conversions run synchronously as the builder is assembled,
+/// so calling `build!(..).await` consumes every input before the first await point.
+///
+/// build!(session.put(expr, payload), encoding, priority, timestamp);
+macro_rules! build {
+    ($builder:expr $(, $value:ident)* $(,)?) => {{
+        let mut builder = $builder;
+        $(
+            if let Some(value) = $value.map($crate::utils::IntoZenoh::into_zenoh) {
+                builder = builder.$value(value);
+            }
+        )*
+        builder
+    }};
+}
+pub(crate) use build;

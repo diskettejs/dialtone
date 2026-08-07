@@ -1,38 +1,41 @@
+use derive_more::From;
 use napi_derive::napi;
-use zenoh::{Wait, sample as zsample};
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, macros::*, matching::*, miss::*,
-  options::*, qos::*, utils::*,
+  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, matching::*, miss::*, options::*,
+  qos::*, utils::*,
 };
 
-option_wrapper!(zenoh_ext::AdvancedPublisher<'static> as Publisher, "Undeclared publisher");
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Publisher(Declared<zenoh_ext::AdvancedPublisher<'static>>);
 
 #[napi]
 impl Publisher {
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
   pub fn id(&self) -> napi::Result<EntityGlobalId> {
-    Ok(self.get_ref()?.id().into())
+    Ok(self.0.get()?.id().into())
   }
 
   #[napi(getter)]
   pub fn encoding(&self) -> napi::Result<Encoding> {
-    Ok(self.get_ref()?.encoding().clone().into())
+    Ok(self.0.get()?.encoding().clone().into())
   }
 
   #[napi(getter)]
   pub fn congestion_control(&self) -> napi::Result<CongestionControl> {
-    Ok(self.get_ref()?.congestion_control().into())
+    Ok(self.0.get()?.congestion_control().into())
   }
 
   #[napi(getter)]
   pub fn priority(&self) -> napi::Result<Priority> {
-    Ok(self.get_ref()?.priority().into())
+    Ok(self.0.get()?.priority().into())
   }
 
   #[napi]
@@ -47,7 +50,7 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let publisher = self.get_ref()?;
+    let publisher = self.0.get()?;
 
     build!(publisher.put(payload), encoding, timestamp, attachment)
       .await
@@ -60,7 +63,7 @@ impl Publisher {
       timestamp,
       attachment,
     } = options.unwrap_or_default();
-    let publisher = self.get_ref()?;
+    let publisher = self.0.get()?;
 
     build!(publisher.delete(), timestamp, attachment)
       .await
@@ -69,7 +72,7 @@ impl Publisher {
 
   #[napi]
   pub async fn matching_status(&self) -> napi::Result<MatchingStatus> {
-    let m = self.get_ref()?.matching_status().await.map_napi_err()?;
+    let m = self.0.get()?.matching_status().await.map_napi_err()?;
     Ok(m.into())
   }
 
@@ -82,7 +85,8 @@ impl Publisher {
     let handler = into_handler(channel);
 
     let listener = self
-      .get_ref()?
+      .0
+      .get()?
       .matching_listener()
       .with(handler)
       .await
@@ -93,25 +97,25 @@ impl Publisher {
 
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    zenoh::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
   }
 }
 
-option_wrapper!(
-  zenoh_ext::AdvancedSubscriber<HandlerImpl<zsample::Sample>> as Subscriber,
-  "Undeclared subscriber"
-);
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Subscriber(Declared<zenoh_ext::AdvancedSubscriber<HandlerImpl<zenoh::sample::Sample>>>);
 
 #[napi]
 impl Subscriber {
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
   pub fn id(&self) -> napi::Result<EntityGlobalId> {
-    Ok(self.get_ref()?.id().into())
+    Ok(self.0.get()?.id().into())
   }
 
   #[napi]
@@ -123,7 +127,8 @@ impl Subscriber {
     let handler = into_handler(channel);
 
     let sample_listener = self
-      .get_ref()?
+      .0
+      .get()?
       .sample_miss_listener()
       .with(handler)
       .await
@@ -140,7 +145,7 @@ impl Subscriber {
     let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
 
-    let subscriber = build!(self.get_ref()?.detect_publishers().with(handler), history)
+    let subscriber = build!(self.0.get()?.detect_publishers().with(handler), history)
       .await
       .map_napi_err()?;
 
@@ -149,8 +154,26 @@ impl Subscriber {
 
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    zenoh::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
-
-recv_handler!(Subscriber => Sample);

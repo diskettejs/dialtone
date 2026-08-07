@@ -1,34 +1,56 @@
+use derive_more::From;
 use napi_derive::napi;
-use zenoh::Wait;
 
-use crate::{config::*, handlers::HandlerImpl, macros::*, utils::*};
+use crate::{config::*, handlers::*, utils::*};
 
-wrapper!(zenoh_ext::Miss);
+#[derive(From)]
+#[napi]
+pub struct Miss(zenoh_ext::Miss);
 
 #[napi]
 impl Miss {
   #[napi(getter)]
   pub fn source(&self) -> EntityGlobalId {
-    self.inner.source().into()
+    self.0.source().into()
   }
 
   #[napi(getter)]
   pub fn nb(&self) -> u32 {
-    self.inner.nb()
+    self.0.nb()
   }
 }
 
-option_wrapper!(
-  zenoh_ext::SampleMissListener<HandlerImpl<zenoh_ext::Miss>>,
-  "Undeclared sample miss listener"
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct SampleMissListener(
+  Declared<zenoh_ext::SampleMissListener<HandlerImpl<zenoh_ext::Miss>>>,
 );
 
 #[napi]
 impl SampleMissListener {
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    zenoh::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
-
-recv_handler!(SampleMissListener => Miss);

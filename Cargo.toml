@@ -22,6 +22,12 @@ async-trait = "0.1.89"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
+derive_more = { version = "2.1.1", default-features = false, features = [
+  "from",
+  "as_ref",
+  "into",
+] }
+
 [build-dependencies]
 napi-build = "2.4.0"
 

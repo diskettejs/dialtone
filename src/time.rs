@@ -1,37 +1,37 @@
+use derive_more::{From, Into};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::time as ztime;
 
-use crate::macros::wrapper;
-
-wrapper!(ztime::Timestamp: Clone);
+#[derive(Clone, From, Into)]
+#[napi]
+pub struct Timestamp(zenoh::time::Timestamp);
 
 #[napi]
 impl Timestamp {
   #[napi(factory)]
   pub fn parse_rfc3339(s: String) -> napi::Result<Self> {
-    ztime::Timestamp::parse_rfc3339(&s)
+    zenoh::time::Timestamp::parse_rfc3339(&s)
       .map(Self::from)
       .map_err(|e| napi::Error::from_reason(e.cause))
   }
 
   #[napi]
   pub fn to_string_rfc3339_lossy(&self) -> String {
-    self.inner.to_string_rfc3339_lossy()
+    self.0.to_string_rfc3339_lossy()
   }
 
   #[napi]
   pub fn get_time(&self) -> BigInt {
-    BigInt::from(self.inner.get_time().as_u64())
+    BigInt::from(self.0.get_time().as_u64())
   }
 
   #[napi]
   pub fn get_id(&self) -> String {
-    self.inner.get_id().to_string()
+    self.0.get_id().to_string()
   }
 
   #[napi]
   pub fn get_diff_duration(&self, other: &Timestamp) -> f64 {
-    self.inner.get_diff_duration(&other.inner).as_secs_f64() * 1000.0
+    self.0.get_diff_duration(&other.0).as_secs_f64() * 1000.0
   }
 }

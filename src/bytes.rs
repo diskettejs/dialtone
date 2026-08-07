@@ -1,21 +1,22 @@
+use derive_more::{AsRef, From, Into};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::bytes as zbytes;
+use zenoh as z;
 
-use crate::{macros::*, utils::*};
+use crate::utils::*;
 
 #[napi]
 pub type BytesLike = napi::Either<String, Uint8Array>;
 
 pub(crate) trait IntoZBytes {
-  fn into_zbytes(self) -> zbytes::ZBytes;
+  fn into_zbytes(self) -> z::bytes::ZBytes;
 }
 
 impl IntoZBytes for BytesLike {
-  fn into_zbytes(self) -> zbytes::ZBytes {
+  fn into_zbytes(self) -> z::bytes::ZBytes {
     match self {
-      napi::Either::A(s) => zbytes::ZBytes::from(s),
-      napi::Either::B(bytes) => zbytes::ZBytes::from(bytes.to_vec()),
+      napi::Either::A(s) => z::bytes::ZBytes::from(s),
+      napi::Either::B(bytes) => z::bytes::ZBytes::from(bytes.to_vec()),
     }
   }
 }
@@ -27,21 +28,15 @@ impl IntoZenoh for BytesLike {
   }
 }
 
-wrapper!(zbytes::ZBytes as Bytes);
-
-impl AsRef<zbytes::ZBytes> for Bytes {
-  fn as_ref(&self) -> &zbytes::ZBytes {
-    &self.inner
-  }
-}
+#[derive(AsRef, From, Into)]
+#[napi]
+pub struct Bytes(z::bytes::ZBytes);
 
 #[napi]
 impl Bytes {
   #[napi(constructor)]
   pub fn new() -> Self {
-    Self {
-      inner: zbytes::ZBytes::new(),
-    }
+    z::bytes::ZBytes::new().into()
   }
 
   #[napi(factory)]
@@ -51,17 +46,17 @@ impl Bytes {
 
   #[napi(getter)]
   pub fn is_empty(&self) -> bool {
-    self.inner.is_empty()
+    self.0.is_empty()
   }
 
   #[napi(getter)]
   pub fn len(&self) -> u32 {
-    self.inner.len() as u32
+    self.0.len() as u32
   }
 
   #[napi]
   pub fn to_bytes(&self) -> Uint8Array {
-    Uint8Array::from(self.inner.to_bytes().into_owned())
+    Uint8Array::from(self.0.to_bytes().into_owned())
   }
 
   /// Decodes the payload as a UTF-8 string.
@@ -70,291 +65,289 @@ impl Bytes {
   /// bytes. use {@link Bytes.toBytes} for arbitrary bytes.
   #[napi]
   pub fn try_to_string(&self) -> Option<String> {
-    self.inner.try_to_string().ok().map(|s| s.into_owned())
+    self.0.try_to_string().ok().map(|s| s.into_owned())
   }
 }
 
-wrapper!(zbytes::Encoding);
+#[derive(From, Into)]
+#[napi]
+pub struct Encoding(z::bytes::Encoding);
 
 #[napi]
 impl Encoding {
   #[napi(factory)]
   pub fn default() -> Self {
-    Encoding {
-      inner: zbytes::Encoding::default(),
-    }
+    z::bytes::Encoding::default().into()
   }
 
   #[napi(factory)]
   pub fn from(value: String) -> Self {
-    Encoding {
-      inner: zbytes::Encoding::from(value),
-    }
+    z::bytes::Encoding::from(value).into()
   }
 
   #[napi(factory)]
   pub fn zenoh_bytes() -> Self {
-    zbytes::Encoding::ZENOH_BYTES.into()
+    z::bytes::Encoding::ZENOH_BYTES.into()
   }
 
   #[napi(factory)]
   pub fn zenoh_string() -> Self {
-    zbytes::Encoding::ZENOH_STRING.into()
+    z::bytes::Encoding::ZENOH_STRING.into()
   }
 
   #[napi(factory)]
   pub fn zenoh_serialized() -> Self {
-    zbytes::Encoding::ZENOH_SERIALIZED.into()
+    z::bytes::Encoding::ZENOH_SERIALIZED.into()
   }
 
   #[napi(factory)]
   pub fn application_octet_stream() -> Self {
-    zbytes::Encoding::APPLICATION_OCTET_STREAM.into()
+    z::bytes::Encoding::APPLICATION_OCTET_STREAM.into()
   }
 
   #[napi(factory)]
   pub fn text_plain() -> Self {
-    zbytes::Encoding::TEXT_PLAIN.into()
+    z::bytes::Encoding::TEXT_PLAIN.into()
   }
 
   #[napi(factory)]
   pub fn application_json() -> Self {
-    zbytes::Encoding::APPLICATION_JSON.into()
+    z::bytes::Encoding::APPLICATION_JSON.into()
   }
 
   #[napi(factory)]
   pub fn text_json() -> Self {
-    zbytes::Encoding::TEXT_JSON.into()
+    z::bytes::Encoding::TEXT_JSON.into()
   }
 
   #[napi(factory)]
   pub fn application_cdr() -> Self {
-    zbytes::Encoding::APPLICATION_CDR.into()
+    z::bytes::Encoding::APPLICATION_CDR.into()
   }
 
   #[napi(factory)]
   pub fn application_cbor() -> Self {
-    zbytes::Encoding::APPLICATION_CBOR.into()
+    z::bytes::Encoding::APPLICATION_CBOR.into()
   }
 
   #[napi(factory)]
   pub fn application_yaml() -> Self {
-    zbytes::Encoding::APPLICATION_YAML.into()
+    z::bytes::Encoding::APPLICATION_YAML.into()
   }
 
   #[napi(factory)]
   pub fn text_yaml() -> Self {
-    zbytes::Encoding::TEXT_YAML.into()
+    z::bytes::Encoding::TEXT_YAML.into()
   }
 
   #[napi(factory)]
   pub fn text_json5() -> Self {
-    zbytes::Encoding::TEXT_JSON5.into()
+    z::bytes::Encoding::TEXT_JSON5.into()
   }
 
   #[napi(factory)]
   pub fn application_python_serialized_object() -> Self {
-    zbytes::Encoding::APPLICATION_PYTHON_SERIALIZED_OBJECT.into()
+    z::bytes::Encoding::APPLICATION_PYTHON_SERIALIZED_OBJECT.into()
   }
 
   #[napi(factory)]
   pub fn application_protobuf() -> Self {
-    zbytes::Encoding::APPLICATION_PROTOBUF.into()
+    z::bytes::Encoding::APPLICATION_PROTOBUF.into()
   }
 
   #[napi(factory)]
   pub fn application_java_serialized_object() -> Self {
-    zbytes::Encoding::APPLICATION_JAVA_SERIALIZED_OBJECT.into()
+    z::bytes::Encoding::APPLICATION_JAVA_SERIALIZED_OBJECT.into()
   }
 
   #[napi(factory)]
   pub fn application_openmetrics_text() -> Self {
-    zbytes::Encoding::APPLICATION_OPENMETRICS_TEXT.into()
+    z::bytes::Encoding::APPLICATION_OPENMETRICS_TEXT.into()
   }
 
   #[napi(factory)]
   pub fn image_png() -> Self {
-    zbytes::Encoding::IMAGE_PNG.into()
+    z::bytes::Encoding::IMAGE_PNG.into()
   }
 
   #[napi(factory)]
   pub fn image_jpeg() -> Self {
-    zbytes::Encoding::IMAGE_JPEG.into()
+    z::bytes::Encoding::IMAGE_JPEG.into()
   }
 
   #[napi(factory)]
   pub fn image_gif() -> Self {
-    zbytes::Encoding::IMAGE_GIF.into()
+    z::bytes::Encoding::IMAGE_GIF.into()
   }
 
   #[napi(factory)]
   pub fn image_bmp() -> Self {
-    zbytes::Encoding::IMAGE_BMP.into()
+    z::bytes::Encoding::IMAGE_BMP.into()
   }
 
   #[napi(factory)]
   pub fn image_webp() -> Self {
-    zbytes::Encoding::IMAGE_WEBP.into()
+    z::bytes::Encoding::IMAGE_WEBP.into()
   }
 
   #[napi(factory)]
   pub fn application_xml() -> Self {
-    zbytes::Encoding::APPLICATION_XML.into()
+    z::bytes::Encoding::APPLICATION_XML.into()
   }
 
   #[napi(factory)]
   pub fn application_x_www_form_urlencoded() -> Self {
-    zbytes::Encoding::APPLICATION_X_WWW_FORM_URLENCODED.into()
+    z::bytes::Encoding::APPLICATION_X_WWW_FORM_URLENCODED.into()
   }
 
   #[napi(factory)]
   pub fn text_html() -> Self {
-    zbytes::Encoding::TEXT_HTML.into()
+    z::bytes::Encoding::TEXT_HTML.into()
   }
 
   #[napi(factory)]
   pub fn text_xml() -> Self {
-    zbytes::Encoding::TEXT_XML.into()
+    z::bytes::Encoding::TEXT_XML.into()
   }
 
   #[napi(factory)]
   pub fn text_css() -> Self {
-    zbytes::Encoding::TEXT_CSS.into()
+    z::bytes::Encoding::TEXT_CSS.into()
   }
 
   #[napi(factory)]
   pub fn text_javascript() -> Self {
-    zbytes::Encoding::TEXT_JAVASCRIPT.into()
+    z::bytes::Encoding::TEXT_JAVASCRIPT.into()
   }
 
   #[napi(factory)]
   pub fn text_markdown() -> Self {
-    zbytes::Encoding::TEXT_MARKDOWN.into()
+    z::bytes::Encoding::TEXT_MARKDOWN.into()
   }
 
   #[napi(factory)]
   pub fn text_csv() -> Self {
-    zbytes::Encoding::TEXT_CSV.into()
+    z::bytes::Encoding::TEXT_CSV.into()
   }
 
   #[napi(factory)]
   pub fn application_sql() -> Self {
-    zbytes::Encoding::APPLICATION_SQL.into()
+    z::bytes::Encoding::APPLICATION_SQL.into()
   }
 
   #[napi(factory)]
   pub fn application_coap_payload() -> Self {
-    zbytes::Encoding::APPLICATION_COAP_PAYLOAD.into()
+    z::bytes::Encoding::APPLICATION_COAP_PAYLOAD.into()
   }
 
   #[napi(factory)]
   pub fn application_json_patch_json() -> Self {
-    zbytes::Encoding::APPLICATION_JSON_PATCH_JSON.into()
+    z::bytes::Encoding::APPLICATION_JSON_PATCH_JSON.into()
   }
 
   #[napi(factory)]
   pub fn application_json_seq() -> Self {
-    zbytes::Encoding::APPLICATION_JSON_SEQ.into()
+    z::bytes::Encoding::APPLICATION_JSON_SEQ.into()
   }
 
   #[napi(factory)]
   pub fn application_jsonpath() -> Self {
-    zbytes::Encoding::APPLICATION_JSONPATH.into()
+    z::bytes::Encoding::APPLICATION_JSONPATH.into()
   }
 
   #[napi(factory)]
   pub fn application_jwt() -> Self {
-    zbytes::Encoding::APPLICATION_JWT.into()
+    z::bytes::Encoding::APPLICATION_JWT.into()
   }
 
   #[napi(factory)]
   pub fn application_mp4() -> Self {
-    zbytes::Encoding::APPLICATION_MP4.into()
+    z::bytes::Encoding::APPLICATION_MP4.into()
   }
 
   #[napi(factory)]
   pub fn application_soap_xml() -> Self {
-    zbytes::Encoding::APPLICATION_SOAP_XML.into()
+    z::bytes::Encoding::APPLICATION_SOAP_XML.into()
   }
 
   #[napi(factory)]
   pub fn application_yang() -> Self {
-    zbytes::Encoding::APPLICATION_YANG.into()
+    z::bytes::Encoding::APPLICATION_YANG.into()
   }
 
   #[napi(factory)]
   pub fn audio_aac() -> Self {
-    zbytes::Encoding::AUDIO_AAC.into()
+    z::bytes::Encoding::AUDIO_AAC.into()
   }
 
   #[napi(factory)]
   pub fn audio_flac() -> Self {
-    zbytes::Encoding::AUDIO_FLAC.into()
+    z::bytes::Encoding::AUDIO_FLAC.into()
   }
 
   #[napi(factory)]
   pub fn audio_mp4() -> Self {
-    zbytes::Encoding::AUDIO_MP4.into()
+    z::bytes::Encoding::AUDIO_MP4.into()
   }
 
   #[napi(factory)]
   pub fn audio_ogg() -> Self {
-    zbytes::Encoding::AUDIO_OGG.into()
+    z::bytes::Encoding::AUDIO_OGG.into()
   }
 
   #[napi(factory)]
   pub fn audio_vorbis() -> Self {
-    zbytes::Encoding::AUDIO_VORBIS.into()
+    z::bytes::Encoding::AUDIO_VORBIS.into()
   }
 
   #[napi(factory)]
   pub fn video_h261() -> Self {
-    zbytes::Encoding::VIDEO_H261.into()
+    z::bytes::Encoding::VIDEO_H261.into()
   }
 
   #[napi(factory)]
   pub fn video_h263() -> Self {
-    zbytes::Encoding::VIDEO_H263.into()
+    z::bytes::Encoding::VIDEO_H263.into()
   }
 
   #[napi(factory)]
   pub fn video_h264() -> Self {
-    zbytes::Encoding::VIDEO_H264.into()
+    z::bytes::Encoding::VIDEO_H264.into()
   }
 
   #[napi(factory)]
   pub fn video_h265() -> Self {
-    zbytes::Encoding::VIDEO_H265.into()
+    z::bytes::Encoding::VIDEO_H265.into()
   }
 
   #[napi(factory)]
   pub fn video_h266() -> Self {
-    zbytes::Encoding::VIDEO_H266.into()
+    z::bytes::Encoding::VIDEO_H266.into()
   }
 
   #[napi(factory)]
   pub fn video_mp4() -> Self {
-    zbytes::Encoding::VIDEO_MP4.into()
+    z::bytes::Encoding::VIDEO_MP4.into()
   }
 
   #[napi(factory)]
   pub fn video_ogg() -> Self {
-    zbytes::Encoding::VIDEO_OGG.into()
+    z::bytes::Encoding::VIDEO_OGG.into()
   }
 
   #[napi(factory)]
   pub fn video_raw() -> Self {
-    zbytes::Encoding::VIDEO_RAW.into()
+    z::bytes::Encoding::VIDEO_RAW.into()
   }
 
   #[napi(factory)]
   pub fn video_vp8() -> Self {
-    zbytes::Encoding::VIDEO_VP8.into()
+    z::bytes::Encoding::VIDEO_VP8.into()
   }
 
   #[napi(factory)]
   pub fn video_vp9() -> Self {
-    zbytes::Encoding::VIDEO_VP9.into()
+    z::bytes::Encoding::VIDEO_VP9.into()
   }
 
   // Exposed to JS as `toString()`; napi cannot surface a `Display` impl, so the
@@ -362,13 +355,13 @@ impl Encoding {
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.to_string()
+    self.0.to_string()
   }
 
   #[napi]
   pub fn with_schema(&self, value: String) -> Self {
-    Encoding {
-      inner: zbytes::Encoding::from(self.inner.to_string()).with_schema(value),
-    }
+    z::bytes::Encoding::from(self.0.to_string())
+      .with_schema(value)
+      .into()
   }
 }

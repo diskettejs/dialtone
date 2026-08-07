@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use napi::Unknown;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::handlers::{self as zhandlers, IntoHandler};
+use zenoh as z;
 
 use crate::utils::MapNapiErr;
 
@@ -24,11 +24,11 @@ impl FifoChannel {
   }
 }
 
-impl<T: Send + 'static> IntoHandler<T> for FifoChannel {
-  type Handler = zhandlers::FifoChannelHandler<T>;
+impl<T: Send + 'static> z::handlers::IntoHandler<T> for FifoChannel {
+  type Handler = z::handlers::FifoChannelHandler<T>;
 
-  fn into_handler(self) -> (zhandlers::Callback<T>, Self::Handler) {
-    zhandlers::FifoChannel::new(self.capacity).into_handler()
+  fn into_handler(self) -> (z::handlers::Callback<T>, Self::Handler) {
+    z::handlers::FifoChannel::new(self.capacity).into_handler()
   }
 }
 
@@ -48,11 +48,11 @@ impl RingChannel {
   }
 }
 
-impl<T: Send + 'static> IntoHandler<T> for RingChannel {
-  type Handler = zhandlers::RingChannelHandler<T>;
+impl<T: Send + 'static> z::handlers::IntoHandler<T> for RingChannel {
+  type Handler = z::handlers::RingChannelHandler<T>;
 
-  fn into_handler(self) -> (zhandlers::Callback<T>, Self::Handler) {
-    zhandlers::RingChannel::new(self.capacity).into_handler()
+  fn into_handler(self) -> (z::handlers::Callback<T>, Self::Handler) {
+    z::handlers::RingChannel::new(self.capacity).into_handler()
   }
 }
 
@@ -115,7 +115,7 @@ pub(crate) trait Receiver: Send + Sync {
 macro_rules! impl_receiver {
   ($($handler:ident),* $(,)?) => {$(
     #[async_trait]
-    impl<T: IntoJs> Receiver for zhandlers::$handler<T> {
+    impl<T: IntoJs> Receiver for z::handlers::$handler<T> {
       async fn recv(&self) -> napi::Result<DeferredJs> {
         Ok(DeferredJs::new(self.recv_async().await.map_napi_err()?))
       }
@@ -200,9 +200,9 @@ impl<T> From<HandlerImpl<T>> for Handler {
   }
 }
 
-fn erased<C, T>(channel: C) -> (zhandlers::Callback<T>, HandlerImpl<T>)
+fn erased<C, T>(channel: C) -> (z::handlers::Callback<T>, HandlerImpl<T>)
 where
-  C: IntoHandler<T>,
+  C: z::handlers::IntoHandler<T>,
   C::Handler: Receiver + 'static,
 {
   let (callback, handler) = channel.into_handler();
@@ -218,7 +218,7 @@ where
 /// channel (`FifoChannel`/`RingChannel`) and erases it into the `(Callback, HandlerImpl)` pair
 /// right there. Downstream holds only that pair — no `Env`, still `Send` — so a declaration can
 /// run as a plain `async fn` without `spawn_future`.
-pub struct ChannelHandler<T>(zhandlers::Callback<T>, HandlerImpl<T>);
+pub struct ChannelHandler<T>(z::handlers::Callback<T>, HandlerImpl<T>);
 
 impl<T: IntoJs> FromNapiValue for ChannelHandler<T> {
   unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> napi::Result<Self> {
@@ -239,9 +239,9 @@ impl<T: IntoJs> FromNapiValue for ChannelHandler<T> {
 
 pub(crate) fn into_handler<T: IntoJs>(
   handler: Option<ChannelHandler<T>>,
-) -> impl IntoHandler<T, Handler = HandlerImpl<T>> {
+) -> impl z::handlers::IntoHandler<T, Handler = HandlerImpl<T>> {
   match handler {
     Some(ChannelHandler(callback, handler)) => (callback, handler),
-    None => erased(zhandlers::FifoChannel::default()),
+    None => erased(z::handlers::FifoChannel::default()),
   }
 }

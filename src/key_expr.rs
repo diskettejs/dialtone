@@ -1,9 +1,12 @@
+use derive_more::{AsRef, From, Into};
 use napi_derive::napi;
-use zenoh::key_expr as zkey_expr;
+use zenoh as z;
 
-use crate::{macros::wrapper, utils::*};
+use crate::utils::*;
 
-wrapper!(zkey_expr::KeyExpr<'static>: Clone);
+#[derive(Clone, AsRef, From, Into)]
+#[napi]
+pub struct KeyExpr(z::key_expr::KeyExpr<'static>);
 
 #[napi]
 pub type KeyExprArg<'a> = napi::Either<String, &'a KeyExpr>;
@@ -23,13 +26,13 @@ impl TryFrom<KeyExprArg<'_>> for KeyExpr {
 impl KeyExpr {
   #[napi(constructor)]
   pub fn new(expr: String) -> napi::Result<Self> {
-    let inner = zkey_expr::KeyExpr::new(expr).map_napi_err()?;
+    let inner = z::key_expr::KeyExpr::new(expr).map_napi_err()?;
     Ok(inner.into())
   }
 
   #[napi(factory)]
   pub fn autocanonize(expr: String) -> napi::Result<Self> {
-    let inner = zkey_expr::KeyExpr::autocanonize(expr).map_napi_err()?;
+    let inner = z::key_expr::KeyExpr::autocanonize(expr).map_napi_err()?;
     Ok(inner.into())
   }
 
@@ -40,34 +43,34 @@ impl KeyExpr {
 
   #[napi]
   pub fn concat(&self, other: String) -> napi::Result<KeyExpr> {
-    let inner = self.inner.concat(&other).map_napi_err()?;
+    let inner = self.0.concat(&other).map_napi_err()?;
     Ok(inner.into())
   }
 
   #[napi]
   pub fn join(&self, other: String) -> napi::Result<KeyExpr> {
-    let inner = self.inner.join(&other).map_napi_err()?;
+    let inner = self.0.join(&other).map_napi_err()?;
     Ok(inner.into())
   }
 
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.as_str().to_string()
+    self.0.as_str().to_string()
   }
 
   #[napi]
   pub fn intersects(&self, other: &KeyExpr) -> bool {
-    self.inner.as_keyexpr().intersects(other.inner.as_keyexpr())
+    self.0.as_keyexpr().intersects(other.0.as_keyexpr())
   }
 
   #[napi]
   pub fn includes(&self, other: &KeyExpr) -> bool {
-    self.inner.as_keyexpr().includes(other.inner.as_keyexpr())
+    self.0.as_keyexpr().includes(other.0.as_keyexpr())
   }
 
   #[napi(getter)]
   pub fn is_wild(&self) -> bool {
-    self.inner.as_keyexpr().is_wild()
+    self.0.as_keyexpr().is_wild()
   }
 }

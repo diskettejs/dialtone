@@ -1,12 +1,13 @@
+use derive_more::{From, Into};
 use napi_derive::napi;
-use zenoh::{config as zconfig, scouting as zscouting};
+use zenoh as z;
 
-use crate::{config::*, handlers::*, macros::*, options::*, session::*, utils::*};
+use crate::{config::*, handlers::*, options::*, session::*, utils::*};
 
-option_wrapper!(
-  zscouting::Scout<HandlerImpl<zscouting::Hello>>,
-  "Stopped scout"
-);
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Scout(Declared<z::scouting::Scout<HandlerImpl<z::scouting::Hello>>>);
 
 #[napi]
 #[allow(clippy::self_named_constructors)]
@@ -17,12 +18,12 @@ impl Scout {
     config: &Config,
     options: Option<ScoutOptions>,
   ) -> napi::Result<Scout> {
-    let what: zconfig::WhatAmIMatcher = what.into();
-    let config: zconfig::Config = config.into();
+    let what: z::config::WhatAmIMatcher = *what.as_ref();
+    let config = config.as_ref().clone();
     let ScoutOptions { channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
 
-    let scout = zscouting::scout(what, config)
+    let scout = z::scouting::scout(what, config)
       .with(handler)
       .await
       .map_napi_err()?;
@@ -32,36 +33,51 @@ impl Scout {
 
   #[napi]
   pub fn stop(&mut self) -> napi::Result<()> {
-    let scout = self.take()?;
+    let scout = self.0.take()?;
 
     scout.stop();
     Ok(())
   }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
+  }
 }
 
-recv_handler!(Scout => Hello);
-
-wrapper!(zscouting::Hello);
+#[derive(From, Into)]
+#[napi]
+pub struct Hello(z::scouting::Hello);
 
 #[napi]
 impl Hello {
   #[napi]
   pub fn locators(&self) -> Vec<Locator> {
-    self
-      .inner
-      .locators()
-      .iter()
-      .map(|l| l.clone().into())
-      .collect()
+    self.0.locators().iter().map(|l| l.clone().into()).collect()
   }
 
   #[napi(getter)]
   pub fn whatami(&self) -> WhatAmI {
-    self.inner.whatami().into()
+    self.0.whatami().into()
   }
 
   #[napi(getter)]
   pub fn zid(&self) -> String {
-    self.inner.zid().to_string()
+    self.0.zid().to_string()
   }
 }

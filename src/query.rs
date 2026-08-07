@@ -1,72 +1,73 @@
+use derive_more::{AsRef, From, Into};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh::{
-  Wait,
-  query::{self as zquery},
-};
+use zenoh as z;
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, macros::*, matching::*, options::*, qos::*,
-  sample::*, utils::*,
+  bytes::*, config::*, handlers::*, key_expr::*, matching::*, options::*, qos::*, sample::*,
+  utils::*,
 };
 
-option_wrapper!(zquery::Query, "Dropped query");
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Query(Declared<z::query::Query>);
 
 #[napi]
 impl Query {
   #[napi(getter)]
   pub fn selector(&self) -> napi::Result<Selector> {
-    Ok(self.get_ref()?.selector().into_owned().into())
+    Ok(self.0.get()?.selector().into_owned().into())
   }
 
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
   pub fn payload(&self) -> napi::Result<Option<Bytes>> {
-    Ok(self.get_ref()?.payload().cloned().map(Into::into))
+    Ok(self.0.get()?.payload().cloned().map(Into::into))
   }
 
   #[napi(getter)]
   pub fn encoding(&self) -> napi::Result<Option<Encoding>> {
-    Ok(self.get_ref()?.encoding().cloned().map(Into::into))
+    Ok(self.0.get()?.encoding().cloned().map(Into::into))
   }
 
   #[napi(getter)]
   pub fn attachment(&self) -> napi::Result<Option<Bytes>> {
-    Ok(self.get_ref()?.attachment().cloned().map(Into::into))
+    Ok(self.0.get()?.attachment().cloned().map(Into::into))
   }
 
   #[napi(getter)]
   pub fn source_info(&self) -> napi::Result<Option<SourceInfo>> {
-    Ok(self.get_ref()?.source_info().cloned().map(Into::into))
+    Ok(self.0.get()?.source_info().cloned().map(Into::into))
   }
 
   #[napi(getter)]
   pub fn priority(&self) -> napi::Result<Priority> {
-    Ok(self.get_ref()?.priority().into())
+    Ok(self.0.get()?.priority().into())
   }
 
   #[napi(getter)]
   pub fn congestion_control(&self) -> napi::Result<CongestionControl> {
-    Ok(self.get_ref()?.congestion_control().into())
+    Ok(self.0.get()?.congestion_control().into())
   }
 
   #[napi(getter)]
   pub fn express(&self) -> napi::Result<bool> {
-    Ok(self.get_ref()?.express())
+    Ok(self.0.get()?.express())
   }
 
   #[napi(getter)]
   pub fn parameters(&self) -> napi::Result<Parameters> {
-    Ok(self.get_ref()?.parameters().clone().into())
+    Ok(self.0.get()?.parameters().clone().into())
   }
 
   #[napi(getter)]
   pub fn accepts_replies(&self) -> napi::Result<ReplyKeyExpr> {
-    Ok(self.get_ref()?.accepts_replies().into())
+    Ok(self.0.get()?.accepts_replies().into())
   }
 
   #[napi]
@@ -78,7 +79,7 @@ impl Query {
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
     let payload = payload.into_zbytes();
-    let query = self.get_ref()?;
+    let query = self.0.get()?;
 
     let ReplyOptions {
       encoding,
@@ -108,7 +109,7 @@ impl Query {
   ) -> napi::Result<()> {
     let payload = payload.into_zbytes();
     let ReplyErrOptions { encoding } = options.unwrap_or_default();
-    let mut builder = self.get_ref()?.reply_err(payload);
+    let mut builder = self.0.get()?.reply_err(payload);
     if let Some(e) = encoding {
       builder = builder.encoding(e);
     }
@@ -132,7 +133,7 @@ impl Query {
     } = options.unwrap_or_default();
 
     build!(
-      self.get_ref()?.reply_del(expr),
+      self.0.get()?.reply_del(expr),
       express,
       timestamp,
       attachment,
@@ -144,25 +145,49 @@ impl Query {
 
   #[napi]
   pub fn drop(&mut self) -> napi::Result<()> {
-    self.take()?;
+    self.0.take()?;
     Ok(())
   }
 }
 
-enum_mapper!(zquery::ReplyKeyExpr: Any, MatchingQuery);
+#[napi(string_enum)]
+pub enum ReplyKeyExpr {
+  Any,
+  MatchingQuery,
+}
 
-wrapper!(zquery::Reply);
+impl From<ReplyKeyExpr> for z::query::ReplyKeyExpr {
+  fn from(value: ReplyKeyExpr) -> Self {
+    match value {
+      ReplyKeyExpr::Any => Self::Any,
+      ReplyKeyExpr::MatchingQuery => Self::MatchingQuery,
+    }
+  }
+}
+
+impl From<z::query::ReplyKeyExpr> for ReplyKeyExpr {
+  fn from(value: z::query::ReplyKeyExpr) -> Self {
+    match value {
+      z::query::ReplyKeyExpr::Any => Self::Any,
+      z::query::ReplyKeyExpr::MatchingQuery => Self::MatchingQuery,
+    }
+  }
+}
+
+#[derive(From, Into)]
+#[napi]
+pub struct Reply(z::query::Reply);
 
 #[napi]
 impl Reply {
   #[napi(getter)]
   pub fn replier_id(&self) -> Option<EntityGlobalId> {
-    self.inner.replier_id().map(EntityGlobalId::from)
+    self.0.replier_id().map(EntityGlobalId::from)
   }
 
   #[napi(getter)]
   pub fn result<'env>(&self, env: &'env Env) -> napi::Result<ReplyResult<'env>> {
-    match self.inner.result() {
+    match self.0.result() {
       Ok(sample) => Ok(Either::A(ReplyResultSample {
         sample: Sample::from(sample.clone()).into_instance(env)?,
         error: Null,
@@ -190,142 +215,195 @@ pub struct ReplyResultError<'env> {
 #[napi]
 pub type ReplyResult<'env> = Either<ReplyResultSample<'env>, ReplyResultError<'env>>;
 
-wrapper!(zquery::ReplyError);
+#[derive(From, Into)]
+#[napi]
+pub struct ReplyError(z::query::ReplyError);
 
 #[napi]
 impl ReplyError {
   #[napi(getter)]
   pub fn encoding(&self) -> Encoding {
-    self.inner.encoding().clone().into()
+    self.0.encoding().clone().into()
   }
 
   #[napi(getter)]
   pub fn payload(&self) -> Bytes {
-    self.inner.payload().clone().into()
+    self.0.payload().clone().into()
   }
 }
 
-wrapper!(zquery::Parameters<'static>: Clone);
+#[derive(Clone, From, Into)]
+#[napi]
+pub struct Parameters(z::query::Parameters<'static>);
 
 #[napi]
 impl Parameters {
   #[napi(factory)]
   pub fn empty() -> Self {
-    zquery::Parameters::empty().into()
+    z::query::Parameters::empty().into()
   }
 
   #[napi(constructor)]
   pub fn new(params: String) -> Self {
-    zquery::Parameters::from(params).into()
+    z::query::Parameters::from(params).into()
   }
 
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.as_str().to_string()
+    self.0.as_str().to_string()
   }
 
   #[napi(getter)]
   pub fn is_empty(&self) -> bool {
-    self.inner.is_empty()
+    self.0.is_empty()
   }
 
   #[napi(getter)]
   pub fn is_ordered(&self) -> bool {
-    self.inner.is_ordered()
+    self.0.is_ordered()
   }
 
   #[napi]
   pub fn contains_key(&self, key: String) -> bool {
-    self.inner.contains_key(key)
+    self.0.contains_key(key)
   }
 
   #[napi]
   pub fn get(&self, key: String) -> Option<String> {
-    self.inner.get(key).map(|value| value.to_string())
+    self.0.get(key).map(|value| value.to_string())
   }
 
   #[napi]
   pub fn values(&self, key: String) -> Vec<String> {
-    self
-      .inner
-      .values(key)
-      .map(|value| value.to_string())
-      .collect()
+    self.0.values(key).map(|value| value.to_string()).collect()
   }
 
   #[napi]
   pub fn insert(&mut self, key: String, value: String) -> Option<String> {
-    self.inner.insert(key, value)
+    self.0.insert(key, value)
   }
 
   #[napi]
   pub fn remove(&mut self, key: String) -> Option<String> {
-    self.inner.remove(key)
+    self.0.remove(key)
   }
 
   #[napi]
   pub fn extend(&mut self, other: &Parameters) {
-    self.inner.extend(&other.inner);
+    self.0.extend(&other.0);
   }
 }
 
-enum_mapper!(zquery::QueryTarget: BestMatching, All, AllComplete);
+#[napi(string_enum)]
+pub enum QueryTarget {
+  BestMatching,
+  All,
+  AllComplete,
+}
 
-enum_mapper!(zquery::ConsolidationMode: Auto, None, Monotonic, Latest);
+impl From<QueryTarget> for z::query::QueryTarget {
+  fn from(value: QueryTarget) -> Self {
+    match value {
+      QueryTarget::BestMatching => Self::BestMatching,
+      QueryTarget::All => Self::All,
+      QueryTarget::AllComplete => Self::AllComplete,
+    }
+  }
+}
 
-option_wrapper!(
-  zquery::Queryable<HandlerImpl<zquery::Query>>,
-  "Undeclared queryable"
-);
+#[napi(string_enum)]
+pub enum ConsolidationMode {
+  Auto,
+  None,
+  Monotonic,
+  Latest,
+}
+
+impl From<ConsolidationMode> for z::query::ConsolidationMode {
+  fn from(value: ConsolidationMode) -> Self {
+    match value {
+      ConsolidationMode::Auto => Self::Auto,
+      ConsolidationMode::None => Self::None,
+      ConsolidationMode::Monotonic => Self::Monotonic,
+      ConsolidationMode::Latest => Self::Latest,
+    }
+  }
+}
+
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Queryable(Declared<z::query::Queryable<HandlerImpl<z::query::Query>>>);
 
 #[napi]
 impl Queryable {
   #[napi(getter)]
   pub fn id(&self) -> napi::Result<EntityGlobalId> {
-    Ok(self.get_ref()?.id().into())
+    Ok(self.0.get()?.id().into())
   }
 
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
 
-recv_handler!(Queryable => Query);
-
-option_wrapper!(zquery::Querier<'static>, "Undeclared querier");
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct Querier(Declared<z::query::Querier<'static>>);
 
 #[napi]
 impl Querier {
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
   pub fn id(&self) -> napi::Result<EntityGlobalId> {
-    Ok(self.get_ref()?.id().into())
+    Ok(self.0.get()?.id().into())
   }
 
   #[napi(getter)]
   pub fn congestion_control(&self) -> napi::Result<CongestionControl> {
-    Ok(self.get_ref()?.congestion_control().into())
+    Ok(self.0.get()?.congestion_control().into())
   }
 
   #[napi(getter)]
   pub fn priority(&self) -> napi::Result<Priority> {
-    Ok(self.get_ref()?.priority().into())
+    Ok(self.0.get()?.priority().into())
   }
 
   #[napi(getter)]
   pub fn accept_replies(&self) -> napi::Result<ReplyKeyExpr> {
-    Ok(self.get_ref()?.accept_replies().into())
+    Ok(self.0.get()?.accept_replies().into())
   }
 
   #[napi]
@@ -343,7 +421,7 @@ impl Querier {
     let handler = into_handler(channel);
 
     let receiver = build!(
-      self.get_ref()?.get().with(handler),
+      self.0.get()?.get().with(handler),
       parameters,
       payload,
       encoding,
@@ -359,7 +437,7 @@ impl Querier {
 
   #[napi]
   pub async fn matching_status(&self) -> napi::Result<MatchingStatus> {
-    let status = self.get_ref()?.matching_status().await.map_napi_err()?;
+    let status = self.0.get()?.matching_status().await.map_napi_err()?;
 
     Ok(status.into())
   }
@@ -373,7 +451,8 @@ impl Querier {
     let handler = into_handler(channel);
 
     let listener = self
-      .get_ref()?
+      .0
+      .get()?
       .matching_listener()
       .with(handler)
       .await
@@ -384,21 +463,23 @@ impl Querier {
 
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
   }
 }
 
-wrapper!(zquery::Selector<'static>);
+#[derive(AsRef, From, Into)]
+#[napi]
+pub struct Selector(z::query::Selector<'static>);
 
 impl Selector {
   pub(crate) fn resolve(
     selector: SelectorArg<'_>,
     parameters: Option<Instance<Parameters>>,
-  ) -> napi::Result<zquery::Selector<'static>> {
-    let mut selector = zquery::Selector::from(Selector::try_from(selector)?);
+  ) -> napi::Result<z::query::Selector<'static>> {
+    let mut selector = z::query::Selector::from(Selector::try_from(selector)?);
     if let Some(parameters) = parameters {
       let key_expr = selector.key_expr().clone().into_owned();
-      selector = zquery::Selector::owned(key_expr, parameters.into_zenoh());
+      selector = z::query::Selector::owned(key_expr, parameters.into_zenoh());
     }
     Ok(selector)
   }
@@ -416,28 +497,30 @@ impl Selector {
   pub fn new(key_expr: KeyExprArg, parameters: Option<String>) -> napi::Result<Self> {
     let key_expr = KeyExpr::try_from(key_expr)?;
 
-    let parameters = parameters.map(zquery::Parameters::from).unwrap_or_default();
+    let parameters = parameters
+      .map(z::query::Parameters::from)
+      .unwrap_or_default();
 
-    let inner = zquery::Selector::owned(key_expr, parameters);
+    let inner = z::query::Selector::owned(key_expr, parameters);
 
     Ok(inner.into())
   }
 
   #[napi(getter)]
   pub fn key_expr(&self) -> KeyExpr {
-    self.inner.key_expr().clone().into_owned().into()
+    self.0.key_expr().clone().into_owned().into()
   }
 
   #[napi(getter)]
   pub fn parameters(&self) -> Parameters {
-    self.inner.parameters().clone().into_owned().into()
+    self.0.parameters().clone().into_owned().into()
   }
 
   #[napi]
   pub fn split(&self) -> SelectorParts {
     SelectorParts {
-      key_expr: self.inner.key_expr().as_str().to_string(),
-      parameters: self.inner.parameters().as_str().to_string(),
+      key_expr: self.0.key_expr().as_str().to_string(),
+      parameters: self.0.parameters().as_str().to_string(),
     }
   }
 }
@@ -450,13 +533,13 @@ impl TryFrom<SelectorArg<'_>> for Selector {
 
   fn try_from(value: SelectorArg<'_>) -> napi::Result<Self> {
     match value {
-      Either3::A(selector) => zquery::Selector::try_from(selector)
+      Either3::A(selector) => z::query::Selector::try_from(selector)
         .map(Selector::from)
         .map_napi_err(),
       Either3::B(key_expr) => {
-        Ok(zquery::Selector::from(zenoh::key_expr::KeyExpr::from(key_expr.clone())).into())
+        Ok(z::query::Selector::from(zenoh::key_expr::KeyExpr::from(key_expr.clone())).into())
       }
-      Either3::C(selector) => Ok(zquery::Selector::from(selector).into()),
+      Either3::C(selector) => Ok(selector.as_ref().clone().into()),
     }
   }
 }

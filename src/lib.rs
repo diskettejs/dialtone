@@ -5,7 +5,6 @@ mod handlers;
 mod key_expr;
 mod liveliness;
 mod logging;
-mod macros;
 mod matching;
 mod miss;
 mod options;

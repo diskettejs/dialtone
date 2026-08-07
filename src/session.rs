@@ -1,56 +1,59 @@
+use derive_more::{From, Into};
 use napi_derive::napi;
-use zenoh::{Wait, config as zconfig, session as zsession};
+use zenoh as z;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, macros::*, options::*, pubsub::*,
+  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, options::*, pubsub::*,
   qos::Reliability, query::*, sample::SampleKind, time::*, utils::*,
 };
 
-wrapper!(zenoh::Session);
+#[derive(From, Into)]
+#[napi]
+pub struct Session(z::Session);
 
 #[napi]
 impl Session {
   #[napi(factory)]
   pub async fn open(config: &Config) -> napi::Result<Self> {
-    let cfg = zenoh::config::Config::from(config);
-    let session = zenoh::open(cfg).await.map_napi_err()?;
+    let cfg = config.as_ref().clone();
+    let session = z::open(cfg).await.map_napi_err()?;
     Ok(session.into())
   }
 
   #[napi(getter)]
   pub fn zid(&self) -> String {
-    self.inner.zid().to_string()
+    self.0.zid().to_string()
   }
 
   #[napi(getter)]
   pub fn id(&self) -> EntityGlobalId {
-    self.inner.id().into()
+    self.0.id().into()
   }
 
   #[napi(getter)]
   pub fn is_closed(&self) -> bool {
-    self.inner.is_closed()
+    self.0.is_closed()
   }
 
   #[napi]
   pub fn new_timestamp(&self) -> Timestamp {
-    self.inner.new_timestamp().into()
+    self.0.new_timestamp().into()
   }
 
   #[napi]
   pub fn info(&self) -> SessionInfo {
-    self.inner.info().into()
+    self.0.info().into()
   }
 
   #[napi]
   pub fn config(&self) -> SessionConfig {
-    self.inner.config().into()
+    self.0.config().into()
   }
 
   #[napi]
   pub async fn close(&self) -> napi::Result<()> {
-    self.inner.close().await.map_napi_err()
+    self.0.close().await.map_napi_err()
   }
 
   #[napi]
@@ -73,7 +76,7 @@ impl Session {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-    let session = self.inner.clone();
+    let session = self.0.clone();
 
     build!(
       session.put(expr, payload),
@@ -117,7 +120,7 @@ impl Session {
     let selector = Selector::resolve(selector, parameters)?;
     let timeout = duration_ms(timeout)?;
     let handler = into_handler(channel);
-    let session = self.inner.clone();
+    let session = self.0.clone();
 
     let receiver = build!(
       session.get(selector).with(handler),
@@ -157,7 +160,7 @@ impl Session {
       attachment,
       source_info,
     } = options.unwrap_or_default();
-    let session = self.inner.clone();
+    let session = self.0.clone();
 
     build!(
       session.delete(expr),
@@ -176,13 +179,13 @@ impl Session {
 
   #[napi]
   pub fn liveliness(&self) -> Liveliness {
-    self.inner.clone().into()
+    self.0.clone().into()
   }
 
   #[napi]
   pub async fn declare_keyexpr(&self, key_expr: KeyExprArg<'_>) -> napi::Result<KeyExpr> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let keyexpr = self.inner.declare_keyexpr(expr).await.map_napi_err()?;
+    let keyexpr = self.0.declare_keyexpr(expr).await.map_napi_err()?;
 
     Ok(keyexpr.into())
   }
@@ -207,7 +210,7 @@ impl Session {
     let timeout = duration_ms(timeout)?;
 
     let zquerier = build!(
-      self.inner.declare_querier(expr),
+      self.0.declare_querier(expr),
       target,
       consolidation,
       congestion_control,
@@ -238,7 +241,7 @@ impl Session {
     let handler = into_handler(channel);
 
     let queryable = build!(
-      self.inner.declare_queryable(expr).with(handler),
+      self.0.declare_queryable(expr).with(handler),
       allowed_origin,
       complete,
     )
@@ -266,7 +269,7 @@ impl Session {
     } = options.unwrap_or_default();
     let query_timeout = duration_ms(query_timeout_ms)?;
     let handler = into_handler(channel);
-    let session = self.inner.clone();
+    let session = self.0.clone();
 
     let base = session
       .declare_subscriber(key_expr)
@@ -312,7 +315,7 @@ impl Session {
     } = options.unwrap_or_default();
 
     let mut builder = build!(
-      self.inner.declare_publisher(expr).advanced(),
+      self.0.declare_publisher(expr).advanced(),
       encoding,
       congestion_control,
       priority,
@@ -334,28 +337,21 @@ impl Session {
   }
 }
 
+#[derive(From)]
 #[napi]
-pub struct SessionInfo {
-  inner: zsession::SessionInfo,
-}
-
-impl From<zsession::SessionInfo> for SessionInfo {
-  fn from(value: zsession::SessionInfo) -> Self {
-    Self { inner: value }
-  }
-}
+pub struct SessionInfo(z::session::SessionInfo);
 
 #[napi]
 impl SessionInfo {
   #[napi]
   pub async fn zid(&self) -> String {
-    self.inner.zid().await.to_string()
+    self.0.zid().await.to_string()
   }
 
   #[napi]
   pub async fn routers_zid(&self) -> Vec<String> {
     self
-      .inner
+      .0
       .routers_zid()
       .await
       .map(|zid| zid.to_string())
@@ -365,7 +361,7 @@ impl SessionInfo {
   #[napi]
   pub async fn peers_zid(&self) -> Vec<String> {
     self
-      .inner
+      .0
       .peers_zid()
       .await
       .map(|zid| zid.to_string())
@@ -374,12 +370,12 @@ impl SessionInfo {
 
   #[napi]
   pub async fn transports(&self) -> Vec<Transport> {
-    self.inner.transports().await.map(Transport::from).collect()
+    self.0.transports().await.map(Transport::from).collect()
   }
 
   #[napi]
   pub async fn links(&self) -> Vec<Link> {
-    self.inner.links().await.map(Link::from).collect()
+    self.0.links().await.map(Link::from).collect()
   }
 
   #[napi]
@@ -390,12 +386,9 @@ impl SessionInfo {
     let TransportEventsListenerOptions { history, channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
 
-    let listener = build!(
-      self.inner.transport_events_listener().with(handler),
-      history,
-    )
-    .await
-    .map_napi_err()?;
+    let listener = build!(self.0.transport_events_listener().with(handler), history,)
+      .await
+      .map_napi_err()?;
 
     Ok(listener.into())
   }
@@ -413,7 +406,7 @@ impl SessionInfo {
     let handler = into_handler(channel);
 
     let listener = build!(
-      self.inner.link_events_listener().with(handler),
+      self.0.link_events_listener().with(handler),
       history,
       transport,
     )
@@ -424,60 +417,84 @@ impl SessionInfo {
   }
 }
 
-wrapper!(zsession::Transport: Clone);
+#[derive(Clone, From, Into)]
+#[napi]
+pub struct Transport(z::session::Transport);
 
 #[napi]
 impl Transport {
   #[napi(getter)]
   pub fn zid(&self) -> String {
-    self.inner.zid().to_string()
+    self.0.zid().to_string()
   }
 
   #[napi(getter)]
   pub fn whatami(&self) -> WhatAmI {
-    self.inner.whatami().into()
+    self.0.whatami().into()
   }
 
   #[napi(getter)]
   pub fn is_qos(&self) -> bool {
-    self.inner.is_qos()
+    self.0.is_qos()
   }
 
   #[napi(getter)]
   pub fn is_multicast(&self) -> bool {
-    self.inner.is_multicast()
+    self.0.is_multicast()
   }
 }
 
-wrapper!(zsession::TransportEvent);
+#[derive(From, Into)]
+#[napi]
+pub struct TransportEvent(z::session::TransportEvent);
 
 #[napi]
 impl TransportEvent {
   #[napi(getter)]
   pub fn kind(&self) -> SampleKind {
-    self.inner.kind().into()
+    self.0.kind().into()
   }
 
   #[napi(getter)]
   pub fn transport(&self) -> Transport {
-    self.inner.transport().clone().into()
+    self.0.transport().clone().into()
   }
 }
 
-option_wrapper!(
-  zsession::TransportEventsListener<HandlerImpl<zsession::TransportEvent>>,
-  "Undeclared transport events listener"
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct TransportEventsListener(
+  Declared<z::session::TransportEventsListener<HandlerImpl<z::session::TransportEvent>>>,
 );
 
 #[napi]
 impl TransportEventsListener {
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
-
-recv_handler!(TransportEventsListener => TransportEvent);
 
 #[napi(object)]
 pub struct LinkPriorities {
@@ -485,159 +502,183 @@ pub struct LinkPriorities {
   pub max: u8,
 }
 
-wrapper!(zsession::Link);
+#[derive(From, Into)]
+#[napi]
+pub struct Link(z::session::Link);
 
 #[napi]
 impl Link {
   #[napi(getter)]
   pub fn zid(&self) -> String {
-    self.inner.zid().to_string()
+    self.0.zid().to_string()
   }
 
   #[napi(getter)]
   pub fn src(&self) -> Locator {
-    self.inner.src().clone().into()
+    self.0.src().clone().into()
   }
 
   #[napi(getter)]
   pub fn dst(&self) -> Locator {
-    self.inner.dst().clone().into()
+    self.0.dst().clone().into()
   }
 
   #[napi(getter)]
   pub fn group(&self) -> Option<Locator> {
-    self.inner.group().cloned().map(Locator::from)
+    self.0.group().cloned().map(Locator::from)
   }
 
   #[napi(getter)]
   pub fn mtu(&self) -> u16 {
-    self.inner.mtu()
+    self.0.mtu()
   }
 
   #[napi(getter)]
   pub fn is_streamed(&self) -> bool {
-    self.inner.is_streamed()
+    self.0.is_streamed()
   }
 
   #[napi(getter)]
   pub fn interfaces(&self) -> Vec<String> {
-    self.inner.interfaces().to_vec()
+    self.0.interfaces().to_vec()
   }
 
   #[napi(getter)]
   pub fn auth_identifier(&self) -> Option<String> {
-    self.inner.auth_identifier().map(|s| s.to_string())
+    self.0.auth_identifier().map(|s| s.to_string())
   }
 
   #[napi(getter)]
   pub fn priorities(&self) -> Option<LinkPriorities> {
     self
-      .inner
+      .0
       .priorities()
       .map(|(min, max)| LinkPriorities { min, max })
   }
 
   #[napi(getter)]
   pub fn reliability(&self) -> Option<Reliability> {
-    self.inner.reliability().map(Into::into)
+    self.0.reliability().map(Into::into)
   }
 }
 
-wrapper!(zsession::LinkEvent);
+#[derive(From, Into)]
+#[napi]
+pub struct LinkEvent(z::session::LinkEvent);
 
 #[napi]
 impl LinkEvent {
   #[napi(getter)]
   pub fn kind(&self) -> SampleKind {
-    self.inner.kind().into()
+    self.0.kind().into()
   }
 
   #[napi(getter)]
   pub fn link(&self) -> Link {
-    self.inner.link().clone().into()
+    self.0.link().clone().into()
   }
 }
 
-option_wrapper!(
-  zsession::LinkEventsListener<HandlerImpl<zsession::LinkEvent>>,
-  "Undeclared link events listener"
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct LinkEventsListener(
+  Declared<z::session::LinkEventsListener<HandlerImpl<z::session::LinkEvent>>>,
 );
 
 #[napi]
 impl LinkEventsListener {
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
 
-recv_handler!(LinkEventsListener => LinkEvent);
-
-wrapper!(zconfig::Locator);
+#[derive(From, Into)]
+#[napi]
+pub struct Locator(z::config::Locator);
 
 #[napi]
 impl Locator {
   #[napi(constructor)]
   pub fn new(protocol: String, address: String, metadata: String) -> napi::Result<Self> {
-    let inner = zconfig::Locator::new(protocol, address, metadata).map_napi_err()?;
+    let inner = z::config::Locator::new(protocol, address, metadata).map_napi_err()?;
     Ok(inner.into())
   }
 
   #[napi(getter)]
   pub fn protocol(&self) -> String {
-    self.inner.protocol().as_str().to_string()
+    self.0.protocol().as_str().to_string()
   }
 
   #[napi(getter)]
   pub fn address(&self) -> String {
-    self.inner.address().as_str().to_string()
+    self.0.address().as_str().to_string()
   }
 
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.as_str().to_string()
+    self.0.as_str().to_string()
   }
 
   #[napi]
   pub fn metadata(&self) -> Metadata {
-    self.inner.to_endpoint().into()
+    self.0.to_endpoint().into()
   }
 
   #[napi]
   pub fn to_endpoint(&self) -> EndPoint {
-    self.inner.to_endpoint().into()
+    self.0.to_endpoint().into()
   }
 }
 
-wrapper!(zconfig::EndPoint as Metadata);
+#[derive(From, Into)]
+#[napi]
+pub struct Metadata(z::config::EndPoint);
 
 #[napi]
 impl Metadata {
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.metadata().as_str().to_string()
+    self.0.metadata().as_str().to_string()
   }
 
   #[napi]
   pub fn is_empty(&self) -> bool {
-    self.inner.metadata().is_empty()
+    self.0.metadata().is_empty()
   }
 
   #[napi]
   pub fn get(&self, key: String) -> Option<String> {
-    self
-      .inner
-      .metadata()
-      .get(&key)
-      .map(|value| value.to_string())
+    self.0.metadata().get(&key).map(|value| value.to_string())
   }
 
   #[napi]
   pub fn values(&self, key: String) -> Vec<String> {
     self
-      .inner
+      .0
       .metadata()
       .values(&key)
       .map(|value| value.to_string())
@@ -645,7 +686,9 @@ impl Metadata {
   }
 }
 
-wrapper!(zconfig::EndPoint);
+#[derive(From, Into)]
+#[napi]
+pub struct EndPoint(z::config::EndPoint);
 
 #[napi(object)]
 pub struct EndPointParts {
@@ -664,40 +707,40 @@ impl EndPoint {
     metadata: String,
     config: String,
   ) -> napi::Result<Self> {
-    let inner = zconfig::EndPoint::new(protocol, address, metadata, config).map_napi_err()?;
+    let inner = z::config::EndPoint::new(protocol, address, metadata, config).map_napi_err()?;
 
     Ok(inner.into())
   }
 
   #[napi(getter)]
   pub fn protocol(&self) -> String {
-    self.inner.protocol().as_str().to_string()
+    self.0.protocol().as_str().to_string()
   }
 
   #[napi(getter)]
   pub fn address(&self) -> String {
-    self.inner.address().as_str().to_string()
+    self.0.address().as_str().to_string()
   }
 
   #[napi]
   #[allow(clippy::inherent_to_string)]
   pub fn to_string(&self) -> String {
-    self.inner.as_str().to_string()
+    self.0.as_str().to_string()
   }
 
   #[napi]
   pub fn metadata(&self) -> Metadata {
-    self.inner.clone().into()
+    self.0.clone().into()
   }
 
   #[napi]
   pub fn config(&self) -> String {
-    self.inner.config().as_str().to_string()
+    self.0.config().as_str().to_string()
   }
 
   #[napi]
   pub fn split(&self) -> EndPointParts {
-    let (protocol, address, metadata, config) = self.inner.split();
+    let (protocol, address, metadata, config) = self.0.split();
     EndPointParts {
       protocol: protocol.as_str().to_string(),
       address: address.as_str().to_string(),
@@ -708,6 +751,6 @@ impl EndPoint {
 
   #[napi]
   pub fn to_locator(&self) -> Locator {
-    self.inner.to_locator().into()
+    self.0.to_locator().into()
   }
 }

@@ -1,29 +1,52 @@
+use derive_more::From;
 use napi_derive::napi;
-use zenoh::{Wait, matching as zmatching};
+use zenoh as z;
 
-use crate::{handlers::HandlerImpl, macros::*, utils::*};
+use crate::{handlers::*, utils::*};
 
-wrapper!(zmatching::MatchingStatus);
+#[derive(From)]
+#[napi]
+pub struct MatchingStatus(z::matching::MatchingStatus);
 
 #[napi]
 impl MatchingStatus {
   #[napi(getter)]
   pub fn matching(&self) -> bool {
-    self.inner.matching()
+    self.0.matching()
   }
 }
 
-option_wrapper!(
-  zmatching::MatchingListener<HandlerImpl<zmatching::MatchingStatus>>,
-  "Undeclared matching listener"
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct MatchingListener(
+  Declared<z::matching::MatchingListener<HandlerImpl<z::matching::MatchingStatus>>>,
 );
 
 #[napi]
 impl MatchingListener {
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
-
-recv_handler!(MatchingListener => MatchingStatus);

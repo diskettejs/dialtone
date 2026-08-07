@@ -1,9 +1,12 @@
+use derive_more::From;
 use napi_derive::napi;
-use zenoh::{Wait, liveliness as zliveliness, pubsub as zpubsub, sample as zsample};
+use zenoh as z;
 
-use crate::{config::*, handlers::*, key_expr::*, macros::*, options::*, utils::*};
+use crate::{config::*, handlers::*, key_expr::*, options::*, utils::*};
 
-wrapper!(zenoh::Session as Liveliness);
+#[derive(From)]
+#[napi]
+pub struct Liveliness(z::Session);
 
 #[napi]
 impl Liveliness {
@@ -11,7 +14,7 @@ impl Liveliness {
   pub async fn declare_token(&self, key_expr: KeyExprArg<'_>) -> napi::Result<LivelinessToken> {
     let expr = KeyExpr::try_from(key_expr)?;
     let token = self
-      .inner
+      .0
       .liveliness()
       .declare_token(expr)
       .await
@@ -31,7 +34,7 @@ impl Liveliness {
     let handler = into_handler(channel);
 
     let subscriber = self
-      .inner
+      .0
       .liveliness()
       .declare_subscriber(expr)
       .with(handler)
@@ -57,7 +60,7 @@ impl Liveliness {
 
     let timeout = duration_ms(timeout)?;
     let handler = into_handler(channel);
-    let session = self.inner.clone();
+    let session = self.0.clone();
 
     let rec = build!(
       session.liveliness().get(expr).with(handler),
@@ -71,37 +74,58 @@ impl Liveliness {
   }
 }
 
-option_wrapper!(zliveliness::LivelinessToken, "Undeclared liveliness token");
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct LivelinessToken(Declared<z::liveliness::LivelinessToken>);
 
 #[napi]
 impl LivelinessToken {
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
   }
 }
 
-option_wrapper!(
-  zpubsub::Subscriber<HandlerImpl<zsample::Sample>> as LivelinessSubscriber,
-  "Undeclared liveliness subscriber"
-);
+#[derive(From)]
+#[from(forward)]
+#[napi]
+pub struct LivelinessSubscriber(Declared<z::pubsub::Subscriber<HandlerImpl<z::sample::Sample>>>);
 
 #[napi]
 impl LivelinessSubscriber {
   #[napi(getter)]
   pub fn key_expr(&self) -> napi::Result<KeyExpr> {
-    Ok(self.get_ref()?.key_expr().clone().into())
+    Ok(self.0.get()?.key_expr().clone().into())
   }
 
   #[napi(getter)]
   pub fn id(&self) -> napi::Result<EntityGlobalId> {
-    Ok(self.get_ref()?.id().into())
+    Ok(self.0.get()?.id().into())
   }
 
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
-    Wait::wait(self.take()?.undeclare()).map_napi_err()
+    z::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
+  }
+
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<DeferredJs> {
+    self.0.get()?.recv().await
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
+    self.0.get()?.try_recv()
+  }
+
+  #[napi]
+  pub fn stream(&self) -> napi::Result<Stream> {
+    Ok(self.0.get()?.stream())
+  }
+
+  #[napi]
+  pub fn handler(&self) -> napi::Result<Handler> {
+    Ok(self.0.get()?.share())
   }
 }
-
-recv_handler!(LivelinessSubscriber => Sample);

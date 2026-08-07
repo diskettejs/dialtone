@@ -23,8 +23,8 @@ identity!(bool, String, Duration);
 
 /// Conversions that defer to an existing `From`/`Into`.
 /// - `T => U` converts `self` directly (`self.into()`), for structs with a `From<T> for U`.
-/// - `Instance: T => U` converts a borrow of the unwrapped instance (`U::from(self.as_ref())`),
-///   for zenoh types whose `From` is implemented on the napi wrapper by reference.
+/// - `Instance: T => U` unwraps the napi class out of the instance and converts the owned
+///   wrapper (`self.into_inner().into()`).
 macro_rules! via_from {
   ($($ty:ty => $into:ty),* $(,)?) => {$(
     impl IntoZenoh for $ty {
@@ -38,12 +38,19 @@ macro_rules! via_from {
     impl IntoZenoh for Instance<$ty> {
       type Into = $into;
       fn into_zenoh(self) -> $into {
-        <$into>::from(self.as_ref())
+        self.into_inner().into()
       }
     }
   )*};
 }
 via_from!(
+  CongestionControl => zenoh::qos::CongestionControl,
+  Priority => zenoh::qos::Priority,
+  Reliability => zenoh::qos::Reliability,
+  Locality => zenoh::sample::Locality,
+  QueryTarget => zenoh::query::QueryTarget,
+  ConsolidationMode => zenoh::query::ConsolidationMode,
+  ReplyKeyExpr => zenoh::query::ReplyKeyExpr,
   HistoryConfig => zenoh_ext::HistoryConfig,
   CacheConfig => zenoh_ext::CacheConfig,
   MissDetectionConfig => zenoh_ext::MissDetectionConfig,
