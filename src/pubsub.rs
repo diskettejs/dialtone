@@ -9,7 +9,7 @@ use crate::{
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Publisher(Declared<zenoh_ext::AdvancedPublisher<'static>>);
+pub struct Publisher(Declared<Publisher, zenoh_ext::AdvancedPublisher<'static>>);
 
 #[napi]
 impl Publisher {
@@ -104,7 +104,9 @@ impl Publisher {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Subscriber(Declared<zenoh_ext::AdvancedSubscriber<HandlerImpl<zenoh::sample::Sample>>>);
+pub struct Subscriber(
+  Declared<Subscriber, zenoh_ext::AdvancedSubscriber<HandlerImpl<zenoh::sample::Sample>>>,
+);
 
 #[napi]
 impl Subscriber {

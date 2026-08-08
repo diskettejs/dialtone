@@ -105,7 +105,7 @@ describe('Publisher', () => {
       const key = 'test/pubsub/undeclare'
       const publisher = await session.declarePublisher(key)
       publisher.undeclare()
-      await expect(publisher.put('x')).rejects.toThrow(/undeclared/i)
+      await expect(publisher.put('x')).rejects.toThrow(/no longer available/i)
     })
   })
 })

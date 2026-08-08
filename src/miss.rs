@@ -24,7 +24,7 @@ impl Miss {
 #[from(forward)]
 #[napi]
 pub struct SampleMissListener(
-  Declared<zenoh_ext::SampleMissListener<HandlerImpl<zenoh_ext::Miss>>>,
+  Declared<SampleMissListener, zenoh_ext::SampleMissListener<HandlerImpl<zenoh_ext::Miss>>>,
 );
 
 #[napi]

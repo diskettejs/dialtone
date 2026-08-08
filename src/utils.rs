@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::ops::Deref;
 use std::ptr;
 
@@ -19,18 +20,21 @@ pub(crate) trait IntoZenoh: 'static {
   fn into_zenoh(self) -> Self::Into;
 }
 
-/// Holds a Zenoh entity that can be undeclared, dropped or stopped exactly once.
+/// Holds a Zenoh entity `T` that can be undeclared, dropped or stopped exactly once, on
+/// behalf of the `#[napi]` class `N` that exposes it.
 ///
-/// `get` borrows the entity and `take` consumes it; both fail once the entity is gone.
-pub struct Declared<T>(Option<T>);
+/// `get` borrows the entity and `take` consumes it; both fail once the entity is gone,
+/// naming `N` so the message matches the class the caller holds rather than the Zenoh
+/// type behind it.
+pub struct Declared<N, T>(Option<T>, PhantomData<fn() -> N>);
 
-impl<T> From<T> for Declared<T> {
+impl<N, T> From<T> for Declared<N, T> {
   fn from(value: T) -> Self {
-    Self(Some(value))
+    Self(Some(value), PhantomData)
   }
 }
 
-impl<T> Declared<T> {
+impl<N: TypeName, T> Declared<N, T> {
   pub fn get(&self) -> Result<&T> {
     self.0.as_ref().ok_or_else(Self::gone)
   }
@@ -40,11 +44,7 @@ impl<T> Declared<T> {
   }
 
   fn gone() -> napi::Error {
-    let name = std::any::type_name::<T>();
-    let name = name.split('<').next().unwrap_or(name);
-    let name = name.rsplit("::").next().unwrap_or(name);
-
-    napi::Error::from_reason(format!("{name} is no longer available"))
+    napi::Error::from_reason(format!("{} is no longer available", N::type_name()))
   }
 }
 

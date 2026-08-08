@@ -32,7 +32,7 @@ describe('Queryable', () => {
       const queryable = await session.declareQueryable('test/queryable/undeclare')
       queryable.undeclare()
 
-      await expect(queryable.recv()).rejects.toThrow(/undeclared/i)
+      await expect(queryable.recv()).rejects.toThrow(/no longer available/i)
     })
   })
 })
@@ -123,7 +123,7 @@ describe('Query', () => {
       const query = await queryable.recv()
       query.drop()
 
-      await expect(query.reply(key, 'late')).rejects.toThrow(/dropped/i)
+      await expect(query.reply(key, 'late')).rejects.toThrow(/no longer available/i)
     })
   })
 })
@@ -166,7 +166,7 @@ describe('Querier', () => {
       const querier = await session.declareQuerier('test/querier/undeclare')
       querier.undeclare()
 
-      await expect(querier.get()).rejects.toThrow(/undeclared/i)
+      await expect(querier.get()).rejects.toThrow(/no longer available/i)
     })
   })
 })
