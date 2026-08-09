@@ -188,10 +188,6 @@ impl<T> HandlerImpl<T> {
   pub(crate) fn stream(&self) -> Stream {
     self.0.stream()
   }
-
-  pub(crate) fn share(&self) -> Handler {
-    self.0.clone()
-  }
 }
 
 impl<T> From<HandlerImpl<T>> for Handler {

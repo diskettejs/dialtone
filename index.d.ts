@@ -15,7 +15,6 @@ declare module './binding.js' {
     recv(): Promise<binding.Sample>
     tryRecv(): binding.Sample | null
     stream(): TypedStream<binding.Sample>
-    handler(): TypedHandler<binding.Sample>
   }
   interface Publisher {
     [Symbol.dispose](): void
@@ -25,21 +24,18 @@ declare module './binding.js' {
     recv(): Promise<binding.MatchingStatus>
     tryRecv(): binding.MatchingStatus | null
     stream(): TypedStream<binding.MatchingStatus>
-    handler(): TypedHandler<binding.MatchingStatus>
   }
   interface SampleMissListener {
     [Symbol.dispose](): void
     recv(): Promise<binding.Miss>
     tryRecv(): binding.Miss | null
     stream(): TypedStream<binding.Miss>
-    handler(): TypedHandler<binding.Miss>
   }
   interface Scout {
     [Symbol.dispose](): void
     recv(): Promise<binding.Hello>
     tryRecv(): binding.Hello | null
     stream(): TypedStream<binding.Hello>
-    handler(): TypedHandler<binding.Hello>
   }
   interface LivelinessToken {
     [Symbol.dispose](): void
@@ -55,7 +51,6 @@ declare module './binding.js' {
     recv(): Promise<binding.Sample>
     tryRecv(): binding.Sample | null
     stream(): TypedStream<binding.Sample>
-    handler(): TypedHandler<binding.Sample>
   }
   interface Querier {
     [Symbol.dispose](): void
@@ -68,21 +63,18 @@ declare module './binding.js' {
     recv(): Promise<binding.Query>
     tryRecv(): binding.Query | null
     stream(): TypedStream<binding.Query>
-    handler(): TypedHandler<binding.Query>
   }
   interface LinkEventsListener {
     [Symbol.dispose](): void
     recv(): Promise<binding.LinkEvent>
     tryRecv(): binding.LinkEvent | null
     stream(): TypedStream<binding.LinkEvent>
-    handler(): TypedHandler<binding.LinkEvent>
   }
   interface TransportEventsListener {
     [Symbol.dispose](): void
     recv(): Promise<binding.TransportEvent>
     tryRecv(): binding.TransportEvent | null
     stream(): TypedStream<binding.TransportEvent>
-    handler(): TypedHandler<binding.TransportEvent>
   }
 }
 

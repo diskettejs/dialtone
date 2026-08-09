@@ -167,7 +167,8 @@ impl Subscriber {
 
   #[napi]
   pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+    let handler = self.0.get()?.handler();
+    handler.recv().await
   }
 
   #[napi]
@@ -178,10 +179,5 @@ impl Subscriber {
   #[napi]
   pub fn stream(&self) -> napi::Result<Stream> {
     Ok(self.0.get()?.stream())
-  }
-
-  #[napi]
-  pub fn handler(&self) -> napi::Result<Handler> {
-    Ok(self.0.get()?.share())
   }
 }

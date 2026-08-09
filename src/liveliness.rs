@@ -122,9 +122,4 @@ impl LivelinessSubscriber {
   pub fn stream(&self) -> napi::Result<Stream> {
     Ok(self.0.get()?.stream())
   }
-
-  #[napi]
-  pub fn handler(&self) -> napi::Result<Handler> {
-    Ok(self.0.get()?.share())
-  }
 }

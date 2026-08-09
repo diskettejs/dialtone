@@ -170,7 +170,6 @@ export declare class LinkEventsListener {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class Liveliness {
@@ -186,7 +185,6 @@ export declare class LivelinessSubscriber {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class LivelinessToken {
@@ -207,7 +205,6 @@ export declare class MatchingListener {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class MatchingStatus {
@@ -291,7 +288,6 @@ export declare class Queryable {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class Reply {
@@ -327,7 +323,6 @@ export declare class SampleMissListener {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class Scout {
@@ -336,7 +331,6 @@ export declare class Scout {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class Selector {
@@ -410,7 +404,6 @@ export declare class Subscriber {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class Timestamp {
@@ -438,7 +431,6 @@ export declare class TransportEventsListener {
   recv(): Promise<DeferredJs>
   tryRecv(): DeferredJs | null
   stream(): Stream
-  handler(): Handler
 }
 
 export declare class WhatAmIMatcher {
