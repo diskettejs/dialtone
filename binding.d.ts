@@ -454,8 +454,15 @@ export declare class WhatAmIMatcher {
 export type BytesBuffer =
   string | Uint8Array
 
+/** Configures a publisher's cache, used to serve history and retransmissions. */
 export interface CacheConfig {
+  /**
+   * How many samples to keep for each resource.
+   *
+   * Defaults to `1`.
+   */
   maxSamples?: number
+  /** QoS to apply to the replies served from the cache. */
   repliesConfig?: RepliesConfig
 }
 
@@ -468,12 +475,32 @@ export type ConsolidationMode =  'Auto'|
 'Monotonic'|
 'Latest';
 
+/** Options for a session delete. */
 export interface DeleteOptions {
+  /** Congestion control to apply when routing the data. */
   congestionControl?: CongestionControl
+  /** Priority to apply when routing the data. */
   priority?: Priority
+  /**
+   * When `true`, the message is not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /**
+   * Reliability to apply when routing the data.
+   *
+   * Note: reliability does not trigger any data retransmission on the wire. It is a
+   * marker that may be used to select the best link available (e.g. TCP for reliable
+   * data and UDP for best effort data).
+   */
   reliability?: Reliability
+  /**
+   * Restricts the matching subscribers that receive the delete to the ones with the
+   * given locality.
+   */
   allowedDestination?: Locality
+  /** Arbitrary user-defined data sent alongside the delete. */
   attachment?: BytesBuffer
 }
 
@@ -484,35 +511,104 @@ export interface EndPointParts {
   config: string
 }
 
+/** Options for a session query. */
 export interface GetOptions {
+  /**
+   * Selector parameters of this query.
+   *
+   * Replaces any parameters already carried by the selector argument.
+   */
   parameters?: ParametersLike
+  /**
+   * Target(s) of the query.
+   *
+   * Selects whether the query just returns the data available in the network matching
+   * the key expression (`BestMatching`, the default) or whether it reaches all matching
+   * queryables (`All`, `AllComplete`).
+   *
+   * See also {@link QueryableOptions.complete}.
+   */
   target?: QueryTarget
+  /**
+   * Consolidation mode of the query.
+   *
+   * Multiple replies to a query may arrive from the network; the consolidation mode
+   * defines the strategy for filtering and reordering them. `Auto` lets the
+   * implementation choose the best strategy.
+   */
   consolidation?: ConsolidationMode
+  /** Congestion control to apply when routing the query. */
   congestionControl?: CongestionControl
+  /** Priority to apply when routing the query. */
   priority?: Priority
+  /**
+   * When `true`, the query is not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /**
+   * Restricts the matching queryables that receive the query to the ones with the given
+   * locality.
+   */
   allowedDestination?: Locality
+  /**
+   * Query timeout, in milliseconds.
+   *
+   * Defaults to the session's `queries_default_timeout` configuration.
+   */
   timeout?: number
+  /** Payload sent along with the query. */
   payload?: BytesBuffer
+  /** Encoding of the query payload. */
   encoding?: string
+  /** Arbitrary user-defined data sent alongside the query. */
   attachment?: BytesBuffer
   channel?: FifoChannel | RingChannel
 }
 
+/** Configures the heartbeat published for sample miss detection. */
 export interface HeartbeatConfig {
+  /**
+   * Period, in milliseconds, at which the last published sample's sequence number is
+   * sent.
+   */
   periodMs: number
+  /**
+   * When `true`, the sequence number is sent each period only if it changed since the
+   * last one, and it is sent with a blocking congestion control.
+   */
   sporadic?: boolean
 }
 
+/** Discriminant selecting {@link HeartbeatRecovery}. */
 export type HeartbeatMode =  'Heartbeat';
 
+/**
+ * Recovers missed samples by subscribing to publisher heartbeats.
+ *
+ * This allows receiving the last published sample's sequence number and checking for
+ * misses. It must be paired with publishers that enable {@link PublisherOptions.cache}
+ * and {@link PublisherOptions.sampleMissDetection} with a
+ * {@link MissDetectionConfig.heartbeat}.
+ */
 export interface HeartbeatRecovery {
   mode: HeartbeatMode
 }
 
+/** Configures the query for historical data performed by a subscriber on declaration. */
 export interface HistoryConfig {
+  /**
+   * When `true`, detects late joiner publishers and queries their historical data.
+   *
+   * Late joiner detection only works with publishers that enable
+   * {@link PublisherOptions.publisherDetection}, and history can only be retransmitted
+   * by publishers that enable {@link PublisherOptions.cache}.
+   */
   detectLatePublishers?: boolean
+  /** How many samples to query for each resource. */
   maxSamples?: number
+  /** Maximum age, in seconds, of the samples to query. */
   maxAgeSecs?: number
 }
 
@@ -521,7 +617,9 @@ export declare function initLog(callback: LogCallback, level: LogLevel): boolean
 export type KeyExprArg =
   string | KeyExpr
 
+/** Options for declaring a listener of link events. */
 export interface LinkEventsListenerOptions {
+  /** When `true`, emits events for the existing links before the live events. */
   history?: boolean
   channel?: FifoChannel | RingChannel
 }
@@ -531,12 +629,26 @@ export interface LinkPriorities {
   max: number
 }
 
+/** Options for a liveliness query. */
 export interface LivelinessGetOptions {
+  /**
+   * Query timeout, in milliseconds.
+   *
+   * Defaults to the session's `queries_default_timeout` configuration.
+   */
   timeout?: number
   channel?: FifoChannel | RingChannel
 }
 
+/** Options for declaring a liveliness subscriber. */
 export interface LivelinessSubscriberOptions {
+  /**
+   * When `true`, queries the network for the currently live tokens upon declaring the
+   * subscriber.
+   *
+   * When `false`, no such query is made, though currently live tokens may still be
+   * delivered to the subscriber.
+   */
   history?: boolean
   channel?: FifoChannel | RingChannel
 }
@@ -570,21 +682,47 @@ export interface LogRecord {
   attributes: Array<LogAttribute>
 }
 
+/** Options for declaring a listener of matching status changes. */
 export interface MatchingListenerOptions {
   channel?: FifoChannel | RingChannel
 }
 
+/**
+ * Configuration for sample miss detection.
+ *
+ * Enabling {@link PublisherOptions.sampleMissDetection} allows subscribers to detect
+ * missed samples through a sample miss listener and to recover them through
+ * {@link SubscriberOptions.recovery}.
+ */
 export interface MissDetectionConfig {
+  /**
+   * Allows last sample miss detection by periodically publishing the last sample's
+   * sequence number.
+   *
+   * Subscribers can recover the last sample with {@link HeartbeatRecovery}.
+   */
   heartbeat?: HeartbeatConfig
 }
 
 export type ParametersLike =
   Record<string, string>
 
+/** Discriminant selecting {@link PeriodicQueriesRecovery}. */
 export type PeriodicQueriesMode =  'PeriodicQueries';
 
+/**
+ * Recovers missed samples by periodically querying for not yet received ones.
+ *
+ * This allows retrieving the last sample(s) if they were lost, so it is useful for
+ * sporadic publications but useless for periodic publications with a period smaller
+ * than or equal to {@link PeriodicQueriesRecovery.periodMs}.
+ *
+ * Retransmission can only be achieved by publishers that enable both
+ * {@link PublisherOptions.cache} and {@link PublisherOptions.sampleMissDetection}.
+ */
 export interface PeriodicQueriesRecovery {
   mode: PeriodicQueriesMode
+  /** Period of the queries, in milliseconds. */
   periodMs: number
 }
 
@@ -596,58 +734,192 @@ export type Priority =  'RealTime'|
 'DataLow'|
 'Background';
 
+/** Options for a single delete on an existing publisher. */
 export interface PublisherDeleteOptions {
+  /** Arbitrary user-defined data sent alongside the delete. */
   attachment?: BytesBuffer
 }
 
+/** Options for declaring a publisher. */
 export interface PublisherOptions {
+  /**
+   * Default encoding of the payloads published by this publisher.
+   *
+   * Can be overridden per publication with {@link PublisherPutOptions.encoding}.
+   */
   encoding?: string
+  /** Congestion control to apply when routing the data. */
   congestionControl?: CongestionControl
+  /** Priority to apply when routing the data. */
   priority?: Priority
+  /**
+   * When `true`, messages are not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /**
+   * Reliability to apply when routing the data.
+   *
+   * Note: reliability does not trigger any data retransmission on the wire. It is a
+   * marker that may be used to select the best link available (e.g. TCP for reliable
+   * data and UDP for best effort data).
+   */
   reliability?: Reliability
+  /**
+   * Restricts the matching subscribers that receive the published data to the ones
+   * with the given locality.
+   */
   allowedDestination?: Locality
+  /**
+   * Attaches a cache to this publisher.
+   *
+   * The cache serves history and retransmission requests coming from subscribers.
+   */
   cache?: CacheConfig
+  /**
+   * Allows matching subscribers to detect lost samples and optionally ask for
+   * retransmission.
+   *
+   * Retransmission can only be achieved if {@link PublisherOptions.cache} is enabled.
+   */
   sampleMissDetection?: MissDetectionConfig
+  /**
+   * When `true`, allows this publisher to be detected by subscribers through liveliness,
+   * which lets them retrieve its local history.
+   */
   publisherDetection?: boolean
 }
 
+/** Options for a single publication on an existing publisher. */
 export interface PublisherPutOptions {
+  /**
+   * Encoding of this publication's payload.
+   *
+   * Overrides the publisher's default {@link PublisherOptions.encoding} for this
+   * publication only.
+   */
   encoding?: string
+  /** Arbitrary user-defined data sent alongside the payload. */
   attachment?: BytesBuffer
 }
 
+/** Options for a session put. */
 export interface PutOptions {
+  /** Encoding of the payload. */
   encoding?: string
+  /** Congestion control to apply when routing the data. */
   congestionControl?: CongestionControl
+  /** Priority to apply when routing the data. */
   priority?: Priority
+  /**
+   * When `true`, the message is not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /**
+   * Reliability to apply when routing the data.
+   *
+   * Note: reliability does not trigger any data retransmission on the wire. It is a
+   * marker that may be used to select the best link available (e.g. TCP for reliable
+   * data and UDP for best effort data).
+   */
   reliability?: Reliability
+  /**
+   * Restricts the matching subscribers that receive the published data to the ones
+   * with the given locality.
+   */
   allowedDestination?: Locality
+  /** Arbitrary user-defined data sent alongside the payload. */
   attachment?: BytesBuffer
 }
 
+/** Options for a query issued by a querier. */
 export interface QuerierGetOptions {
+  /** Selector parameters of this query. */
   parameters?: ParametersLike
+  /** Payload sent along with the query. */
   payload?: BytesBuffer
+  /** Encoding of the query payload. */
   encoding?: string
+  /** Arbitrary user-defined data sent alongside the query. */
   attachment?: BytesBuffer
   channel?: FifoChannel | RingChannel
 }
 
+/** Options for declaring a querier. */
 export interface QuerierOptions {
+  /**
+   * Target(s) of the querier's queries.
+   *
+   * Selects whether a query just returns the data available in the network matching the
+   * key expression (`BestMatching`, the default) or whether it reaches all matching
+   * queryables (`All`, `AllComplete`).
+   *
+   * See also {@link QueryableOptions.complete}.
+   */
   target?: QueryTarget
+  /**
+   * Consolidation mode of the querier's queries.
+   *
+   * Multiple replies to a query may arrive from the network; the consolidation mode
+   * defines the strategy for filtering and reordering them. `Auto` lets the
+   * implementation choose the best strategy.
+   */
   consolidation?: ConsolidationMode
+  /** Congestion control to apply when routing the queries. */
   congestionControl?: CongestionControl
+  /** Priority to apply when routing the queries. */
   priority?: Priority
+  /**
+   * When `true`, the queries are not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /**
+   * Restricts the matching queryables that receive the queries to the ones with the
+   * given locality.
+   */
   allowedDestination?: Locality
+  /**
+   * Query timeout, in milliseconds.
+   *
+   * Defaults to the session's `queries_default_timeout` configuration.
+   */
   timeout?: number
+  /**
+   * Whether this querier accepts replies whose key expression does not intersect its
+   * own.
+   *
+   * A queryable serving a glob-like key expression such as `foo/*` may reply to a query
+   * for `foo/bar` with the key expression `foo/baz`. By default such disjoint replies
+   * are rejected on the sending side; `Any` accepts them.
+   */
   acceptReplies?: ReplyKeyExpr
 }
 
+/** Options for declaring a queryable. */
 export interface QueryableOptions {
+  /**
+   * When `true`, the queryable promises to have all the data associated with its key
+   * expression, so queriers do not need to query other nodes for matching data.
+   *
+   * E.g. a queryable serving `foo/*` that is complete answers a query for `foo/bar` on
+   * its own, even if other queryables match `foo/bar`. But a complete queryable serving
+   * `foo/bar` does not cover the whole of `foo/*`, so a query for `foo/*` is still sent
+   * to other queryables as well.
+   *
+   * This applies to the default {@link QueryTarget} `BestMatching`. `All` forcibly
+   * requests every available queryable, and `AllComplete` requests only the complete
+   * ones.
+   */
   complete?: boolean
+  /**
+   * Restricts the matching queries received by this queryable to the ones with the given
+   * locality.
+   */
   allowedOrigin?: Locality
   channel?: FifoChannel | RingChannel
 }
@@ -659,27 +931,52 @@ export type QueryTarget =  'BestMatching'|
 export type Reliability =  'BestEffort'|
 'Reliable';
 
+/** QoS applied to the replies served from a cache. */
 export interface RepliesConfig {
+  /** Priority to apply when routing the replies. */
   priority?: Priority
+  /** Congestion control to apply when routing the replies. */
   congestionControl?: CongestionControl
+  /**
+   * When `true`, the replies are not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
 }
 
+/** Options for replying to a query with a delete. */
 export interface ReplyDelOptions {
+  /**
+   * When `true`, the reply is not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /** Arbitrary user-defined data sent alongside the reply. */
   attachment?: BytesBuffer
 }
 
+/** Options for replying to a query with an error. */
 export interface ReplyErrOptions {
+  /** Encoding of the error payload. */
   encoding?: string
 }
 
 export type ReplyKeyExpr =  'Any'|
 'MatchingQuery';
 
+/** Options for replying to a query with a payload. */
 export interface ReplyOptions {
+  /** Encoding of the reply payload. */
   encoding?: string
+  /**
+   * When `true`, the reply is not batched.
+   *
+   * This usually has a positive impact on latency but a negative impact on throughput.
+   */
   express?: boolean
+  /** Arbitrary user-defined data sent alongside the reply payload. */
   attachment?: BytesBuffer
 }
 
@@ -699,10 +996,12 @@ export interface ReplyResultSample {
 export type SampleKind =  'Put'|
 'Delete';
 
+/** Options for declaring a listener of missed samples. */
 export interface SampleMissListenerOptions {
   channel?: FifoChannel | RingChannel
 }
 
+/** Options for scouting. */
 export interface ScoutOptions {
   channel?: FifoChannel | RingChannel
 }
@@ -715,17 +1014,47 @@ export interface SelectorParts {
   parameters: string
 }
 
+/** Options for declaring a subscriber. */
 export interface SubscriberOptions {
+  /**
+   * Restricts the matching publications received by this subscriber to the ones with
+   * the given locality.
+   */
   allowedOrigin?: Locality
+  /**
+   * Queries for historical data when the subscriber is declared.
+   *
+   * History can only be retransmitted by publishers that enable
+   * {@link PublisherOptions.cache}.
+   */
   history?: HistoryConfig
+  /**
+   * Asks for retransmission of detected lost samples.
+   *
+   * Retransmission can only be achieved by publishers that enable both
+   * {@link PublisherOptions.cache} and {@link PublisherOptions.sampleMissDetection}.
+   */
   recovery?: PeriodicQueriesRecovery | HeartbeatRecovery
+  /** When `true`, allows this subscriber to be detected through liveliness. */
   subscriberDetection?: boolean
+  /**
+   * A key expression appended to the liveliness token key expression.
+   *
+   * It can be used to convey metadata.
+   */
   subscriberDetectionMetadata?: string
+  /**
+   * Timeout, in milliseconds, for the queries issued for history and retransmission.
+   *
+   * Defaults to `10000`.
+   */
   queryTimeoutMs?: number
   channel?: FifoChannel | RingChannel
 }
 
+/** Options for declaring a listener of transport events. */
 export interface TransportEventsListenerOptions {
+  /** When `true`, emits events for the existing transports before the live events. */
   history?: boolean
   channel?: FifoChannel | RingChannel
 }
