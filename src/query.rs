@@ -346,8 +346,8 @@ impl From<ConsolidationMode> for z::query::ConsolidationMode {
 
 impl From<ConsolidationMode> for z::query::QueryConsolidation {
   fn from(value: ConsolidationMode) -> Self {
-    let mode: z::query::QueryConsolidation = value.into();
-    mode
+    let mode: z::query::ConsolidationMode = value.into();
+    mode.into()
   }
 }
 
