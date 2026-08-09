@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use napi::Unknown;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use zenoh as z;
 
 use crate::utils::MapNapiErr;
 
@@ -24,11 +23,11 @@ impl FifoChannel {
   }
 }
 
-impl<T: Send + 'static> z::handlers::IntoHandler<T> for FifoChannel {
-  type Handler = z::handlers::FifoChannelHandler<T>;
+impl<T: Send + 'static> zenoh::handlers::IntoHandler<T> for FifoChannel {
+  type Handler = zenoh::handlers::FifoChannelHandler<T>;
 
-  fn into_handler(self) -> (z::handlers::Callback<T>, Self::Handler) {
-    z::handlers::FifoChannel::new(self.capacity).into_handler()
+  fn into_handler(self) -> (zenoh::handlers::Callback<T>, Self::Handler) {
+    zenoh::handlers::FifoChannel::new(self.capacity).into_handler()
   }
 }
 
@@ -48,11 +47,11 @@ impl RingChannel {
   }
 }
 
-impl<T: Send + 'static> z::handlers::IntoHandler<T> for RingChannel {
-  type Handler = z::handlers::RingChannelHandler<T>;
+impl<T: Send + 'static> zenoh::handlers::IntoHandler<T> for RingChannel {
+  type Handler = zenoh::handlers::RingChannelHandler<T>;
 
-  fn into_handler(self) -> (z::handlers::Callback<T>, Self::Handler) {
-    z::handlers::RingChannel::new(self.capacity).into_handler()
+  fn into_handler(self) -> (zenoh::handlers::Callback<T>, Self::Handler) {
+    zenoh::handlers::RingChannel::new(self.capacity).into_handler()
   }
 }
 
@@ -115,7 +114,7 @@ pub(crate) trait Receiver: Send + Sync {
 macro_rules! impl_receiver {
   ($($handler:ident),* $(,)?) => {$(
     #[async_trait]
-    impl<T: IntoJs> Receiver for z::handlers::$handler<T> {
+    impl<T: IntoJs> Receiver for zenoh::handlers::$handler<T> {
       async fn recv(&self) -> napi::Result<DeferredJs> {
         Ok(DeferredJs::new(self.recv_async().await.map_napi_err()?))
       }
@@ -143,29 +142,6 @@ impl Handler {
   pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
     self.0.try_recv()
   }
-
-  #[napi]
-  pub fn stream(&self) -> Stream {
-    Stream(self.clone())
-  }
-}
-
-#[napi(async_iterator)]
-pub struct Stream(Handler);
-
-#[napi]
-impl AsyncGenerator for Stream {
-  type Yield = DeferredJs;
-  type Next = ();
-  type Return = ();
-
-  fn next(
-    &mut self,
-    _value: Option<()>,
-  ) -> impl std::future::Future<Output = napi::Result<Option<DeferredJs>>> + Send + 'static {
-    let handler = self.0.clone();
-    async move { Ok(handler.recv().await.ok()) }
-  }
 }
 
 pub struct HandlerImpl<T>(Handler, PhantomData<T>);
@@ -184,10 +160,6 @@ impl<T> HandlerImpl<T> {
   pub(crate) fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
     self.0.try_recv()
   }
-
-  pub(crate) fn stream(&self) -> Stream {
-    self.0.stream()
-  }
 }
 
 impl<T> From<HandlerImpl<T>> for Handler {
@@ -196,9 +168,9 @@ impl<T> From<HandlerImpl<T>> for Handler {
   }
 }
 
-fn erased<C, T>(channel: C) -> (z::handlers::Callback<T>, HandlerImpl<T>)
+fn erased<C, T>(channel: C) -> (zenoh::handlers::Callback<T>, HandlerImpl<T>)
 where
-  C: z::handlers::IntoHandler<T>,
+  C: zenoh::handlers::IntoHandler<T>,
   C::Handler: Receiver + 'static,
 {
   let (callback, handler) = channel.into_handler();
@@ -214,7 +186,7 @@ where
 /// channel (`FifoChannel`/`RingChannel`) and erases it into the `(Callback, HandlerImpl)` pair
 /// right there. Downstream holds only that pair — no `Env`, still `Send` — so a declaration can
 /// run as a plain `async fn` without `spawn_future`.
-pub struct ChannelHandler<T>(z::handlers::Callback<T>, HandlerImpl<T>);
+pub struct ChannelHandler<T>(zenoh::handlers::Callback<T>, HandlerImpl<T>);
 
 impl<T: IntoJs> FromNapiValue for ChannelHandler<T> {
   unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> napi::Result<Self> {
@@ -235,9 +207,9 @@ impl<T: IntoJs> FromNapiValue for ChannelHandler<T> {
 
 pub(crate) fn into_handler<T: IntoJs>(
   handler: Option<ChannelHandler<T>>,
-) -> impl z::handlers::IntoHandler<T, Handler = HandlerImpl<T>> {
+) -> impl zenoh::handlers::IntoHandler<T, Handler = HandlerImpl<T>> {
   match handler {
     Some(ChannelHandler(callback, handler)) => (callback, handler),
-    None => erased(z::handlers::FifoChannel::default()),
+    None => erased(zenoh::handlers::FifoChannel::default()),
   }
 }

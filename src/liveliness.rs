@@ -117,9 +117,4 @@ impl LivelinessSubscriber {
   pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
     self.0.get()?.try_recv()
   }
-
-  #[napi]
-  pub fn stream(&self) -> napi::Result<Stream> {
-    Ok(self.0.get()?.stream())
-  }
 }

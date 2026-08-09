@@ -135,24 +135,6 @@ describe('Subscriber', () => {
     })
   })
 
-  describe('stream()', () => {
-    test('yields samples via async iteration', async () => {
-      const key = 'test/pubsub/stream'
-      using publisher = await session.declarePublisher(key)
-      using subscriber = await session.declareSubscriber(key)
-
-      await publisher.put('streamed')
-
-      let yielded = false
-      for await (const sample of subscriber.stream()) {
-        expect(sample).toBeTruthy()
-        yielded = true
-        break
-      }
-      expect(yielded).toBe(true)
-    })
-  })
-
   describe('detectPublishers()', () => {
     test("observes a publisher's liveliness token", async () => {
       const key = 'test/pubsub/detect-publishers'
