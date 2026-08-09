@@ -7,7 +7,7 @@ use crate::{config::*, handlers::*, options::*, session::*, utils::*};
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Scout(Declared<Scout, z::scouting::Scout<HandlerImpl<z::scouting::Hello>>>);
+pub struct Scout(Declared<z::scouting::Scout<HandlerImpl<z::scouting::Hello>>>);
 
 #[napi]
 #[allow(clippy::self_named_constructors)]

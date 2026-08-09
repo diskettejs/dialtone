@@ -20,10 +20,7 @@ impl MatchingStatus {
 #[from(forward)]
 #[napi]
 pub struct MatchingListener(
-  Declared<
-    MatchingListener,
-    z::matching::MatchingListener<HandlerImpl<z::matching::MatchingStatus>>,
-  >,
+  Declared<z::matching::MatchingListener<HandlerImpl<z::matching::MatchingStatus>>>,
 );
 
 #[napi]

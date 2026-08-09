@@ -11,7 +11,7 @@ use crate::{
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Query(Declared<Query, z::query::Query>);
+pub struct Query(Declared<z::query::Query>);
 
 #[napi]
 impl Query {
@@ -334,7 +334,7 @@ impl From<ConsolidationMode> for z::query::ConsolidationMode {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Queryable(Declared<Queryable, z::query::Queryable<HandlerImpl<z::query::Query>>>);
+pub struct Queryable(Declared<z::query::Queryable<HandlerImpl<z::query::Query>>>);
 
 #[napi]
 impl Queryable {
@@ -377,7 +377,7 @@ impl Queryable {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Querier(Declared<Querier, z::query::Querier<'static>>);
+pub struct Querier(Declared<z::query::Querier<'static>>);
 
 #[napi]
 impl Querier {

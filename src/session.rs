@@ -465,10 +465,7 @@ impl TransportEvent {
 #[from(forward)]
 #[napi]
 pub struct TransportEventsListener(
-  Declared<
-    TransportEventsListener,
-    z::session::TransportEventsListener<HandlerImpl<z::session::TransportEvent>>,
-  >,
+  Declared<z::session::TransportEventsListener<HandlerImpl<z::session::TransportEvent>>>,
 );
 
 #[napi]
@@ -586,7 +583,7 @@ impl LinkEvent {
 #[from(forward)]
 #[napi]
 pub struct LinkEventsListener(
-  Declared<LinkEventsListener, z::session::LinkEventsListener<HandlerImpl<z::session::LinkEvent>>>,
+  Declared<z::session::LinkEventsListener<HandlerImpl<z::session::LinkEvent>>>,
 );
 
 #[napi]

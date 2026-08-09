@@ -77,7 +77,7 @@ impl Liveliness {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct LivelinessToken(Declared<LivelinessToken, z::liveliness::LivelinessToken>);
+pub struct LivelinessToken(Declared<z::liveliness::LivelinessToken>);
 
 #[napi]
 impl LivelinessToken {
@@ -90,9 +90,7 @@ impl LivelinessToken {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct LivelinessSubscriber(
-  Declared<LivelinessSubscriber, z::pubsub::Subscriber<HandlerImpl<z::sample::Sample>>>,
-);
+pub struct LivelinessSubscriber(Declared<z::pubsub::Subscriber<HandlerImpl<z::sample::Sample>>>);
 
 #[napi]
 impl LivelinessSubscriber {
