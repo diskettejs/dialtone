@@ -41,33 +41,38 @@ impl Publisher {
   #[napi]
   pub async fn put(
     &self,
-    payload: BytesLike,
+    payload: BytesBuffer,
     options: Option<PublisherPutOptions>,
   ) -> napi::Result<()> {
-    let payload = payload.into_zbytes();
     let PublisherPutOptions {
       encoding,
-      timestamp,
       attachment,
     } = options.unwrap_or_default();
     let publisher = self.0.get()?;
+    let mut builder = publisher.put(payload);
 
-    build!(publisher.put(payload), encoding, timestamp, attachment)
-      .await
-      .map_napi_err()
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
   pub async fn delete(&self, options: Option<PublisherDeleteOptions>) -> napi::Result<()> {
-    let PublisherDeleteOptions {
-      timestamp,
-      attachment,
-    } = options.unwrap_or_default();
+    let PublisherDeleteOptions { attachment } = options.unwrap_or_default();
     let publisher = self.0.get()?;
+    let mut builder = publisher.delete();
 
-    build!(publisher.delete(), timestamp, attachment)
-      .await
-      .map_napi_err()
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -144,10 +149,13 @@ impl Subscriber {
   ) -> napi::Result<LivelinessSubscriber> {
     let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
+    let mut builder = self.0.get()?.detect_publishers().with(handler);
 
-    let subscriber = build!(self.0.get()?.detect_publishers().with(handler), history)
-      .await
-      .map_napi_err()?;
+    if let Some(history) = history {
+      builder = builder.history(history)
+    }
+
+    let subscriber = builder.await.map_napi_err()?;
 
     Ok(subscriber.into())
   }

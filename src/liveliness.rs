@@ -54,21 +54,20 @@ impl Liveliness {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
-      cancellation_token,
+      // cancellation_token,
       channel,
     } = options.unwrap_or_default();
 
     let timeout = duration_ms(timeout)?;
     let handler = into_handler(channel);
     let session = self.0.clone();
+    let mut builder = session.liveliness().get(expr).with(handler);
 
-    let rec = build!(
-      session.liveliness().get(expr).with(handler),
-      timeout,
-      cancellation_token,
-    )
-    .await
-    .map_napi_err()?;
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(timeout)
+    }
+
+    let rec = builder.await.map_napi_err()?;
 
     Ok(rec.into())
   }

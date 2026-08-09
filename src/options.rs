@@ -2,98 +2,19 @@ use std::time::Duration;
 
 use napi_derive::napi;
 
-use crate::{
-  bytes::*, cancellation::*, handlers::*, qos::*, query::*, sample::*, session::*, time::*,
-  utils::*,
-};
-
-/// Identity conversions: primitives passed straight to a setter, plus `Duration` values that
-/// `duration_ms` has already produced and that pass back through `build!`.
-macro_rules! identity {
-  ($($ty:ty),* $(,)?) => {$(
-    impl IntoZenoh for $ty {
-      type Into = $ty;
-      fn into_zenoh(self) -> $ty {
-        self
-      }
-    }
-  )*};
-}
-identity!(bool, String, Duration);
-
-/// Conversions that defer to an existing `From`/`Into`.
-/// - `T => U` converts `self` directly (`self.into()`), for structs with a `From<T> for U`.
-/// - `Instance: T => U` unwraps the napi class out of the instance and converts the owned
-///   wrapper (`self.into_inner().into()`).
-macro_rules! via_from {
-  ($($ty:ty => $into:ty),* $(,)?) => {$(
-    impl IntoZenoh for $ty {
-      type Into = $into;
-      fn into_zenoh(self) -> $into {
-        self.into()
-      }
-    }
-  )*};
-  (Instance: $($ty:ty => $into:ty),* $(,)?) => {$(
-    impl IntoZenoh for Instance<$ty> {
-      type Into = $into;
-      fn into_zenoh(self) -> $into {
-        self.into_inner().into()
-      }
-    }
-  )*};
-}
-via_from!(
-  CongestionControl => zenoh::qos::CongestionControl,
-  Priority => zenoh::qos::Priority,
-  Reliability => zenoh::qos::Reliability,
-  Locality => zenoh::sample::Locality,
-  QueryTarget => zenoh::query::QueryTarget,
-  ConsolidationMode => zenoh::query::ConsolidationMode,
-  ReplyKeyExpr => zenoh::query::ReplyKeyExpr,
-  HistoryConfig => zenoh_ext::HistoryConfig,
-  CacheConfig => zenoh_ext::CacheConfig,
-  MissDetectionConfig => zenoh_ext::MissDetectionConfig,
-);
-via_from!(Instance:
-  Timestamp => zenoh::time::Timestamp,
-  SourceInfo => zenoh::sample::SourceInfo,
-  CancellationToken => zenoh::cancellation::CancellationToken,
-  Parameters => zenoh::query::Parameters<'static>,
-  Transport => zenoh::session::Transport,
-);
-
-impl IntoZenoh for napi::Either<PeriodicQueriesRecovery, HeartbeatRecovery> {
-  type Into = zenoh_ext::RecoveryConfig;
-  fn into_zenoh(self) -> zenoh_ext::RecoveryConfig {
-    match self {
-      napi::Either::A(periodic) => periodic.into(),
-      napi::Either::B(heartbeat) => heartbeat.into(),
-    }
-  }
-}
-
-/// Converts a JS millisecond timeout into a `Duration`, surfacing invalid values as errors.
-pub(crate) fn duration_ms(ms: Option<f64>) -> napi::Result<Option<Duration>> {
-  ms.map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
-    .transpose()
-}
+use crate::{bytes::*, handlers::*, qos::*, query::*};
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct PublisherPutOptions {
   pub encoding: Option<String>,
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct PublisherDeleteOptions {
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[derive(Default)]
@@ -108,7 +29,6 @@ pub struct PublisherOptions {
   pub cache: Option<CacheConfig>,
   pub sample_miss_detection: Option<MissDetectionConfig>,
   pub publisher_detection: Option<bool>,
-  pub publisher_detection_metadata: Option<String>,
 }
 
 #[derive(Default)]
@@ -133,11 +53,7 @@ pub struct PutOptions {
   pub express: Option<bool>,
   pub reliability: Option<Reliability>,
   pub allowed_destination: Option<Locality>,
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[derive(Default)]
@@ -148,11 +64,7 @@ pub struct DeleteOptions {
   pub express: Option<bool>,
   pub reliability: Option<Reliability>,
   pub allowed_destination: Option<Locality>,
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[napi(object, object_to_js = false)]
@@ -245,8 +157,6 @@ pub struct TransportEventsListenerOptions {
 #[napi(object, object_to_js = false)]
 pub struct LinkEventsListenerOptions {
   pub history: Option<bool>,
-  #[napi(ts_type = "Transport")]
-  pub transport: Option<Instance<Transport>>,
   #[napi(ts_type = "FifoChannel | RingChannel")]
   pub channel: Option<ChannelHandler<zenoh::session::LinkEvent>>,
 }
@@ -263,8 +173,7 @@ pub struct LivelinessSubscriberOptions {
 #[napi(object, object_to_js = false)]
 pub struct LivelinessGetOptions {
   pub timeout: Option<f64>,
-  #[napi(ts_type = "CancellationToken")]
-  pub cancellation_token: Option<Instance<CancellationToken>>,
+  // pub cancellation_token: Option<Instance<CancellationToken>>,
   #[napi(ts_type = "FifoChannel | RingChannel")]
   pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }
@@ -342,11 +251,7 @@ impl From<RepliesConfig> for zenoh_ext::RepliesConfig {
 pub struct ReplyOptions {
   pub encoding: Option<String>,
   pub express: Option<bool>,
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[derive(Default)]
@@ -359,25 +264,17 @@ pub struct ReplyErrOptions {
 #[napi(object, object_to_js = false)]
 pub struct ReplyDelOptions {
   pub express: Option<bool>,
-  #[napi(ts_type = "Timestamp")]
-  pub timestamp: Option<Instance<Timestamp>>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
+  pub attachment: Option<BytesBuffer>,
 }
 
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct QuerierGetOptions {
-  #[napi(ts_type = "Parameters")]
-  pub parameters: Option<Instance<Parameters>>,
-  pub payload: Option<BytesLike>,
+  pub parameters: Option<ParametersLike>,
+  pub payload: Option<BytesBuffer>,
   pub encoding: Option<String>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
-  #[napi(ts_type = "CancellationToken")]
-  pub cancellation_token: Option<Instance<CancellationToken>>,
+  pub attachment: Option<BytesBuffer>,
+  // pub cancellation_token: Option<Instance<CancellationToken>>,
   #[napi(ts_type = "FifoChannel | RingChannel")]
   pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }
@@ -407,8 +304,7 @@ pub struct QuerierOptions {
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct GetOptions {
-  #[napi(ts_type = "Parameters")]
-  pub parameters: Option<Instance<Parameters>>,
+  pub parameters: Option<ParametersLike>,
   pub target: Option<QueryTarget>,
   pub consolidation: Option<ConsolidationMode>,
   pub congestion_control: Option<CongestionControl>,
@@ -416,13 +312,10 @@ pub struct GetOptions {
   pub express: Option<bool>,
   pub allowed_destination: Option<Locality>,
   pub timeout: Option<f64>,
-  pub payload: Option<BytesLike>,
+  pub payload: Option<BytesBuffer>,
   pub encoding: Option<String>,
-  pub attachment: Option<BytesLike>,
-  #[napi(ts_type = "SourceInfo")]
-  pub source_info: Option<Instance<SourceInfo>>,
-  #[napi(ts_type = "CancellationToken")]
-  pub cancellation_token: Option<Instance<CancellationToken>>,
+  pub attachment: Option<BytesBuffer>,
+  // pub cancellation_token: Option<ClassInstance<'env, CancellationToken>>,
   #[napi(ts_type = "FifoChannel | RingChannel")]
   pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
 }

@@ -109,6 +109,7 @@ impl SessionConfig {
 }
 
 #[napi(string_enum)]
+#[derive(Clone)]
 pub enum WhatAmI {
   Router,
   Peer,

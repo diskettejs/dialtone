@@ -3,28 +3,16 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::utils::*;
+#[napi(transparent)]
+#[derive(From)]
+pub struct BytesBuffer(napi::Either<String, Uint8Array>);
 
-#[napi]
-pub type BytesLike = napi::Either<String, Uint8Array>;
-
-pub(crate) trait IntoZBytes {
-  fn into_zbytes(self) -> z::bytes::ZBytes;
-}
-
-impl IntoZBytes for BytesLike {
-  fn into_zbytes(self) -> z::bytes::ZBytes {
-    match self {
+impl From<BytesBuffer> for z::bytes::ZBytes {
+  fn from(value: BytesBuffer) -> Self {
+    match value.0 {
       napi::Either::A(s) => z::bytes::ZBytes::from(s),
       napi::Either::B(bytes) => z::bytes::ZBytes::from(bytes.to_vec()),
     }
-  }
-}
-
-impl IntoZenoh for BytesLike {
-  type Into = zenoh::bytes::ZBytes;
-  fn into_zenoh(self) -> zenoh::bytes::ZBytes {
-    self.into_zbytes()
   }
 }
 
@@ -40,8 +28,12 @@ impl Bytes {
   }
 
   #[napi(factory)]
-  pub fn from(value: BytesLike) -> Self {
-    value.into_zbytes().into()
+  pub fn from(value: BytesBuffer) -> Self {
+    let zbytes = match value.0 {
+      napi::Either::A(s) => z::bytes::ZBytes::from(s),
+      napi::Either::B(bytes) => z::bytes::ZBytes::from(bytes.to_vec()),
+    };
+    zbytes.into()
   }
 
   #[napi(getter)]

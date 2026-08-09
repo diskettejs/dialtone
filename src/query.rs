@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use derive_more::{AsRef, From, Into};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -61,7 +63,7 @@ impl Query {
   }
 
   #[napi(getter)]
-  pub fn parameters(&self) -> napi::Result<Parameters> {
+  pub fn parameters(&self) -> napi::Result<Parameters<'_>> {
     Ok(self.0.get()?.parameters().clone().into())
   }
 
@@ -74,40 +76,39 @@ impl Query {
   pub async fn reply(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: BytesLike,
+    payload: BytesBuffer,
     options: Option<ReplyOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let payload = payload.into_zbytes();
     let query = self.0.get()?;
-
     let ReplyOptions {
       encoding,
       express,
-      timestamp,
       attachment,
-      source_info,
     } = options.unwrap_or_default();
+    let mut builder = query.reply(expr, payload);
 
-    build!(
-      query.reply(expr, payload),
-      encoding,
-      express,
-      timestamp,
-      attachment,
-      source_info,
-    )
-    .await
-    .map_napi_err()
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
   pub async fn reply_err(
     &self,
-    payload: BytesLike,
+    payload: BytesBuffer,
     options: Option<ReplyErrOptions>,
   ) -> napi::Result<()> {
-    let payload = payload.into_zbytes();
     let ReplyErrOptions { encoding } = options.unwrap_or_default();
     let mut builder = self.0.get()?.reply_err(payload);
     if let Some(e) = encoding {
@@ -124,23 +125,21 @@ impl Query {
     options: Option<ReplyDelOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
-
     let ReplyDelOptions {
       express,
-      timestamp,
       attachment,
-      source_info,
     } = options.unwrap_or_default();
+    let mut builder = self.0.get()?.reply_del(expr);
 
-    build!(
-      self.0.get()?.reply_del(expr),
-      express,
-      timestamp,
-      attachment,
-      source_info,
-    )
-    .await
-    .map_napi_err()
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -232,12 +231,21 @@ impl ReplyError {
   }
 }
 
+#[napi]
+pub type ParametersLike = HashMap<String, String>;
+
+impl<'s> From<ParametersLike> for Parameters<'s> {
+  fn from(value: ParametersLike) -> Self {
+    Parameters::from(value)
+  }
+}
+
 #[derive(Clone, From, Into)]
 #[napi]
-pub struct Parameters(z::query::Parameters<'static>);
+pub struct Parameters<'s>(z::query::Parameters<'s>);
 
 #[napi]
-impl Parameters {
+impl<'s> Parameters<'s> {
   #[napi(factory)]
   pub fn empty() -> Self {
     z::query::Parameters::empty().into()
@@ -245,6 +253,11 @@ impl Parameters {
 
   #[napi(constructor)]
   pub fn new(params: String) -> Self {
+    z::query::Parameters::from(params).into()
+  }
+
+  #[napi(factory)]
+  pub fn from(params: ParametersLike) -> Self {
     z::query::Parameters::from(params).into()
   }
 
@@ -331,6 +344,13 @@ impl From<ConsolidationMode> for z::query::ConsolidationMode {
   }
 }
 
+impl From<ConsolidationMode> for z::query::QueryConsolidation {
+  fn from(value: ConsolidationMode) -> Self {
+    let mode: z::query::QueryConsolidation = value.into();
+    mode
+  }
+}
+
 #[derive(From)]
 #[from(forward)]
 #[napi]
@@ -413,24 +433,29 @@ impl Querier {
       payload,
       encoding,
       attachment,
-      source_info,
-      cancellation_token,
+      // cancellation_token,
       channel,
     } = options.unwrap_or_default();
-
     let handler = into_handler(channel);
+    let mut builder = self.0.get()?.get().with(handler);
 
-    let receiver = build!(
-      self.0.get()?.get().with(handler),
-      parameters,
-      payload,
-      encoding,
-      attachment,
-      source_info,
-      cancellation_token,
-    )
-    .await
-    .map_napi_err()?;
+    if let Some(parameters) = parameters {
+      builder = builder.parameters(Parameters::from(parameters))
+    }
+
+    if let Some(payload) = payload {
+      builder = builder.payload(payload)
+    }
+
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    let receiver = builder.await.map_napi_err()?;
 
     Ok(receiver.into())
   }
@@ -474,12 +499,13 @@ pub struct Selector(z::query::Selector<'static>);
 impl Selector {
   pub(crate) fn resolve(
     selector: SelectorArg<'_>,
-    parameters: Option<Instance<Parameters>>,
+    parameters: Option<ParametersLike>,
   ) -> napi::Result<z::query::Selector<'static>> {
     let mut selector = z::query::Selector::from(Selector::try_from(selector)?);
     if let Some(parameters) = parameters {
+      let parameters = z::query::Parameters::from(parameters);
       let key_expr = selector.key_expr().clone().into_owned();
-      selector = z::query::Selector::owned(key_expr, parameters.into_zenoh());
+      selector = z::query::Selector::owned(key_expr, parameters);
     }
     Ok(selector)
   }
@@ -512,7 +538,7 @@ impl Selector {
   }
 
   #[napi(getter)]
-  pub fn parameters(&self) -> Parameters {
+  pub fn parameters(&self) -> Parameters<'_> {
     self.0.parameters().clone().into_owned().into()
   }
 

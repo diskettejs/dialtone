@@ -12,7 +12,7 @@ declare global {
 
 export declare class Bytes {
   constructor()
-  static from(value: BytesLike): Bytes
+  static from(value: BytesBuffer): Bytes
   get isEmpty(): boolean
   get len(): number
   toBytes(): Uint8Array
@@ -229,6 +229,7 @@ export declare class Miss {
 export declare class Parameters {
   static empty(): Parameters
   constructor(params: string)
+  static from(params: ParametersLike): Parameters
   toString(): string
   get isEmpty(): boolean
   get isOrdered(): boolean
@@ -246,7 +247,7 @@ export declare class Publisher {
   get encoding(): Encoding
   get congestionControl(): CongestionControl
   get priority(): Priority
-  put(payload: BytesLike, options?: PublisherPutOptions | undefined | null): Promise<void>
+  put(payload: BytesBuffer, options?: PublisherPutOptions | undefined | null): Promise<void>
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
   matchingStatus(): Promise<MatchingStatus>
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
@@ -277,8 +278,8 @@ export declare class Query {
   get express(): boolean
   get parameters(): Parameters
   get acceptsReplies(): ReplyKeyExpr
-  reply(keyExpr: KeyExprArg, payload: BytesLike, options?: ReplyOptions | undefined | null): Promise<void>
-  replyErr(payload: BytesLike, options?: ReplyErrOptions | undefined | null): Promise<void>
+  reply(keyExpr: KeyExprArg, payload: BytesBuffer, options?: ReplyOptions | undefined | null): Promise<void>
+  replyErr(payload: BytesBuffer, options?: ReplyErrOptions | undefined | null): Promise<void>
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
   drop(): void
 }
@@ -354,7 +355,7 @@ export declare class Session {
   info(): SessionInfo
   config(): SessionConfig
   close(): Promise<void>
-  put(keyExpr: KeyExprArg, payload: BytesLike, options?: PutOptions | undefined | null): Promise<void>
+  put(keyExpr: KeyExprArg, payload: BytesBuffer, options?: PutOptions | undefined | null): Promise<void>
   get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Handler>
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
   liveliness(): Liveliness
@@ -450,7 +451,7 @@ export declare class WhatAmIMatcher {
   toStr(): string
 }
 
-export type BytesLike =
+export type BytesBuffer =
   string | Uint8Array
 
 export interface CacheConfig {
@@ -473,9 +474,7 @@ export interface DeleteOptions {
   express?: boolean
   reliability?: Reliability
   allowedDestination?: Locality
-  timestamp?: Timestamp
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
+  attachment?: BytesBuffer
 }
 
 export interface EndPointParts {
@@ -486,7 +485,7 @@ export interface EndPointParts {
 }
 
 export interface GetOptions {
-  parameters?: Parameters
+  parameters?: ParametersLike
   target?: QueryTarget
   consolidation?: ConsolidationMode
   congestionControl?: CongestionControl
@@ -494,11 +493,9 @@ export interface GetOptions {
   express?: boolean
   allowedDestination?: Locality
   timeout?: number
-  payload?: BytesLike
+  payload?: BytesBuffer
   encoding?: string
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
-  cancellationToken?: CancellationToken
+  attachment?: BytesBuffer
   channel?: FifoChannel | RingChannel
 }
 
@@ -526,7 +523,6 @@ export type KeyExprArg =
 
 export interface LinkEventsListenerOptions {
   history?: boolean
-  transport?: Transport
   channel?: FifoChannel | RingChannel
 }
 
@@ -537,7 +533,6 @@ export interface LinkPriorities {
 
 export interface LivelinessGetOptions {
   timeout?: number
-  cancellationToken?: CancellationToken
   channel?: FifoChannel | RingChannel
 }
 
@@ -583,6 +578,9 @@ export interface MissDetectionConfig {
   heartbeat?: HeartbeatConfig
 }
 
+export type ParametersLike =
+  Record<string, string>
+
 export type PeriodicQueriesMode =  'PeriodicQueries';
 
 export interface PeriodicQueriesRecovery {
@@ -599,8 +597,7 @@ export type Priority =  'RealTime'|
 'Background';
 
 export interface PublisherDeleteOptions {
-  timestamp?: Timestamp
-  attachment?: BytesLike
+  attachment?: BytesBuffer
 }
 
 export interface PublisherOptions {
@@ -613,13 +610,11 @@ export interface PublisherOptions {
   cache?: CacheConfig
   sampleMissDetection?: MissDetectionConfig
   publisherDetection?: boolean
-  publisherDetectionMetadata?: string
 }
 
 export interface PublisherPutOptions {
   encoding?: string
-  timestamp?: Timestamp
-  attachment?: BytesLike
+  attachment?: BytesBuffer
 }
 
 export interface PutOptions {
@@ -629,18 +624,14 @@ export interface PutOptions {
   express?: boolean
   reliability?: Reliability
   allowedDestination?: Locality
-  timestamp?: Timestamp
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
+  attachment?: BytesBuffer
 }
 
 export interface QuerierGetOptions {
-  parameters?: Parameters
-  payload?: BytesLike
+  parameters?: ParametersLike
+  payload?: BytesBuffer
   encoding?: string
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
-  cancellationToken?: CancellationToken
+  attachment?: BytesBuffer
   channel?: FifoChannel | RingChannel
 }
 
@@ -676,9 +667,7 @@ export interface RepliesConfig {
 
 export interface ReplyDelOptions {
   express?: boolean
-  timestamp?: Timestamp
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
+  attachment?: BytesBuffer
 }
 
 export interface ReplyErrOptions {
@@ -691,9 +680,7 @@ export type ReplyKeyExpr =  'Any'|
 export interface ReplyOptions {
   encoding?: string
   express?: boolean
-  timestamp?: Timestamp
-  attachment?: BytesLike
-  sourceInfo?: SourceInfo
+  attachment?: BytesBuffer
 }
 
 export type ReplyResult =

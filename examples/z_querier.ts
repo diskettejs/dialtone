@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises'
 import { parseArgs } from 'node:util'
-import { Parameters, Session, type QuerierGetOptions, type QueryTarget } from '../index.js'
+import { Session, type QuerierGetOptions, type QueryTarget } from '../index.js'
 import { commonOptions, configFromArgs } from './common.ts'
 
 const QUERY_TARGETS: Record<string, QueryTarget> = {
@@ -61,7 +61,7 @@ async function main() {
     console.log(`Querying '${values.selector}' with payload: '${buf}'...`)
 
     // Refer to z_bytes.ts to see how to serialize different types of message.
-    const options: QuerierGetOptions = { payload: buf, parameters: new Parameters(params) }
+    const options: QuerierGetOptions = { payload: buf }
     const replies = await querier.get(options)
     for await (const reply of replies.stream()) {
       const { result } = reply

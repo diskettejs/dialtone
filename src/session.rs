@@ -60,11 +60,10 @@ impl Session {
   pub async fn put(
     &self,
     key_expr: KeyExprArg<'_>,
-    payload: BytesLike,
+    payload: BytesBuffer,
     options: Option<PutOptions>,
   ) -> napi::Result<()> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let payload = payload.into_zbytes();
     let PutOptions {
       encoding,
       congestion_control,
@@ -72,26 +71,40 @@ impl Session {
       express,
       reliability,
       allowed_destination,
-      timestamp,
       attachment,
-      source_info,
     } = options.unwrap_or_default();
     let session = self.0.clone();
+    let mut builder = session.put(expr, payload);
 
-    build!(
-      session.put(expr, payload),
-      encoding,
-      congestion_control,
-      priority,
-      express,
-      reliability,
-      allowed_destination,
-      timestamp,
-      attachment,
-      source_info,
-    )
-    .await
-    .map_napi_err()
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into())
+    }
+
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into())
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into())
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into())
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -112,33 +125,57 @@ impl Session {
       payload,
       encoding,
       attachment,
-      source_info,
-      cancellation_token,
+      // cancellation_token,
       channel,
     } = options.unwrap_or_default();
-
     let selector = Selector::resolve(selector, parameters)?;
     let timeout = duration_ms(timeout)?;
     let handler = into_handler(channel);
     let session = self.0.clone();
 
-    let receiver = build!(
-      session.get(selector).with(handler),
-      target,
-      consolidation,
-      congestion_control,
-      priority,
-      express,
-      allowed_destination,
-      timeout,
-      payload,
-      encoding,
-      attachment,
-      source_info,
-      cancellation_token,
-    )
-    .await
-    .map_napi_err()?;
+    let mut builder = session.get(selector).with(handler);
+
+    if let Some(target) = target {
+      builder = builder.target(target.into())
+    }
+
+    if let Some(consolidation) = consolidation {
+      builder = builder.consolidation(consolidation)
+    }
+
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into())
+    }
+
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into())
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into())
+    }
+
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(timeout)
+    }
+
+    if let Some(payload) = payload {
+      builder = builder.payload(payload)
+    }
+
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    let receiver = builder.await.map_napi_err()?;
 
     Ok(receiver.into())
   }
@@ -156,25 +193,36 @@ impl Session {
       express,
       reliability,
       allowed_destination,
-      timestamp,
       attachment,
-      source_info,
     } = options.unwrap_or_default();
     let session = self.0.clone();
+    let mut builder = session.delete(expr);
 
-    build!(
-      session.delete(expr),
-      congestion_control,
-      priority,
-      express,
-      reliability,
-      allowed_destination,
-      timestamp,
-      attachment,
-      source_info,
-    )
-    .await
-    .map_napi_err()
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into())
+    }
+
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into())
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into())
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into())
+    }
+
+    if let Some(attachment) = attachment {
+      builder = builder.attachment(attachment)
+    }
+
+    builder.await.map_napi_err()
   }
 
   #[napi]
@@ -209,19 +257,41 @@ impl Session {
     let expr = KeyExpr::try_from(key_expr)?;
     let timeout = duration_ms(timeout)?;
 
-    let zquerier = build!(
-      self.0.declare_querier(expr),
-      target,
-      consolidation,
-      congestion_control,
-      priority,
-      express,
-      allowed_destination,
-      timeout,
-      accept_replies,
-    )
-    .await
-    .map_napi_err()?;
+    let mut builder = self.0.declare_querier(expr);
+
+    if let Some(target) = target {
+      builder = builder.target(target.into())
+    }
+
+    if let Some(consolidation) = consolidation {
+      builder = builder.consolidation(consolidation)
+    }
+
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into())
+    }
+
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into())
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into())
+    }
+
+    if let Some(timeout) = timeout {
+      builder = builder.timeout(timeout)
+    }
+
+    if let Some(accept_replies) = accept_replies {
+      builder = builder.accept_replies(accept_replies.into())
+    }
+
+    let zquerier = builder.await.map_napi_err()?;
 
     Ok(zquerier.into())
   }
@@ -239,14 +309,17 @@ impl Session {
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
     let handler = into_handler(channel);
+    let mut builder = self.0.declare_queryable(expr).with(handler);
 
-    let queryable = build!(
-      self.0.declare_queryable(expr).with(handler),
-      allowed_origin,
-      complete,
-    )
-    .await
-    .map_napi_err()?;
+    if let Some(allowed_origin) = allowed_origin {
+      builder = builder.allowed_origin(allowed_origin.into())
+    }
+
+    if let Some(complete) = complete {
+      builder = builder.complete(complete)
+    }
+
+    let queryable = builder.await.map_napi_err()?;
 
     Ok(queryable.into())
   }
@@ -271,19 +344,33 @@ impl Session {
     let handler = into_handler(channel);
     let session = self.0.clone();
 
-    let base = session
+    let mut builder = session
       .declare_subscriber(key_expr)
       .advanced()
       .with(handler);
 
-    let mut builder = build!(
-      base,
-      allowed_origin,
-      history,
-      recovery,
-      query_timeout,
-      subscriber_detection_metadata,
-    );
+    if let Some(allowed_origin) = allowed_origin {
+      builder = builder.allowed_origin(allowed_origin.into())
+    }
+
+    if let Some(history) = history {
+      builder = builder.history(history.into())
+    }
+
+    if let Some(recovery) = recovery {
+      builder = builder.recovery(match recovery {
+        napi::Either::A(periodic) => periodic.into(),
+        napi::Either::B(heartbeat) => heartbeat.into(),
+      })
+    }
+
+    if let Some(query_timeout) = query_timeout {
+      builder = builder.query_timeout(query_timeout)
+    }
+
+    if let Some(subscriber_detection_metadata) = subscriber_detection_metadata {
+      builder = builder.subscriber_detection_metadata(subscriber_detection_metadata)
+    }
 
     if subscriber_detection == Some(true) {
       builder = builder.subscriber_detection();
@@ -309,23 +396,43 @@ impl Session {
       allowed_destination,
       priority,
       publisher_detection,
-      publisher_detection_metadata,
       reliability,
       sample_miss_detection,
     } = options.unwrap_or_default();
 
-    let mut builder = build!(
-      self.0.declare_publisher(expr).advanced(),
-      encoding,
-      congestion_control,
-      priority,
-      express,
-      reliability,
-      allowed_destination,
-      cache,
-      publisher_detection_metadata,
-      sample_miss_detection,
-    );
+    let mut builder = self.0.declare_publisher(expr).advanced();
+
+    if let Some(encoding) = encoding {
+      builder = builder.encoding(encoding)
+    }
+
+    if let Some(congestion_control) = congestion_control {
+      builder = builder.congestion_control(congestion_control.into())
+    }
+
+    if let Some(priority) = priority {
+      builder = builder.priority(priority.into())
+    }
+
+    if let Some(express) = express {
+      builder = builder.express(express)
+    }
+
+    if let Some(reliability) = reliability {
+      builder = builder.reliability(reliability.into())
+    }
+
+    if let Some(allowed_destination) = allowed_destination {
+      builder = builder.allowed_destination(allowed_destination.into())
+    }
+
+    if let Some(cache) = cache {
+      builder = builder.cache(cache.into())
+    }
+
+    if let Some(sample_miss_detection) = sample_miss_detection {
+      builder = builder.sample_miss_detection(sample_miss_detection.into())
+    }
 
     if publisher_detection == Some(true) {
       builder = builder.publisher_detection();
@@ -385,10 +492,13 @@ impl SessionInfo {
   ) -> napi::Result<TransportEventsListener> {
     let TransportEventsListenerOptions { history, channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
+    let mut builder = self.0.transport_events_listener().with(handler);
 
-    let listener = build!(self.0.transport_events_listener().with(handler), history,)
-      .await
-      .map_napi_err()?;
+    if let Some(history) = history {
+      builder = builder.history(history)
+    }
+
+    let listener = builder.await.map_napi_err()?;
 
     Ok(listener.into())
   }
@@ -398,20 +508,15 @@ impl SessionInfo {
     &self,
     options: Option<LinkEventsListenerOptions>,
   ) -> napi::Result<LinkEventsListener> {
-    let LinkEventsListenerOptions {
-      history,
-      transport,
-      channel,
-    } = options.unwrap_or_default();
+    let LinkEventsListenerOptions { history, channel } = options.unwrap_or_default();
     let handler = into_handler(channel);
+    let mut builder = self.0.link_events_listener().with(handler);
 
-    let listener = build!(
-      self.0.link_events_listener().with(handler),
-      history,
-      transport,
-    )
-    .await
-    .map_napi_err()?;
+    if let Some(history) = history {
+      builder = builder.history(history)
+    }
+
+    let listener = builder.await.map_napi_err()?;
 
     Ok(listener.into())
   }

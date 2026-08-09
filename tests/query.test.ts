@@ -152,7 +152,7 @@ describe('Querier', () => {
       using queryable = await session.declareQueryable(key)
       using querier = await session.declareQuerier(key)
 
-      const replies = await querier.get({ payload: 'ping', parameters: new Parameters('n=1') })
+      const replies = await querier.get({ payload: 'ping', parameters: { n: '1' } })
       expect(typeof replies.recv).toBe('function')
 
       const query = await queryable.recv()
@@ -188,7 +188,7 @@ describe('Session.get()', () => {
       using queryable = await session.declareQueryable(key)
       await session.get(`${key}?ignored=1`, {
         consolidation: 'None',
-        parameters: new Parameters('used=1'),
+        parameters: { used: '1' },
       })
 
       const query = await queryable.recv()
