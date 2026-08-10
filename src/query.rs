@@ -375,11 +375,6 @@ impl Queryable {
 
     Ok(query.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Query>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }
 
 /// A stream of the replies to a single query.
@@ -394,11 +389,6 @@ impl Replies {
     let reply = self.0.recv_async().await.map_napi_err()?;
 
     Ok(reply.into())
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Reply>> {
-    Ok(self.0.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 

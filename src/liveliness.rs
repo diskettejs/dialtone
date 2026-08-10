@@ -119,9 +119,4 @@ impl LivelinessSubscriber {
 
     Ok(sample.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }

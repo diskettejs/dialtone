@@ -596,11 +596,6 @@ impl TransportEventsListener {
 
     Ok(event.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<TransportEvent>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }
 
 #[napi(object)]
@@ -705,11 +700,6 @@ impl LinkEventsListener {
     let event = self.0.get()?.recv_async().await.map_napi_err()?;
 
     Ok(event.into())
-  }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<LinkEvent>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 

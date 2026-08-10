@@ -40,9 +40,4 @@ impl SampleMissListener {
 
     Ok(miss.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Miss>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }

@@ -38,9 +38,4 @@ impl MatchingListener {
 
     Ok(status.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<MatchingStatus>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }

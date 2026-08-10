@@ -45,11 +45,6 @@ impl Scout {
 
     Ok(hello.into())
   }
-
-  #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<Hello>> {
-    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
-  }
 }
 
 #[napi]

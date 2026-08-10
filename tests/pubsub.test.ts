@@ -96,7 +96,6 @@ describe('Publisher', () => {
       const status = await listener.recv()
 
       expect(status.matching).toBe(true)
-      expect(listener.tryRecv()).toBeNull()
     })
   })
 
@@ -143,17 +142,6 @@ describe('Subscriber', () => {
       const sample = await subscriber.recv()
 
       expect(sample.payload.tryToString()).toBe('hello')
-    })
-
-    test('tryRecv() returns null when the channel is empty', async () => {
-      const key = 'test/pubsub/try-recv'
-      using publisher = await session.declarePublisher(key)
-      using subscriber = await session.declareSubscriber(key)
-
-      await publisher.put('only')
-      await subscriber.recv()
-
-      expect(subscriber.tryRecv()).toBeNull()
     })
   })
 

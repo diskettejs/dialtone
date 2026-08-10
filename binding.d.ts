@@ -148,7 +148,6 @@ export declare class LinkEvent {
 export declare class LinkEventsListener {
   undeclare(): void
   recv(): Promise<LinkEvent>
-  tryRecv(): LinkEvent | null
 }
 
 export declare class Liveliness {
@@ -162,7 +161,6 @@ export declare class LivelinessSubscriber {
   get id(): EntityGlobalId
   undeclare(): void
   recv(): Promise<Sample>
-  tryRecv(): Sample | null
 }
 
 export declare class LivelinessToken {
@@ -181,7 +179,6 @@ export declare class Locator {
 export declare class MatchingListener {
   undeclare(): void
   recv(): Promise<MatchingStatus>
-  tryRecv(): MatchingStatus | null
 }
 
 export declare class MatchingStatus {
@@ -262,13 +259,11 @@ export declare class Queryable {
   get keyExpr(): KeyExpr
   undeclare(): void
   recv(): Promise<Query>
-  tryRecv(): Query | null
 }
 
 /** A stream of the replies to a single query. */
 export declare class Replies {
   recv(): Promise<Reply>
-  tryRecv(): Reply | null
 }
 
 export declare class Reply {
@@ -297,14 +292,12 @@ export declare class Sample {
 export declare class SampleMissListener {
   undeclare(): void
   recv(): Promise<Miss>
-  tryRecv(): Miss | null
 }
 
 export declare class Scout {
   static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
   stop(): void
   recv(): Promise<Hello>
-  tryRecv(): Hello | null
 }
 
 export declare class Selector {
@@ -359,7 +352,6 @@ export declare class Subscriber {
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
   undeclare(): void
   recv(): Promise<Sample>
-  tryRecv(): Sample | null
 }
 
 export declare class Timestamp {
@@ -385,7 +377,6 @@ export declare class TransportEvent {
 export declare class TransportEventsListener {
   undeclare(): void
   recv(): Promise<TransportEvent>
-  tryRecv(): TransportEvent | null
 }
 
 export declare class WhatAmIMatcher {
