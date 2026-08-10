@@ -3,7 +3,7 @@ use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::utils::*;
+use crate::utils::{Declared, MapNapiErr};
 
 #[napi]
 #[derive(From)]

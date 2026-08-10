@@ -2,7 +2,7 @@ use derive_more::{From, Into};
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::utils::*;
+use crate::utils::MapNapiErr;
 
 #[napi]
 #[derive(Clone, From, Into)]

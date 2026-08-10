@@ -511,7 +511,7 @@ export interface CacheConfig {
    * Defaults to `1`.
    */
   maxSamples?: number
-  /** QoS to apply to the replies served from the cache. */
+  /** `QoS` to apply to the replies served from the cache. */
   repliesConfig?: RepliesConfig
 }
 
@@ -635,7 +635,7 @@ export interface HeartbeatConfig {
   sporadic?: boolean
 }
 
-/** Discriminant selecting {@link HeartbeatRecovery}. */
+/** Discriminant selecting {@link `HeartbeatRecovery`}. */
 export type HeartbeatMode =  'Heartbeat';
 
 /**
@@ -746,7 +746,7 @@ export interface MissDetectionConfig {
    * Allows last sample miss detection by periodically publishing the last sample's
    * sequence number.
    *
-   * Subscribers can recover the last sample with {@link HeartbeatRecovery}.
+   * Subscribers can recover the last sample with {@link `HeartbeatRecovery`}.
    */
   heartbeat?: HeartbeatConfig
 }
@@ -754,7 +754,7 @@ export interface MissDetectionConfig {
 export type ParametersLike =
   Record<string, string>
 
-/** Discriminant selecting {@link PeriodicQueriesRecovery}. */
+/** Discriminant selecting {@link `PeriodicQueriesRecovery`}. */
 export type PeriodicQueriesMode =  'PeriodicQueries';
 
 /**
@@ -963,7 +963,7 @@ export interface QueryableOptions {
    * `foo/bar` does not cover the whole of `foo/*`, so a query for `foo/*` is still sent
    * to other queryables as well.
    *
-   * This applies to the default {@link QueryTarget} `BestMatching`. `All` forcibly
+   * This applies to the default {@link `QueryTarget`} `BestMatching`. `All` forcibly
    * requests every available queryable, and `AllComplete` requests only the complete
    * ones.
    */
@@ -988,7 +988,7 @@ export type QueryTarget =  'BestMatching'|
 export type Reliability =  'BestEffort'|
 'Reliable';
 
-/** QoS applied to the replies served from a cache. */
+/** `QoS` applied to the replies served from a cache. */
 export interface RepliesConfig {
   /** Priority to apply when routing the replies. */
   priority?: Priority

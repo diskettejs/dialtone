@@ -1,8 +1,8 @@
-use std::time::Duration;
+use core::time::Duration;
 
 use napi_derive::napi;
 
-use crate::{bytes::*, qos::*, query::*};
+use crate::{bytes::BytesBuffer, qos::{CongestionControl, Priority, Reliability, Locality}, query::{ParametersLike, QueryTarget, ConsolidationMode, ReplyKeyExpr}};
 
 /// Options for a single publication on an existing publisher.
 #[derive(Default)]
@@ -180,13 +180,13 @@ impl From<HistoryConfig> for zenoh_ext::HistoryConfig {
   }
 }
 
-/// Discriminant selecting {@link PeriodicQueriesRecovery}.
+/// Discriminant selecting {@link `PeriodicQueriesRecovery`}.
 #[napi(string_enum)]
 pub enum PeriodicQueriesMode {
   PeriodicQueries,
 }
 
-/// Discriminant selecting {@link HeartbeatRecovery}.
+/// Discriminant selecting {@link `HeartbeatRecovery`}.
 #[napi(string_enum)]
 pub enum HeartbeatMode {
   Heartbeat,
@@ -221,7 +221,7 @@ pub struct HeartbeatRecovery {
 impl From<PeriodicQueriesRecovery> for zenoh_ext::RecoveryConfig {
   fn from(value: PeriodicQueriesRecovery) -> Self {
     zenoh_ext::RecoveryConfig::<false>::default()
-      .periodic_queries(Duration::from_millis(value.period_ms as u64))
+      .periodic_queries(Duration::from_millis(u64::from(value.period_ms)))
   }
 }
 
@@ -337,7 +337,7 @@ pub struct MissDetectionConfig {
   /// Allows last sample miss detection by periodically publishing the last sample's
   /// sequence number.
   ///
-  /// Subscribers can recover the last sample with {@link HeartbeatRecovery}.
+  /// Subscribers can recover the last sample with {@link `HeartbeatRecovery`}.
   pub heartbeat: Option<HeartbeatConfig>,
 }
 
@@ -345,7 +345,7 @@ impl From<MissDetectionConfig> for zenoh_ext::MissDetectionConfig {
   fn from(value: MissDetectionConfig) -> Self {
     let mut config = zenoh_ext::MissDetectionConfig::default();
     if let Some(heartbeat) = value.heartbeat {
-      let period = Duration::from_millis(heartbeat.period_ms as u64);
+      let period = Duration::from_millis(u64::from(heartbeat.period_ms));
       config = if heartbeat.sporadic == Some(true) {
         config.sporadic_heartbeat(period)
       } else {
@@ -363,7 +363,7 @@ pub struct CacheConfig {
   ///
   /// Defaults to `1`.
   pub max_samples: Option<u32>,
-  /// QoS to apply to the replies served from the cache.
+  /// `QoS` to apply to the replies served from the cache.
   pub replies_config: Option<RepliesConfig>,
 }
 
@@ -380,7 +380,7 @@ impl From<CacheConfig> for zenoh_ext::CacheConfig {
   }
 }
 
-/// QoS applied to the replies served from a cache.
+/// `QoS` applied to the replies served from a cache.
 #[napi(object)]
 pub struct RepliesConfig {
   /// Priority to apply when routing the replies.
@@ -474,7 +474,7 @@ pub struct QueryableOptions {
   /// `foo/bar` does not cover the whole of `foo/*`, so a query for `foo/*` is still sent
   /// to other queryables as well.
   ///
-  /// This applies to the default {@link QueryTarget} `BestMatching`. `All` forcibly
+  /// This applies to the default {@link `QueryTarget`} `BestMatching`. `All` forcibly
   /// requests every available queryable, and `AllComplete` requests only the complete
   /// ones.
   pub complete: Option<bool>,

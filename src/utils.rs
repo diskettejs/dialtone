@@ -1,10 +1,10 @@
-use std::time::Duration;
+use core::time::Duration;
 
 pub(crate) trait MapNapiErr<T> {
   fn map_napi_err(self) -> napi::Result<T>;
 }
 
-impl<T, E: std::fmt::Display> MapNapiErr<T> for std::result::Result<T, E> {
+impl<T, E: core::fmt::Display> MapNapiErr<T> for core::result::Result<T, E> {
   fn map_napi_err(self) -> napi::Result<T> {
     self.map_err(|e| napi::Error::from_reason(e.to_string()))
   }
@@ -32,7 +32,7 @@ impl<T> Declared<T> {
   }
 
   fn gone() -> napi::Error {
-    let path = std::any::type_name::<T>();
+    let path = core::any::type_name::<T>();
     let name = path.split('<').next().unwrap_or(path);
     let name = name.rsplit("::").next().unwrap_or(path);
     napi::Error::from_reason(format!("{name} has already been consumed."))

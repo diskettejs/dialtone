@@ -6,7 +6,7 @@ use napi_derive::napi;
 use zenoh as z;
 
 use crate::{
-  bytes::*, config::*, key_expr::*, matching::*, options::*, qos::*, sample::*, utils::*,
+  bytes::{Bytes, Encoding, BytesBuffer}, config::EntityGlobalId, key_expr::{KeyExpr, KeyExprArg}, matching::{MatchingStatus, MatchingListener}, options::{ReplyOptions, ReplyErrOptions, ReplyDelOptions, QuerierGetOptions, MatchingListenerOptions}, qos::{Priority, CongestionControl}, sample::Sample, utils::{Declared, MapNapiErr, fifo},
 };
 
 #[napi]
@@ -83,15 +83,15 @@ impl Query {
     let mut builder = query.reply(expr, payload);
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -126,11 +126,11 @@ impl Query {
     let mut builder = self.0.get()?.reply_del(expr);
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -228,7 +228,7 @@ impl ReplyError {
 #[napi]
 pub type ParametersLike = HashMap<String, String>;
 
-impl<'s> From<ParametersLike> for Parameters<'s> {
+impl From<ParametersLike> for Parameters<'_> {
   fn from(value: ParametersLike) -> Self {
     Parameters::from(value)
   }
@@ -239,7 +239,7 @@ impl<'s> From<ParametersLike> for Parameters<'s> {
 pub struct Parameters<'s>(z::query::Parameters<'s>);
 
 #[napi]
-impl<'s> Parameters<'s> {
+impl Parameters<'_> {
   #[napi(factory)]
   pub fn empty() -> Self {
     z::query::Parameters::empty().into()
@@ -278,12 +278,12 @@ impl<'s> Parameters<'s> {
 
   #[napi]
   pub fn get(&self, key: String) -> Option<String> {
-    self.0.get(key).map(|value| value.to_string())
+    self.0.get(key).map(std::string::ToString::to_string)
   }
 
   #[napi]
   pub fn values(&self, key: String) -> Vec<String> {
-    self.0.values(key).map(|value| value.to_string()).collect()
+    self.0.values(key).map(std::string::ToString::to_string).collect()
   }
 
   #[napi]
@@ -487,19 +487,19 @@ impl Querier {
     let mut builder = self.0.get()?.get().with(handler);
 
     if let Some(parameters) = parameters {
-      builder = builder.parameters(Parameters::from(parameters))
+      builder = builder.parameters(Parameters::from(parameters));
     }
 
     if let Some(payload) = payload {
-      builder = builder.payload(payload)
+      builder = builder.payload(payload);
     }
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     let receiver = builder.await.map_napi_err()?;

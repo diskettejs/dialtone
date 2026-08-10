@@ -5,8 +5,20 @@ use zenoh as z;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, config::*, key_expr::*, liveliness::*, options::*, pubsub::*, qos::Reliability,
-  query::*, sample::SampleKind, time::*, utils::*,
+  bytes::BytesBuffer,
+  config::{Config, EntityGlobalId, SessionConfig, WhatAmI},
+  key_expr::{KeyExpr, KeyExprArg},
+  liveliness::Liveliness,
+  options::{
+    DeleteOptions, GetOptions, LinkEventsListenerOptions, PublisherOptions, PutOptions,
+    QuerierOptions, QueryableOptions, SubscriberOptions, TransportEventsListenerOptions,
+  },
+  pubsub::{Publisher, Subscriber},
+  qos::Reliability,
+  query::{Querier, Queryable, Replies, Selector, SelectorArg},
+  sample::SampleKind,
+  time::Timestamp,
+  utils::{Declared, MapNapiErr, duration_ms, fifo},
 };
 
 #[napi]
@@ -78,31 +90,31 @@ impl Session {
     let mut builder = session.put(expr, payload);
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into())
+      builder = builder.congestion_control(congestion_control.into());
     }
 
     if let Some(priority) = priority {
-      builder = builder.priority(priority.into())
+      builder = builder.priority(priority.into());
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into())
+      builder = builder.reliability(reliability.into());
     }
 
     if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into())
+      builder = builder.allowed_destination(allowed_destination.into());
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -137,43 +149,43 @@ impl Session {
     let mut builder = session.get(selector).with(handler);
 
     if let Some(target) = target {
-      builder = builder.target(target.into())
+      builder = builder.target(target.into());
     }
 
     if let Some(consolidation) = consolidation {
-      builder = builder.consolidation(consolidation)
+      builder = builder.consolidation(consolidation);
     }
 
     if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into())
+      builder = builder.congestion_control(congestion_control.into());
     }
 
     if let Some(priority) = priority {
-      builder = builder.priority(priority.into())
+      builder = builder.priority(priority.into());
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into())
+      builder = builder.allowed_destination(allowed_destination.into());
     }
 
     if let Some(timeout) = timeout {
-      builder = builder.timeout(timeout)
+      builder = builder.timeout(timeout);
     }
 
     if let Some(payload) = payload {
-      builder = builder.payload(payload)
+      builder = builder.payload(payload);
     }
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     let receiver = builder.await.map_napi_err()?;
@@ -200,27 +212,27 @@ impl Session {
     let mut builder = session.delete(expr);
 
     if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into())
+      builder = builder.congestion_control(congestion_control.into());
     }
 
     if let Some(priority) = priority {
-      builder = builder.priority(priority.into())
+      builder = builder.priority(priority.into());
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into())
+      builder = builder.reliability(reliability.into());
     }
 
     if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into())
+      builder = builder.allowed_destination(allowed_destination.into());
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -233,10 +245,9 @@ impl Session {
 
   #[napi]
   pub async fn declare_keyexpr(&self, key_expr: KeyExprArg<'_>) -> napi::Result<KeyExpr> {
-    let expr = KeyExpr::try_from(key_expr)?;
-    let keyexpr = self.0.declare_keyexpr(expr).await.map_napi_err()?;
+    let value = KeyExpr::try_from(key_expr)?;
 
-    Ok(keyexpr.into())
+    Ok(self.0.declare_keyexpr(value).await.map_napi_err()?.into())
   }
 
   #[napi]
@@ -261,35 +272,35 @@ impl Session {
     let mut builder = self.0.declare_querier(expr);
 
     if let Some(target) = target {
-      builder = builder.target(target.into())
+      builder = builder.target(target.into());
     }
 
     if let Some(consolidation) = consolidation {
-      builder = builder.consolidation(consolidation)
+      builder = builder.consolidation(consolidation);
     }
 
     if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into())
+      builder = builder.congestion_control(congestion_control.into());
     }
 
     if let Some(priority) = priority {
-      builder = builder.priority(priority.into())
+      builder = builder.priority(priority.into());
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into())
+      builder = builder.allowed_destination(allowed_destination.into());
     }
 
     if let Some(timeout) = timeout {
-      builder = builder.timeout(timeout)
+      builder = builder.timeout(timeout);
     }
 
     if let Some(accept_replies) = accept_replies {
-      builder = builder.accept_replies(accept_replies.into())
+      builder = builder.accept_replies(accept_replies.into());
     }
 
     let zquerier = builder.await.map_napi_err()?;
@@ -313,11 +324,11 @@ impl Session {
     let mut builder = self.0.declare_queryable(expr).with(handler);
 
     if let Some(allowed_origin) = allowed_origin {
-      builder = builder.allowed_origin(allowed_origin.into())
+      builder = builder.allowed_origin(allowed_origin.into());
     }
 
     if let Some(complete) = complete {
-      builder = builder.complete(complete)
+      builder = builder.complete(complete);
     }
 
     let queryable = builder.await.map_napi_err()?;
@@ -351,26 +362,26 @@ impl Session {
       .with(handler);
 
     if let Some(allowed_origin) = allowed_origin {
-      builder = builder.allowed_origin(allowed_origin.into())
+      builder = builder.allowed_origin(allowed_origin.into());
     }
 
     if let Some(history) = history {
-      builder = builder.history(history.into())
+      builder = builder.history(history.into());
     }
 
     if let Some(recovery) = recovery {
       builder = builder.recovery(match recovery {
         napi::Either::A(periodic) => periodic.into(),
         napi::Either::B(heartbeat) => heartbeat.into(),
-      })
+      });
     }
 
     if let Some(query_timeout) = query_timeout {
-      builder = builder.query_timeout(query_timeout)
+      builder = builder.query_timeout(query_timeout);
     }
 
     if let Some(subscriber_detection_metadata) = subscriber_detection_metadata {
-      builder = builder.subscriber_detection_metadata(subscriber_detection_metadata)
+      builder = builder.subscriber_detection_metadata(subscriber_detection_metadata);
     }
 
     if subscriber_detection == Some(true) {
@@ -404,35 +415,35 @@ impl Session {
     let mut builder = self.0.declare_publisher(expr).advanced();
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(congestion_control) = congestion_control {
-      builder = builder.congestion_control(congestion_control.into())
+      builder = builder.congestion_control(congestion_control.into());
     }
 
     if let Some(priority) = priority {
-      builder = builder.priority(priority.into())
+      builder = builder.priority(priority.into());
     }
 
     if let Some(express) = express {
-      builder = builder.express(express)
+      builder = builder.express(express);
     }
 
     if let Some(reliability) = reliability {
-      builder = builder.reliability(reliability.into())
+      builder = builder.reliability(reliability.into());
     }
 
     if let Some(allowed_destination) = allowed_destination {
-      builder = builder.allowed_destination(allowed_destination.into())
+      builder = builder.allowed_destination(allowed_destination.into());
     }
 
     if let Some(cache) = cache {
-      builder = builder.cache(cache.into())
+      builder = builder.cache(cache.into());
     }
 
     if let Some(sample_miss_detection) = sample_miss_detection {
-      builder = builder.sample_miss_detection(sample_miss_detection.into())
+      builder = builder.sample_miss_detection(sample_miss_detection.into());
     }
 
     if publisher_detection == Some(true) {
@@ -499,7 +510,7 @@ impl SessionInfo {
     let mut builder = self.0.transport_events_listener().with(handler);
 
     if let Some(history) = history {
-      builder = builder.history(history)
+      builder = builder.history(history);
     }
 
     let listener = builder.await.map_napi_err()?;
@@ -520,7 +531,7 @@ impl SessionInfo {
     let mut builder = self.0.link_events_listener().with(handler);
 
     if let Some(history) = history {
-      builder = builder.history(history)
+      builder = builder.history(history);
     }
 
     let listener = builder.await.map_napi_err()?;
@@ -674,7 +685,10 @@ impl Link {
 
   #[napi(getter)]
   pub fn auth_identifier(&self) -> Option<String> {
-    self.0.auth_identifier().map(|s| s.to_string())
+    self
+      .0
+      .auth_identifier()
+      .map(std::string::ToString::to_string)
   }
 
   #[napi(getter)]
@@ -814,7 +828,11 @@ impl Metadata {
 
   #[napi]
   pub fn get(&self, key: String) -> Option<String> {
-    self.0.metadata().get(&key).map(|value| value.to_string())
+    self
+      .0
+      .metadata()
+      .get(&key)
+      .map(std::string::ToString::to_string)
   }
 
   #[napi]
@@ -823,7 +841,7 @@ impl Metadata {
       .0
       .metadata()
       .values(&key)
-      .map(|value| value.to_string())
+      .map(std::string::ToString::to_string)
       .collect()
   }
 }

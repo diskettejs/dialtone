@@ -2,7 +2,7 @@ use derive_more::From;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::{config::*, key_expr::*, options::*, pubsub::SampleIter, query::Replies, utils::*};
+use crate::{config::EntityGlobalId, key_expr::{KeyExprArg, KeyExpr}, options::{LivelinessSubscriberOptions, LivelinessGetOptions}, pubsub::SampleIter, query::Replies, utils::{MapNapiErr, fifo, duration_ms, Declared}};
 
 #[napi]
 #[derive(From)]
@@ -67,7 +67,7 @@ impl Liveliness {
     let mut builder = session.liveliness().get(expr).with(handler);
 
     if let Some(timeout) = timeout {
-      builder = builder.timeout(timeout)
+      builder = builder.timeout(timeout);
     }
 
     let rec = builder.await.map_napi_err()?;

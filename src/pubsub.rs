@@ -3,8 +3,8 @@ use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, config::*, key_expr::*, liveliness::*, matching::*, miss::*, options::*, qos::*,
-  sample::Sample, utils::*,
+  bytes::{Encoding, BytesBuffer}, config::EntityGlobalId, key_expr::KeyExpr, liveliness::LivelinessSubscriber, matching::{MatchingStatus, MatchingListener}, miss::SampleMissListener, options::{PublisherPutOptions, PublisherDeleteOptions, MatchingListenerOptions, SampleMissListenerOptions, LivelinessSubscriberOptions}, qos::{CongestionControl, Priority},
+  sample::Sample, utils::{Declared, MapNapiErr, fifo},
 };
 
 #[napi]
@@ -53,11 +53,11 @@ impl Publisher {
     let mut builder = publisher.put(payload);
 
     if let Some(encoding) = encoding {
-      builder = builder.encoding(encoding)
+      builder = builder.encoding(encoding);
     }
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -70,7 +70,7 @@ impl Publisher {
     let mut builder = publisher.delete();
 
     if let Some(attachment) = attachment {
-      builder = builder.attachment(attachment)
+      builder = builder.attachment(attachment);
     }
 
     builder.await.map_napi_err()
@@ -160,7 +160,7 @@ impl Subscriber {
     let mut builder = self.0.get()?.detect_publishers().with(handler);
 
     if let Some(history) = history {
-      builder = builder.history(history)
+      builder = builder.history(history);
     }
 
     let subscriber = builder.await.map_napi_err()?;

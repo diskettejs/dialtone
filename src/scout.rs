@@ -3,7 +3,7 @@ use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::{config::*, options::*, session::*, utils::*};
+use crate::{config::{WhatAmIMatcher, Config, WhatAmI}, options::ScoutOptions, session::Locator, utils::{Declared, fifo, MapNapiErr}};
 
 #[napi]
 #[derive(From)]

@@ -42,6 +42,7 @@ impl Bytes {
   }
 
   #[napi(getter)]
+  #[allow(clippy::cast_possible_truncation)]
   pub fn len(&self) -> u32 {
     self.0.len() as u32
   }

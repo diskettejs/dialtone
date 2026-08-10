@@ -51,7 +51,7 @@ impl Sample {
 
   #[napi(getter)]
   pub fn timestamp(&self) -> Option<Timestamp> {
-    self.0.timestamp().cloned().map(Into::into)
+    self.0.timestamp().copied().map(Into::into)
   }
 
   #[napi(getter)]

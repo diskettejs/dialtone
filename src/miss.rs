@@ -2,7 +2,7 @@ use derive_more::From;
 use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 
-use crate::{config::*, utils::*};
+use crate::{config::EntityGlobalId, utils::{Declared, MapNapiErr}};
 
 #[napi]
 #[derive(From)]
