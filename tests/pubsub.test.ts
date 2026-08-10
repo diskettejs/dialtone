@@ -35,7 +35,7 @@ describe('Publisher', () => {
       await publisher.put('hello')
 
       for await (const sample of subscriber.receive()) {
-        expect(sample.payload.tryToString()).toBe('hello')
+        expect(sample.payload.toString()).toBe('hello')
         expect(sample.keyExpr.toString()).toBe(key)
         expect(sample.kind).toBe('Put')
         break
@@ -51,7 +51,7 @@ describe('Publisher', () => {
 
       for await (const sample of subscriber.receive()) {
         expect(sample.encoding.toString()).toBe('text/plain')
-        expect(sample.attachment?.tryToString()).toBe('meta')
+        expect(sample.attachment?.toString()).toBe('meta')
         break
       }
     })
@@ -79,7 +79,7 @@ describe('Publisher', () => {
       await publisher.delete({ attachment: 'meta' })
 
       for await (const sample of subscriber.receive()) {
-        expect(sample.attachment?.tryToString()).toBe('meta')
+        expect(sample.attachment?.toString()).toBe('meta')
         break
       }
     })
@@ -139,7 +139,7 @@ describe('Subscriber', () => {
       // Draining the buffer lets the blocked put through, in order.
       const seen: (string | null)[] = []
       for await (const sample of subscriber.receive()) {
-        seen.push(sample.payload.tryToString())
+        seen.push(sample.payload.toString())
         if (seen.length === 2) break
       }
       await second
@@ -160,7 +160,7 @@ describe('Subscriber', () => {
 
       const seen: (string | null)[] = []
       for await (const sample of subscriber.receive()) {
-        seen.push(sample.payload.tryToString())
+        seen.push(sample.payload.toString())
         if (seen.length === 3) break
       }
 
@@ -177,7 +177,7 @@ describe('Subscriber', () => {
       // Undeclaring from inside the loop closes the channel, ending iteration.
       const seen: (string | null)[] = []
       for await (const sample of subscriber.receive()) {
-        seen.push(sample.payload.tryToString())
+        seen.push(sample.payload.toString())
         subscriber.undeclare()
       }
 

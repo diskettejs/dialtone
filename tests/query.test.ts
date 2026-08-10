@@ -50,9 +50,9 @@ describe('Query', () => {
       })
 
       for await (const query of queryable.receive()) {
-        expect(query.payload?.tryToString()).toBe('req')
+        expect(query.payload?.toString()).toBe('req')
         expect(query.encoding?.toString()).toBe('text/plain')
-        expect(query.attachment?.tryToString()).toBe('meta')
+        expect(query.attachment?.toString()).toBe('meta')
         expect(query.parameters.get('unit')).toBe('celsius')
         break
       }
@@ -84,9 +84,9 @@ describe('Query', () => {
       for await (const reply of replies.receive()) {
         expect(reply.id).not.toBeNull()
         expect(reply.result.error).toBeNull()
-        expect(reply.result.sample?.payload.tryToString()).toBe('pong')
+        expect(reply.result.sample?.payload.toString()).toBe('pong')
         expect(reply.result.sample?.encoding.toString()).toBe('text/plain')
-        expect(reply.result.sample?.attachment?.tryToString()).toBe('meta')
+        expect(reply.result.sample?.attachment?.toString()).toBe('meta')
         break
       }
     })
@@ -105,7 +105,7 @@ describe('Query', () => {
 
       for await (const reply of replies.receive()) {
         expect(reply.result.sample).toBeNull()
-        expect(reply.result.error?.payload.tryToString()).toBe('boom')
+        expect(reply.result.error?.payload.toString()).toBe('boom')
         expect(reply.result.error?.encoding.toString()).toBe('text/plain')
         break
       }
@@ -173,7 +173,7 @@ describe('Querier', () => {
       expect(typeof replies.receive).toBe('function')
 
       for await (const query of queryable.receive()) {
-        expect(query.payload?.tryToString()).toBe('ping')
+        expect(query.payload?.toString()).toBe('ping')
         expect(query.parameters.get('n')).toBe('1')
         break
       }

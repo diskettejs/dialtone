@@ -6,9 +6,9 @@ const utf8 = (value: string): Uint8Array => new TextEncoder().encode(value)
 
 describe('Bytes', () => {
   describe('from()', () => {
-    test('accepts a string and round-trips through tryToString', () => {
-      expect(Bytes.from('hello').tryToString()).toBe('hello')
-      expect(Bytes.from('héllo 🌍').tryToString()).toBe('héllo 🌍')
+    test('accepts a string and round-trips through toString', () => {
+      expect(Bytes.from('hello').toString()).toBe('hello')
+      expect(Bytes.from('héllo 🌍').toString()).toBe('héllo 🌍')
     })
 
     test('stores a string as its UTF-8 encoding, readable via toBytes', () => {
@@ -20,8 +20,8 @@ describe('Bytes', () => {
       expect(Bytes.from(raw).toBytes()).toEqual(raw)
     })
 
-    test('decodes valid UTF-8 bytes via tryToString', () => {
-      expect(Bytes.from(utf8('héllo 🌍')).tryToString()).toBe('héllo 🌍')
+    test('decodes valid UTF-8 bytes via toString', () => {
+      expect(Bytes.from(utf8('héllo 🌍')).toString()).toBe('héllo 🌍')
     })
   })
 
@@ -33,24 +33,34 @@ describe('Bytes', () => {
     })
   })
 
-  describe('tryToString()', () => {
-    test('returns null for a lone 0xFF (invalid UTF-8)', () => {
-      expect(Bytes.from(new Uint8Array([0xff])).tryToString()).toBeNull()
+  describe('toString()', () => {
+    test('replaces a lone 0xFF with U+FFFD', () => {
+      expect(Bytes.from(new Uint8Array([0xff])).toString()).toBe('�')
     })
 
-    test('returns null for a valid prefix followed by a bare continuation byte', () => {
+    test('keeps the valid prefix and replaces a bare continuation byte', () => {
       // "hi" then 0x80, a continuation byte with no leading byte
-      expect(Bytes.from(new Uint8Array([0x68, 0x69, 0x80])).tryToString()).toBeNull()
+      expect(Bytes.from(new Uint8Array([0x68, 0x69, 0x80])).toString()).toBe('hi�')
+    })
+
+    test('emits one U+FFFD per maximal invalid subsequence', () => {
+      const raw = new Uint8Array([0xff, 0xfe, 0xfd])
+      expect(Bytes.from(raw).toString()).toBe('���')
+      expect(Bytes.from(raw).toString()).toBe(new TextDecoder().decode(raw))
     })
 
     test('never throws regardless of contents', () => {
-      expect(() => Bytes.from(new Uint8Array([0xff, 0xfe, 0xfd])).tryToString()).not.toThrow()
+      expect(() => Bytes.from(new Uint8Array([0xff, 0xfe, 0xfd])).toString()).not.toThrow()
     })
 
     test('decodes an empty payload to the empty string', () => {
-      expect(new Bytes().tryToString()).toBe('')
-      expect(Bytes.from('').tryToString()).toBe('')
-      expect(Bytes.from(new Uint8Array([])).tryToString()).toBe('')
+      expect(new Bytes().toString()).toBe('')
+      expect(Bytes.from('').toString()).toBe('')
+      expect(Bytes.from(new Uint8Array([])).toString()).toBe('')
+    })
+
+    test('is used by string coercion', () => {
+      expect(`${Bytes.from('hello')}`).toBe('hello')
     })
   })
 
