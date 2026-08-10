@@ -2,25 +2,38 @@ use derive_more::From;
 use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 
-use crate::{config::EntityGlobalId, utils::{Declared, MapNapiErr}};
+use crate::{
+  config::EntityGlobalId,
+  utils::{Declared, MapNapiErr},
+};
 
+/// A report of samples a subscriber did not receive.
 #[napi]
 #[derive(From)]
 pub struct Miss(zenoh_ext::Miss);
 
 #[napi]
 impl Miss {
+  /// The global identifier of the publisher whose samples were missed.
   #[napi(getter)]
   pub fn source(&self) -> EntityGlobalId {
     self.0.source().into()
   }
 
+  /// The number of samples missed from that publisher.
   #[napi(getter)]
   pub fn nb(&self) -> u32 {
     self.0.nb()
   }
 }
 
+/// A listener reporting the samples a subscriber missed.
+///
+/// Missed samples can only be detected from publishers that enable
+/// {@link PublisherOptions.sampleMissDetection}.
+///
+/// {@link SampleMissListener.undeclare} consumes the listener; every member throws once it
+/// has been undeclared.
 #[napi]
 #[derive(From)]
 #[from(forward)]
@@ -30,11 +43,19 @@ pub struct SampleMissListener(
 
 #[napi]
 impl SampleMissListener {
+  /// Undeclares this listener, so that no further miss is reported to it.
+  ///
+  /// @throws If this listener has already been undeclared.
   #[napi]
   pub fn undeclare(&mut self) -> napi::Result<()> {
     zenoh::Wait::wait(self.0.take()?.undeclare()).map_napi_err()
   }
 
+  /// Iterates over the misses reported to this listener.
+  ///
+  /// @returns A {@link `MissIter`} that yields each buffered {@link `Miss`} and completes
+  /// once the listener stops receiving.
+  /// @throws If this listener has already been undeclared.
   #[napi]
   pub fn receive(&self) -> napi::Result<MissIter> {
     let handler = (**self.0.get()?).clone();

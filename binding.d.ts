@@ -9,11 +9,27 @@ declare global {
   }
 }
 
+/**
+ * The raw bytes carried by a sample, a reply or an attachment.
+ *
+ * Zenoh does not interpret the payload; how it should be read is conveyed separately by
+ * an {@link `Encoding`}.
+ */
 export declare class Bytes {
+  /** Creates an empty payload. */
   constructor()
+  /** Creates a payload from a string or a byte array. */
   static from(value: BytesBuffer): Bytes
+  /** Whether this payload carries no bytes. */
   get isEmpty(): boolean
+  /** The total number of bytes in this payload. */
   get len(): number
+  /**
+   * Copies the payload into a byte array.
+   *
+   * Zenoh may hold a payload received from the network across several memory regions,
+   * so the bytes are gathered into a newly allocated `Uint8Array`.
+   */
   toBytes(): Uint8Array
   /**
    * Decodes the payload as a UTF-8 string.
@@ -24,103 +40,278 @@ export declare class Bytes {
   toString(): string
 }
 
+/**
+ * A synchronization primitive used to interrupt queries.
+ *
+ * Cancellation is final: once a token is cancelled it stays cancelled, and the queries
+ * later associated with it are interrupted straight away.
+ */
 export declare class CancellationToken {
+  /** Creates a token that is not yet cancelled. */
   constructor()
+  /** Interrupts the queries associated with this token. Resolves once the interruption has taken effect. */
   cancel(): Promise<void>
   /** Returns true if the token was cancelled (i.e. `cancel` was called). */
   get isCancelled(): boolean
 }
 
+/**
+ * The configuration a session is opened with.
+ *
+ * The configuration tree has no stable shape, so its fields are not exposed individually.
+ * A configuration is loaded from a file or a JSON5 string with {@link Config.fromFile} or
+ * {@link Config.fromJson5}, and edited with {@link Config.insertJson5} and
+ * {@link Config.remove}.
+ */
 export declare class Config {
+  /** Returns the default configuration. */
   static default(): Config
+  /**
+   * Returns the name of the environment variable {@link Config.fromEnv} reads the
+   * configuration file path from.
+   */
   static defaultConfigPathEnv(): string
+  /**
+   * Loads the configuration from the file whose path is held by the environment variable
+   * named by {@link Config.defaultConfigPathEnv}.
+   *
+   * @throws If the variable is unset, or if the file cannot be read or is not a valid
+   * configuration.
+   */
   static fromEnv(): Config
+  /**
+   * Loads the configuration from the file at `path`.
+   *
+   * @throws If the file cannot be read or is not a valid configuration.
+   */
   static fromFile(path: string): Config
+  /**
+   * Loads the configuration from the JSON5 string `input`.
+   *
+   * @throws If the string is not a valid configuration.
+   */
   static fromJson5(input: string): Config
+  /**
+   * Returns the configuration held at `key`, as a JSON string.
+   *
+   * @throws If no configuration is held at `key`.
+   */
   getJson(key: string): string
+  /**
+   * Inserts the JSON5 `value` at `key`.
+   *
+   * A key of the form `<path>/<idKey>=<idValue>` addresses one item of the list held at
+   * `<path>`, the one whose `<idKey>` field equals `<idValue>`. The item is appended when
+   * the list holds no such item yet.
+   *
+   * @throws If `key` does not address an insertable entry, or if `value` is not valid at
+   * that key.
+   */
   insertJson5(key: string, value: string): void
+  /**
+   * Removes the configuration held at `key`.
+   *
+   * A key of the form `<path>/<idKey>=<idValue>` addresses one item of the list held at
+   * `<path>`, the one whose `<idKey>` field equals `<idValue>`.
+   *
+   * @throws If `key` does not address a removable entry.
+   */
   remove(key: string): void
 }
 
+/**
+ * How the payload of a sample or a reply should be interpreted by the application.
+ *
+ * An encoding is a string in MIME-like format, `type/subtype[;schema]`. Zenoh neither
+ * imposes an encoding value nor operates on it: it is optional metadata carried
+ * alongside the payload so that the receiving application can decide what to do with it.
+ *
+ * Some encodings are mapped internally to a compact integer identifier and are therefore
+ * cheaper to send than arbitrary strings; those are the ones exposed as the static
+ * factories below.
+ */
 export declare class Encoding {
+  /** The default encoding, `zenoh/bytes`. */
   static default(): Encoding
+  /**
+   * Creates an encoding from its string representation, `type/subtype[;schema]`.
+   *
+   * A value that is not one of the encodings Zenoh knows about is carried as-is.
+   */
   static from(value: string): Encoding
+  /** Just some bytes, with no assumption made about their format: `zenoh/bytes`. */
   static zenohBytes(): Encoding
+  /** A UTF-8 string: `zenoh/string`. */
   static zenohString(): Encoding
+  /** Data serialized by a Zenoh binding: `zenoh/serialized`. */
   static zenohSerialized(): Encoding
+  /** An application-specific stream of bytes: `application/octet-stream`. */
   static applicationOctetStream(): Encoding
+  /** A textual file: `text/plain`. */
   static textPlain(): Encoding
+  /** JSON data intended to be consumed by an application: `application/json`. */
   static applicationJson(): Encoding
+  /** JSON data intended to be human readable: `text/json`. */
   static textJson(): Encoding
+  /** Common Data Representation (CDR)-encoded data: `application/cdr`. */
   static applicationCdr(): Encoding
+  /** Concise Binary Object Representation (CBOR)-encoded data: `application/cbor`. */
   static applicationCbor(): Encoding
+  /** YAML data intended to be consumed by an application: `application/yaml`. */
   static applicationYaml(): Encoding
+  /** YAML data intended to be human readable: `text/yaml`. */
   static textYaml(): Encoding
+  /** JSON5-encoded data intended to be human readable: `text/json5`. */
   static textJson5(): Encoding
+  /** A Python object serialized with `pickle`: `application/python-serialized-object`. */
   static applicationPythonSerializedObject(): Encoding
+  /** Application-specific protobuf-encoded data: `application/protobuf`. */
   static applicationProtobuf(): Encoding
+  /** A Java serialized object: `application/java-serialized-object`. */
   static applicationJavaSerializedObject(): Encoding
+  /** `OpenMetrics` data, commonly used by Prometheus: `application/openmetrics-text`. */
   static applicationOpenmetricsText(): Encoding
+  /** A Portable Network Graphics (PNG) image: `image/png`. */
   static imagePng(): Encoding
+  /** A Joint Photographic Experts Group (JPEG) image: `image/jpeg`. */
   static imageJpeg(): Encoding
+  /** A Graphics Interchange Format (GIF) image: `image/gif`. */
   static imageGif(): Encoding
+  /** A Bitmap (BMP) image: `image/bmp`. */
   static imageBmp(): Encoding
+  /** A WebP image: `image/webp`. */
   static imageWebp(): Encoding
+  /** An XML file intended to be consumed by an application: `application/xml`. */
   static applicationXml(): Encoding
+  /** An encoded list of name/value tuples: `application/x-www-form-urlencoded`. */
   static applicationXWwwFormUrlencoded(): Encoding
+  /** An HTML file: `text/html`. */
   static textHtml(): Encoding
+  /** An XML file that is human readable: `text/xml`. */
   static textXml(): Encoding
+  /** A CSS file: `text/css`. */
   static textCss(): Encoding
+  /** A JavaScript file: `text/javascript`. */
   static textJavascript(): Encoding
+  /** A Markdown file: `text/markdown`. */
   static textMarkdown(): Encoding
+  /** A CSV file: `text/csv`. */
   static textCsv(): Encoding
+  /** An application-specific SQL query: `application/sql`. */
   static applicationSql(): Encoding
+  /**
+   * Constrained Application Protocol (CoAP) data intended for CoAP-to-HTTP and
+   * HTTP-to-CoAP proxies: `application/coap-payload`.
+   */
   static applicationCoapPayload(): Encoding
+  /** A sequence of operations to apply to a JSON document: `application/json-patch+json`. */
   static applicationJsonPatchJson(): Encoding
+  /** A sequence of UTF-8 encoded JSON texts: `application/json-seq`. */
   static applicationJsonSeq(): Encoding
+  /** A `JSONPath` expression selecting values within a JSON value: `application/jsonpath`. */
   static applicationJsonpath(): Encoding
+  /** A JSON Web Token (JWT): `application/jwt`. */
   static applicationJwt(): Encoding
+  /** Application-specific MPEG-4-encoded data, either audio or video: `application/mp4`. */
   static applicationMp4(): Encoding
+  /** A SOAP 1.2 message serialized as XML 1.0: `application/soap+xml`. */
   static applicationSoapXml(): Encoding
+  /**
+   * YANG-encoded data, commonly used by the Network Configuration Protocol (NETCONF):
+   * `application/yang`.
+   */
   static applicationYang(): Encoding
+  /** An MPEG-4 Advanced Audio Coding (AAC) media: `audio/aac`. */
   static audioAac(): Encoding
+  /** A Free Lossless Audio Codec (FLAC) media: `audio/flac`. */
   static audioFlac(): Encoding
+  /** An audio codec defined in MPEG-1, MPEG-2 or MPEG-4: `audio/mp4`. */
   static audioMp4(): Encoding
+  /** An Ogg-encapsulated audio stream: `audio/ogg`. */
   static audioOgg(): Encoding
+  /** A Vorbis-encoded audio stream: `audio/vorbis`. */
   static audioVorbis(): Encoding
+  /** An h261-encoded video stream: `video/h261`. */
   static videoH261(): Encoding
+  /** An h263-encoded video stream: `video/h263`. */
   static videoH263(): Encoding
+  /** An h264-encoded video stream: `video/h264`. */
   static videoH264(): Encoding
+  /** An h265-encoded video stream: `video/h265`. */
   static videoH265(): Encoding
+  /** An h266-encoded video stream: `video/h266`. */
   static videoH266(): Encoding
+  /** A video codec defined in MPEG-1, MPEG-2 or MPEG-4: `video/mp4`. */
   static videoMp4(): Encoding
+  /** An Ogg-encapsulated video stream: `video/ogg`. */
   static videoOgg(): Encoding
+  /** An uncompressed, studio-quality video stream: `video/raw`. */
   static videoRaw(): Encoding
+  /** A VP8-encoded video stream: `video/vp8`. */
   static videoVp8(): Encoding
+  /** A VP9-encoded video stream: `video/vp9`. */
   static videoVp9(): Encoding
+  /** The string representation of this encoding, e.g. `text/plain;utf-8`. */
   toString(): string
+  /**
+   * Returns a copy of this encoding carrying the given schema.
+   *
+   * Zenoh does not define what a schema is; its meaning is left to the application. A
+   * common schema for `text/plain`, for instance, is `utf-8`, which renders as
+   * `text/plain;utf-8`.
+   */
   withSchema(value: string): Encoding
 }
 
+/**
+ * A {@link `Locator`} extended with a configuration part, in the canonical form
+ * `<protocol>/<address>[?<metadata>][#<config>]`.
+ *
+ * The configuration part is a `;`-separated list of `<key>=<value>` pairs, sorted
+ * alphabetically by key. It configures aspects of the endpoint such as the interface to
+ * listen on or to connect from.
+ */
 export declare class EndPoint {
+  /**
+   * Builds an endpoint from its protocol, address, metadata and configuration parts.
+   *
+   * @throws If the parts do not form a valid endpoint.
+   */
   constructor(protocol: string, address: string, metadata: string, config: string)
+  /** The protocol part of this endpoint, e.g. `tcp`. */
   get protocol(): string
+  /** The address part of this endpoint, e.g. `127.0.0.1:7447`. */
   get address(): string
+  /** Returns this endpoint in its canonical string form. */
   toString(): string
+  /** Returns the metadata part of this endpoint. */
   metadata(): Metadata
+  /**
+   * Returns the configuration part of this endpoint, in its `<key>=<value>;...` string
+   * form.
+   */
   config(): string
+  /** Returns the protocol, address, metadata and configuration parts of this endpoint. */
   split(): EndPointParts
+  /** Returns this endpoint as a locator, dropping its configuration part. */
   toLocator(): Locator
 }
 
+/** The identifier globally identifying an entity in a Zenoh system. */
 export declare class EntityGlobalId {
+  /** The Zenoh identifier of the session this entity belongs to. */
   get zid(): string
+  /** The identifier of this entity within its session. */
   get eid(): number
 }
 
+/** The reply a Zenoh process sends to a scout message, announcing itself. */
 export declare class Hello {
+  /** The locators this process can be reached at. */
   locators(): Array<Locator>
+  /** The kind of Zenoh process that sent this hello. */
   get whatami(): WhatAmI
+  /** The Zenoh identifier of the process that sent this hello. */
   get zid(): string
 }
 
@@ -137,33 +328,117 @@ export declare class HelloIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<HelloIter, Hello, void, undefined>
 }
 
+/**
+ * A set of keys, expressed with a glob-like syntax.
+ *
+ * A key expression is a `/`-separated list of non-empty UTF-8 chunks. It may never start
+ * or end with `/`, contain `//`, or contain any of the characters `#$?` outside of the
+ * `$*` wildcard. It must also be in canonical form, so that two key expressions denoting
+ * the same set are always the same string.
+ *
+ * Three wildcards widen the set a key expression denotes: `*` stands for a single chunk,
+ * `**` for any number of chunks, and `$*` for any substring within a chunk.
+ *
+ * Since key expressions denote sets, they relate to one another: two of them
+ * {@link KeyExpr.intersects} if they share at least one key, and one of them
+ * {@link KeyExpr.includes} another if it holds every key of the other. Two key
+ * expressions denote the same set exactly when they are the same string.
+ */
 export declare class KeyExpr {
+  /**
+   * Creates a key expression from its string form.
+   *
+   * @throws If the string is not a valid key expression. Note that being valid requires
+   * being canonical; use {@link KeyExpr.autocanonize} to canonize it first.
+   */
   constructor(expr: string)
+  /**
+   * Canonizes the given string, then creates a key expression from it.
+   *
+   * @throws If the string is not a valid key expression even after canonization.
+   */
   static autocanonize(expr: string): KeyExpr
+  /**
+   * Creates a key expression from its string form, same as the {@link `KeyExpr`}
+   * constructor.
+   *
+   * @throws If the string is not a valid, canonical key expression.
+   */
   static fromStr(expr: string): KeyExpr
+  /**
+   * Appends `other` to this key expression without inserting a separator.
+   *
+   * Prefer {@link KeyExpr.join}, as Zenoh can take advantage of the hierarchical
+   * separation it inserts.
+   *
+   * @throws If the result is not a valid key expression, or if this key expression ends
+   * with `*` while `other` starts with `*`.
+   */
   concat(other: string): KeyExpr
+  /**
+   * Joins this key expression and `other`, inserting a `/` in between them.
+   *
+   * This is the preferred way of concatenating path segments.
+   *
+   * @throws If the result is not a valid key expression.
+   */
   join(other: string): KeyExpr
+  /** Returns this key expression in its string form. */
   toString(): string
+  /**
+   * Returns `true` if the two key expressions intersect, i.e. if at least one key belongs
+   * to the sets denoted by both of them.
+   */
   intersects(other: KeyExpr): boolean
+  /**
+   * Returns `true` if this key expression includes `other`, i.e. if the set it denotes
+   * holds every key of the set denoted by `other`.
+   */
   includes(other: KeyExpr): boolean
+  /** Whether this key expression contains a wildcard. */
   get isWild(): boolean
 }
 
+/**
+ * A concrete data link within a {@link `Transport`}.
+ *
+ * Zenoh can establish several links to the same remote node using different protocols,
+ * e.g. TCP, UDP or QUIC.
+ */
 export declare class Link {
+  /** The Zenoh identifier of the transport this link belongs to. */
   get zid(): string
+  /** The source locator, i.e. the local end of this link. */
   get src(): Locator
+  /** The destination locator, i.e. the remote end of this link. */
   get dst(): Locator
+  /** The group locator of a multicast link, or `null` when the link is not multicast. */
   get group(): Locator | null
+  /** The maximum transmission unit of this link, in bytes. */
   get mtu(): number
+  /** Whether this link's protocol is stream-oriented. */
   get isStreamed(): boolean
+  /** The network interfaces associated with this link. */
   get interfaces(): Array<string>
+  /**
+   * The authentication identifier of this link, or `null` when its protocol does not
+   * provide one.
+   */
   get authIdentifier(): string | null
+  /**
+   * The range of priorities this link is used for, or `null` when its transport does not
+   * support `QoS`.
+   */
   get priorities(): LinkPriorities | null
+  /** The reliability of this link, or `null` when its transport does not support `QoS`. */
   get reliability(): Reliability | null
 }
 
+/** An event reported when a link is added or removed. */
 export declare class LinkEvent {
+  /** Whether the link was added (`Put`) or removed (`Delete`). */
   get kind(): SampleKind
+  /** The link this event is about. */
   get link(): Link
 }
 
@@ -180,43 +455,161 @@ export declare class LinkEventIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<LinkEventIter, LinkEvent, void, undefined>
 }
 
+/** A listener receiving the link events of a session. */
 export declare class LinkEventsListener {
+  /**
+   * Undeclares this listener and stops receiving link events.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Returns a stream of the link events delivered to this listener.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   receive(): LinkEventIter
 }
 
+/**
+ * The liveliness interface of a session: declares liveliness tokens, queries the ones
+ * currently alive and subscribes to their changes.
+ *
+ * A liveliness token is a token whose liveliness is tied to the session that declared it
+ * and that can be monitored by remote applications.
+ */
 export declare class Liveliness {
+  /**
+   * Declares a liveliness token on the given key expression.
+   *
+   * The token is seen as alive by the applications monitoring it for as long as it is
+   * not undeclared, the declaring application is running and the two are connected.
+   */
   declareToken(keyExpr: KeyExprArg): Promise<LivelinessToken>
+  /**
+   * Declares a subscriber for the liveliness changes of the tokens matching the given
+   * key expression.
+   *
+   * A sample whose kind is `Put` signals a token that became alive; one whose kind is
+   * `Delete` signals a token that was lost.
+   */
   declareSubscriber(keyExpr: KeyExprArg, options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
+  /**
+   * Queries the liveliness tokens currently alive whose key expression matches the given
+   * one.
+   *
+   * @returns The replies to the query, each carrying the key expression of one live
+   * token.
+   */
   get(keyExpr: KeyExprArg, options?: LivelinessGetOptions | undefined | null): Promise<Replies>
 }
 
+/**
+ * A subscriber receiving the liveliness changes of the tokens matching its key
+ * expression.
+ *
+ * {@link LivelinessSubscriber.undeclare} consumes the subscriber; every member throws
+ * once it has been undeclared.
+ */
 export declare class LivelinessSubscriber {
+  /** The key expression whose liveliness changes this subscriber receives. */
   get keyExpr(): KeyExpr
+  /** The global identifier of this subscriber. */
   get id(): EntityGlobalId
+  /**
+   * Undeclares this subscriber, so that no further liveliness change is delivered to it.
+   *
+   * @throws If this subscriber has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Iterates over the liveliness changes delivered to this subscriber.
+   *
+   * @returns A {@link `SampleIter`} that yields a sample whose kind is `Put` for each
+   * token that became alive and `Delete` for each token that was lost, and completes
+   * once the subscriber stops receiving.
+   * @throws If this subscriber has already been undeclared.
+   */
   receive(): SampleIter
 }
 
+/**
+ * A token whose liveliness is tied to the session that declared it.
+ *
+ * The token is seen as alive by any application monitoring it for as long as the token
+ * is not undeclared, the declaring application is running and the two applications have
+ * Zenoh connectivity.
+ *
+ * {@link LivelinessToken.undeclare} consumes the token; it throws once the token has been
+ * undeclared.
+ */
 export declare class LivelinessToken {
+  /**
+   * Undeclares this token, so that the applications monitoring it stop seeing it as
+   * alive.
+   *
+   * @throws If this token has already been undeclared.
+   */
   undeclare(): void
 }
 
+/**
+ * An address at which a Zenoh node can be reached, in the canonical form
+ * `<protocol>/<address>[?<metadata>]`.
+ *
+ * The metadata part is a `;`-separated list of `<key>=<value>` pairs, sorted
+ * alphabetically by key.
+ */
 export declare class Locator {
+  /**
+   * Builds a locator from its protocol, address and metadata parts.
+   *
+   * @throws If the parts do not form a valid locator.
+   */
   constructor(protocol: string, address: string, metadata: string)
+  /** The protocol part of this locator, e.g. `tcp`. */
   get protocol(): string
+  /** The address part of this locator, e.g. `127.0.0.1:7447`. */
   get address(): string
+  /** Returns this locator in its canonical string form. */
   toString(): string
+  /** Returns the metadata part of this locator. */
   metadata(): Metadata
+  /** Returns this locator as an endpoint with an empty configuration part. */
   toEndpoint(): EndPoint
 }
 
+/**
+ * A listener notified each time the {@link `MatchingStatus`} of the entity that declared
+ * it changes.
+ *
+ * {@link MatchingListener.undeclare} consumes the listener; every member throws once it
+ * has been undeclared.
+ */
 export declare class MatchingListener {
+  /**
+   * Undeclares this listener, so that no further matching status is reported to it.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Iterates over the matching status changes reported to this listener.
+   *
+   * @returns A {@link `MatchingStatusIter`} that yields each buffered
+   * {@link `MatchingStatus`} and completes once the listener stops receiving.
+   * @throws If this listener has already been undeclared.
+   */
   receive(): MatchingStatusIter
 }
 
+/** Whether there exist entities matching a publisher or a querier. */
 export declare class MatchingStatus {
+  /**
+   * `true` if there exist entities matching the declaring entity, i.e. subscribers
+   * matching a publisher's key expression, or queryables matching a querier's key
+   * expression and target.
+   */
   get matching(): boolean
 }
 
@@ -233,15 +626,33 @@ export declare class MatchingStatusIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<MatchingStatusIter, MatchingStatus, void, undefined>
 }
 
+/**
+ * The metadata part of a {@link `Locator`} or an {@link `EndPoint`}.
+ *
+ * Metadata is a `;`-separated list of `<key>=<value>` pairs. Zenoh reads `prio`, an
+ * inclusive priority range such as `1-3`, and `rel`, either `0` for best effort or `1` for
+ * reliable; both are used to select the link a message is sent on.
+ */
 export declare class Metadata {
+  /** Returns this metadata in its `<key>=<value>;...` string form. */
   toString(): string
+  /** Returns `true` when this metadata carries no pair. */
   isEmpty(): boolean
+  /** Returns the value associated with `key`, or `null` when the key is absent. */
   get(key: string): string | null
+  /**
+   * Returns the values associated with `key`, splitting the value on `|`.
+   *
+   * @returns The individual values, or an empty array when the key is absent.
+   */
   values(key: string): Array<string>
 }
 
+/** A report of samples a subscriber did not receive. */
 export declare class Miss {
+  /** The global identifier of the publisher whose samples were missed. */
   get source(): EntityGlobalId
+  /** The number of samples missed from that publisher. */
   get nb(): number
 }
 
@@ -258,67 +669,295 @@ export declare class MissIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<MissIter, Miss, void, undefined>
 }
 
+/**
+ * The parameters part of a {@link Selector}.
+ *
+ * Parameters are a `;`-separated list of entries, where `=` separates a key from its
+ * value and `|` separates the several values of one key. An entry without `=` has the
+ * empty string as its value.
+ *
+ * Zenoh reserves the parameter names starting with a non-alphanumeric character, such as
+ * `_time` and `_anyke`. Queryables are encouraged to prefix their own parameter names to
+ * avoid conflicting with other queryables.
+ */
 export declare class Parameters {
+  /** Creates empty parameters. */
   static empty(): Parameters
+  /** Creates parameters from their string form, e.g. `a=1;b=2|3;c`. */
   constructor(params: string)
+  /** Creates parameters from a record of key-value pairs. */
   static from(params: ParametersLike): Parameters
+  /** Returns these parameters in their string form. */
   toString(): string
+  /** Whether these parameters hold no entry at all. */
   get isEmpty(): boolean
+  /** Whether the keys of these parameters are sorted in alphabetical order. */
   get isOrdered(): boolean
+  /** Returns `true` if these parameters contain the given key. */
   containsKey(key: string): boolean
+  /**
+   * Returns the value of the given key, or `null` if the key is absent.
+   *
+   * The value is returned as stored, so a key with several `|`-separated values yields
+   * all of them as a single string. Use {@link Parameters.values} to get them apart.
+   */
   get(key: string): string | null
+  /**
+   * Returns the `|`-separated values of the given key, or an empty array if the key is
+   * absent.
+   */
   values(key: string): Array<string>
+  /**
+   * Inserts a key-value pair into these parameters.
+   *
+   * @returns The value previously held by that key, or `null` if the key was absent.
+   */
   insert(key: string, value: string): string | null
+  /**
+   * Removes a key from these parameters.
+   *
+   * @returns The value that key held, or `null` if the key was absent.
+   */
   remove(key: string): string | null
+  /**
+   * Extends these parameters with the entries of `other`.
+   *
+   * Keys held by both sides take the value from `other`.
+   */
   extend(other: Parameters): void
 }
 
+/**
+ * A publisher declared on a key expression, used to send data repeatedly without
+ * re-resolving the key expression on each publication.
+ *
+ * On top of a plain publication, a publisher can keep a {@link PublisherOptions.cache}
+ * of the last samples so that subscribers can retrieve them as history or ask for their
+ * retransmission, announce a sequence number so subscribers can detect misses through
+ * {@link PublisherOptions.sampleMissDetection}, and make itself discoverable through
+ * {@link PublisherOptions.publisherDetection}.
+ *
+ * {@link Publisher.undeclare} consumes the publisher; every member throws once it has
+ * been undeclared.
+ */
 export declare class Publisher {
+  /** The key expression this publisher writes to. */
   get keyExpr(): KeyExpr
+  /** The global identifier of this publisher. */
   get id(): EntityGlobalId
+  /**
+   * The encoding used when publishing data.
+   *
+   * A single publication can override it with {@link PublisherPutOptions.encoding}.
+   */
   get encoding(): Encoding
+  /** The congestion control applied when routing the published data. */
   get congestionControl(): CongestionControl
+  /** The priority applied when routing the published data. */
   get priority(): Priority
+  /**
+   * Publishes a payload on this publisher's key expression.
+   *
+   * The matching subscribers receive a sample whose kind is `Put`.
+   */
   put(payload: BytesBuffer, options?: PublisherPutOptions | undefined | null): Promise<void>
+  /**
+   * Declares that the data associated with this publisher's key expression is deleted.
+   *
+   * The matching subscribers receive a sample whose kind is `Delete`.
+   */
   delete(options?: PublisherDeleteOptions | undefined | null): Promise<void>
+  /**
+   * Reads the current matching status of this publisher.
+   *
+   * @returns A {@link `MatchingStatus`} whose {@link MatchingStatus.matching} is `true`
+   * if there exist subscribers matching this publisher's key expression.
+   */
   matchingStatus(): Promise<MatchingStatus>
+  /**
+   * Declares a listener notified each time the matching status of this publisher
+   * changes, i.e. each time it gains its first matching subscriber or loses its last
+   * one.
+   */
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
+  /**
+   * Undeclares this publisher, informing the network that it need not optimize
+   * publications for its key expression anymore.
+   *
+   * @throws If this publisher has already been undeclared.
+   */
   undeclare(): void
 }
 
+/**
+ * A preconfigured sender of queries to a given key expression.
+ *
+ * Declaring a querier lets Zenoh optimize the routing of the queries it sends, which is
+ * worthwhile when the same key expression is queried repeatedly.
+ *
+ * {@link Querier.undeclare} consumes the querier; every other member throws afterwards.
+ */
 export declare class Querier {
+  /** The key expression this querier sends its queries on. */
   get keyExpr(): KeyExpr
+  /** The global id of this querier. */
   get id(): EntityGlobalId
+  /** The congestion control applied when routing the queries. */
   get congestionControl(): CongestionControl
+  /** The priority applied when routing the queries. */
   get priority(): Priority
+  /**
+   * Whether this querier accepts replies whose key expression does not intersect its
+   * own.
+   *
+   * See {@link `ReplyKeyExpr`}.
+   */
   get acceptReplies(): ReplyKeyExpr
+  /**
+   * Sends a query on this querier's key expression.
+   *
+   * @returns The stream of the replies received for this query.
+   *
+   * @throws If the querier has already been undeclared.
+   */
   get(options?: QuerierGetOptions | undefined | null): Promise<Replies>
+  /**
+   * Returns whether there is currently at least one queryable matching this querier's
+   * key expression and target.
+   *
+   * @throws If the querier has already been undeclared.
+   */
   matchingStatus(): Promise<MatchingStatus>
+  /**
+   * Declares a listener notified each time the matching status of this querier changes.
+   *
+   * @throws If the querier has already been undeclared.
+   */
   matchingListener(options?: MatchingListenerOptions | undefined | null): Promise<MatchingListener>
+  /**
+   * Undeclares this querier, informing the network that it no longer needs to optimize
+   * queries for its key expression.
+   *
+   * @throws If the querier has already been undeclared.
+   */
   undeclare(): void
 }
 
+/**
+ * A query received by a {@link Queryable}.
+ *
+ * It carries everything the querier sent: the selector, and the payload and attachment,
+ * if any. Answer it with {@link Query.reply}, {@link Query.replyDel} or
+ * {@link Query.replyErr}.
+ *
+ * {@link Query.keyExpr} is not necessarily the key expression to reply on, as it may
+ * contain wildcards. A queryable serving `foo/*` may receive a query for `foo/bar` and
+ * another for `foo/baz`, and should reply respectively on `foo/bar` and `foo/baz`.
+ *
+ * {@link Query.drop} consumes the query; every other member throws afterwards.
+ */
 export declare class Query {
+  /**
+   * The full selector of this query, i.e. its key expression together with its
+   * parameters.
+   */
   get selector(): Selector
+  /**
+   * The key expression this query targets.
+   *
+   * It may contain wildcards, so it is not necessarily the key expression to reply on.
+   */
   get keyExpr(): KeyExpr
+  /** The payload sent along with this query, or `null` if it carries none. */
   get payload(): Bytes | null
+  /** The encoding of {@link Query.payload}, or `null` if this query carries no payload. */
   get encoding(): Encoding | null
+  /**
+   * The arbitrary user-defined data sent alongside this query, or `null` if there is
+   * none.
+   */
   get attachment(): Bytes | null
+  /** The priority applied when routing this query. */
   get priority(): Priority
+  /** The congestion control applied when routing this query. */
   get congestionControl(): CongestionControl
+  /** Whether this query was sent without batching, which usually reduces latency. */
   get express(): boolean
+  /** The selector parameters of this query. */
   get parameters(): Parameters
+  /**
+   * Whether this query accepts replies whose key expression does not intersect its own.
+   *
+   * See {@link `ReplyKeyExpr`}.
+   */
   get acceptsReplies(): ReplyKeyExpr
+  /**
+   * Replies to this query with a sample of kind `Put`.
+   *
+   * `keyExpr` is the concrete key expression the replied data belongs to. It is not
+   * necessarily {@link Query.keyExpr}, which may contain wildcards.
+   *
+   * The reply is sent with the `QoS` of the query.
+   *
+   * @throws If `keyExpr` does not intersect the query's key expression while the query
+   * only accepts matching replies, or if the query has already been consumed.
+   */
   reply(keyExpr: KeyExprArg, payload: BytesBuffer, options?: ReplyOptions | undefined | null): Promise<void>
+  /**
+   * Replies to this query with an error.
+   *
+   * The reply is sent with the `QoS` of the query.
+   *
+   * @throws If the query has already been consumed.
+   */
   replyErr(payload: BytesBuffer, options?: ReplyErrOptions | undefined | null): Promise<void>
+  /**
+   * Replies to this query with a sample of kind `Delete`.
+   *
+   * `keyExpr` is the concrete key expression the deletion applies to. It is not
+   * necessarily {@link Query.keyExpr}, which may contain wildcards.
+   *
+   * The reply is sent with the `QoS` of the query.
+   *
+   * @throws If `keyExpr` does not intersect the query's key expression while the query
+   * only accepts matching replies, or if the query has already been consumed.
+   */
   replyDel(keyExpr: KeyExprArg, options?: ReplyDelOptions | undefined | null): Promise<void>
+  /**
+   * Releases this query without replying to it.
+   *
+   * @throws If the query has already been consumed.
+   */
   drop(): void
 }
 
+/**
+ * An entity that implements the query/reply pattern.
+ *
+ * A queryable receives the queries sent by {@link Session.get} and {@link Querier.get}
+ * that match its key expression, and answers them through the methods of {@link Query}.
+ *
+ * {@link Queryable.undeclare} consumes the queryable; every other member throws
+ * afterwards.
+ */
 export declare class Queryable {
+  /** The global id of this queryable. */
   get id(): EntityGlobalId
+  /** The key expression this queryable answers queries for. */
   get keyExpr(): KeyExpr
+  /**
+   * Undeclares this queryable, stopping the delivery of queries to it.
+   *
+   * @throws If the queryable has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Returns the stream of the queries delivered to this queryable.
+   *
+   * Iteration ends once the queryable is undeclared.
+   *
+   * @throws If the queryable has already been undeclared.
+   */
   receive(): QueryIter
 }
 
@@ -337,20 +976,52 @@ export declare class QueryIter {
 
 /** A stream of the replies to a single query. */
 export declare class Replies {
+  /**
+   * Returns the stream of the replies to this query.
+   *
+   * Iteration ends once the query completes, i.e. once every matching queryable has
+   * answered or the query has timed out.
+   */
   receive(): ReplyIter
 }
 
+/**
+ * An answer received from a {@link Queryable}.
+ *
+ * A reply holds either a successful {@link Sample} or a {@link `ReplyError`}; read
+ * {@link Reply.result} to tell them apart.
+ */
 export declare class Reply {
+  /**
+   * The global id of the Zenoh entity that answered this reply, or `null` if it is not
+   * known.
+   */
   get id(): EntityGlobalId | null
+  /**
+   * The result carried by this reply.
+   *
+   * Exactly one of its two fields is set: on success `sample` holds the replied data and
+   * `error` is `null`, on failure `error` holds the error and `sample` is `null`.
+   */
   get result(): ReplyResult
 }
 
+/**
+ * The error variant of a {@link Reply}.
+ *
+ * It carries the payload describing the error, which may be a message or structured
+ * data, along with the encoding of that payload.
+ */
 export declare class ReplyError {
+  /** The encoding of {@link ReplyError.payload}. */
   get encoding(): Encoding
+  /** The payload describing the error. */
   get payload(): Bytes
 }
 
 /**
+ * A stream of the replies to a single query.
+ *
  * This type implements JavaScript's async iterable protocol.
  * It can be used with `for await...of` loops.
  *
@@ -361,16 +1032,34 @@ export declare class ReplyIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<ReplyIter, Reply, void, undefined>
 }
 
+/**
+ * The data unit delivered to a subscriber or carried by a successful {@link Reply}.
+ *
+ * It holds the payload along with all the metadata associated with the data.
+ */
 export declare class Sample {
+  /** The payload of this sample. */
   get payload(): Bytes
+  /** The key expression this sample was published on. */
   get keyExpr(): KeyExpr
+  /** Whether this sample was issued by a put or by a delete. */
   get kind(): SampleKind
+  /** The encoding of {@link Sample.payload}. */
   get encoding(): Encoding
+  /** The timestamp of this sample, or `null` if it carries none. */
   get timestamp(): Timestamp | null
+  /** Whether this sample was sent without batching, which usually reduces latency. */
   get express(): boolean
+  /** The priority applied when routing this sample. */
   get priority(): Priority
+  /** The congestion control applied when routing this sample. */
   get congestionControl(): CongestionControl
+  /** The reliability applied when routing this sample. */
   get reliability(): Reliability
+  /**
+   * The arbitrary user-defined data sent alongside the payload, or `null` if there is
+   * none.
+   */
   get attachment(): Bytes | null
 }
 
@@ -387,88 +1076,385 @@ export declare class SampleIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<SampleIter, Sample, void, undefined>
 }
 
+/**
+ * A listener reporting the samples a subscriber missed.
+ *
+ * Missed samples can only be detected from publishers that enable
+ * {@link PublisherOptions.sampleMissDetection}.
+ *
+ * {@link SampleMissListener.undeclare} consumes the listener; every member throws once it
+ * has been undeclared.
+ */
 export declare class SampleMissListener {
+  /**
+   * Undeclares this listener, so that no further miss is reported to it.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Iterates over the misses reported to this listener.
+   *
+   * @returns A {@link `MissIter`} that yields each buffered {@link `Miss`} and completes
+   * once the listener stops receiving.
+   * @throws If this listener has already been undeclared.
+   */
   receive(): MissIter
 }
 
+/**
+ * A running scout, discovering the Zenoh processes reachable on the network.
+ *
+ * Scouting periodically sends scout messages and collects the {@link `Hello`} replies of
+ * the processes that answer them.
+ *
+ * {@link Scout.stop} consumes the scout; every member throws once it has been stopped.
+ */
 export declare class Scout {
+  /**
+   * Starts scouting for the kinds of Zenoh process selected by `what`, using `config`
+   * for the scouting parameters such as the multicast address and interfaces.
+   */
   static scout(what: WhatAmIMatcher, config: Config, options?: ScoutOptions | undefined | null): Promise<Scout>
+  /**
+   * Stops scouting.
+   *
+   * @throws If this scout has already been stopped.
+   */
   stop(): void
+  /**
+   * Iterates over the hellos received while scouting.
+   *
+   * @returns A {@link `HelloIter`} that yields each buffered hello and completes once
+   * scouting stops.
+   * @throws If this scout has already been stopped.
+   */
   receive(): HelloIter
 }
 
+/**
+ * The combination of a key expression and a set of parameters, identifying what a query
+ * targets.
+ *
+ * The key expression defines the set of keys the query is relevant to, and the
+ * parameters carry arguments to the queryables answering it, e.g. remote procedure call
+ * arguments or filters on value or metadata.
+ *
+ * In string form a selector looks like a URI: the part before the first `?` is the key
+ * expression and the part after it is the parameters.
+ */
 export declare class Selector {
+  /**
+   * Creates a selector from a key expression and, optionally, parameters in their string
+   * form.
+   *
+   * @throws If `keyExpr` is a string that is not a valid key expression.
+   */
   constructor(keyExpr: KeyExprArg, parameters?: string | undefined | null)
+  /**
+   * The key expression of this selector, defining the set of keys the query is relevant
+   * to.
+   */
   get keyExpr(): KeyExpr
+  /** The parameters of this selector. */
   get parameters(): Parameters
+  /**
+   * Returns the key expression and the parameters of this selector, both in their string
+   * form.
+   */
   split(): SelectorParts
 }
 
+/**
+ * The main component of Zenoh, holding this node's connection to the network.
+ *
+ * A session is opened with {@link Session.open} and declares the other Zenoh entities:
+ * publishers, subscribers, queriers, queryables and liveliness tokens. Those entities
+ * have a lifetime of their own, but they stop working once the session is closed.
+ */
 export declare class Session {
+  /**
+   * Opens a session with the given configuration.
+   *
+   * @throws If the session could not be opened.
+   */
   static open(config: Config): Promise<Session>
+  /**
+   * The Zenoh identifier of this session.
+   *
+   * Shortcut for {@link SessionInfo.zid}.
+   */
   get zid(): string
+  /** The identifier of this session as a Zenoh entity. */
   get id(): EntityGlobalId
+  /** Whether this session has been closed. */
   get isClosed(): boolean
+  /** Returns a timestamp carrying the current time and this session's Zenoh identifier. */
   newTimestamp(): Timestamp
+  /** Returns information about this session and the network around it. */
   info(): SessionInfo
+  /** Returns the configuration this session is currently running with. */
   config(): SessionConfig
+  /**
+   * Closes this session.
+   *
+   * Every subscriber and queryable declared by this session stops receiving data, and
+   * further attempts to publish or query with the session or its publishers fail.
+   * Undeclaring an entity after the session is closed is a no-op.
+   *
+   * @throws If the session could not be closed.
+   */
   close(): Promise<void>
+  /**
+   * Publishes a payload on the resources matching a key expression.
+   *
+   * Shortcut for declaring a publisher with {@link Session.declarePublisher} and calling
+   * {@link Publisher.put} on it.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   put(keyExpr: KeyExprArg, payload: BytesBuffer, options?: PutOptions | undefined | null): Promise<void>
+  /**
+   * Queries the queryables matching a selector.
+   *
+   * Shortcut for declaring a querier with {@link Session.declareQuerier} and calling
+   * {@link Querier.get} on it.
+   *
+   * Replies are guaranteed to carry a key expression that matches the selector.
+   *
+   * @returns The replies to this query.
+   * @throws If the selector is invalid or the session is closed.
+   */
   get(selector: SelectorArg, options?: GetOptions | undefined | null): Promise<Replies>
+  /**
+   * Publishes a delete on the resources matching a key expression.
+   *
+   * Shortcut for declaring a publisher with {@link Session.declarePublisher} and calling
+   * {@link Publisher.delete} on it.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   delete(keyExpr: KeyExprArg, options?: DeleteOptions | undefined | null): Promise<void>
+  /**
+   * Returns the liveliness interface of this session, used to declare liveliness tokens
+   * and to subscribe to or query the tokens alive in the network.
+   */
   liveliness(): Liveliness
+  /**
+   * Informs Zenoh that a key expression will be used repeatedly, so that it optimizes its
+   * transmission.
+   *
+   * @returns The declared key expression, to be used in place of the original one.
+   * @throws If the key expression is invalid or the session is closed.
+   */
   declareKeyexpr(keyExpr: KeyExprArg): Promise<KeyExpr>
+  /**
+   * Declares a querier that repeatedly queries the resources matching a key expression.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   declareQuerier(keyExpr: KeyExprArg, options?: QuerierOptions | undefined | null): Promise<Querier>
+  /**
+   * Declares a queryable that answers the queries matching a key expression.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   declareQueryable(keyExpr: KeyExprArg, options?: QueryableOptions | undefined | null): Promise<Queryable>
+  /**
+   * Declares a subscriber that receives the data published on the resources matching a
+   * key expression.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   declareSubscriber(keyExpr: KeyExprArg, options?: SubscriberOptions | undefined | null): Promise<Subscriber>
+  /**
+   * Declares a publisher that writes to the resources matching a key expression.
+   *
+   * @throws If the key expression is invalid or the session is closed.
+   */
   declarePublisher(keyExpr: KeyExprArg, options?: PublisherOptions | undefined | null): Promise<Publisher>
 }
 
+/**
+ * The configuration an open {@link `Session`} is currently running with.
+ *
+ * It reads the whole configuration of the session, and applies changes to the plugin part
+ * of it.
+ */
 export declare class SessionConfig {
+  /**
+   * Returns the configuration held at `key`, as a JSON string.
+   *
+   * @throws If no configuration is held at `key`.
+   */
   get(key: string): string
+  /**
+   * Inserts the JSON5 `value` at `key`, applying it to the running session.
+   *
+   * Only keys under `plugins/` can be updated on a running session.
+   *
+   * @throws If `key` is outside `plugins/`, or if `value` is not valid at that key.
+   */
   insertJson5(key: string, value: string): void
+  /** Returns the whole configuration as a JSON string. */
   toJson(): string
+  /**
+   * Returns the default timeout, in milliseconds, applied to the queries issued by this
+   * session.
+   */
   queriesDefaultTimeoutMs(): bigint
+  /**
+   * Returns the configuration of the plugin named `pluginName`, as a JSON string.
+   *
+   * @throws If the plugin holds no configuration.
+   */
   getPluginConfig(pluginName: string): string
 }
 
+/**
+ * Information about a session and the Zenoh network around it.
+ *
+ * This covers the identifier of the session itself, the identifiers of the routers and
+ * peers it is connected to, and the transports and links currently established.
+ */
 export declare class SessionInfo {
+  /** Returns the Zenoh identifier of this session. */
   zid(): Promise<string>
+  /**
+   * Returns the Zenoh identifiers of the routers this process is currently connected to,
+   * or the identifier of the current router when this code runs inside one.
+   */
   routersZid(): Promise<Array<string>>
+  /** Returns the Zenoh identifiers of the peers this process is currently connected to. */
   peersZid(): Promise<Array<string>>
+  /** Returns the currently open transports, i.e. the connections to other Zenoh nodes. */
   transports(): Promise<Array<Transport>>
+  /** Returns the links established across all transports. */
   links(): Promise<Array<Link>>
+  /**
+   * Declares a listener notified whenever a transport is opened or closed.
+   *
+   * @throws If the listener could not be declared.
+   */
   transportEventsListener(options?: TransportEventsListenerOptions | undefined | null): Promise<TransportEventsListener>
+  /**
+   * Declares a listener notified whenever a link is added or removed.
+   *
+   * @throws If the listener could not be declared.
+   */
   linkEventsListener(options?: LinkEventsListenerOptions | undefined | null): Promise<LinkEventsListener>
 }
 
+/**
+ * A subscriber receiving the samples published on the key expressions matching its own.
+ *
+ * On top of a plain subscription, a subscriber can query the matching publishers for
+ * {@link SubscriberOptions.history}, detect the samples it missed and ask for their
+ * {@link SubscriberOptions.recovery}, and make itself discoverable through
+ * {@link SubscriberOptions.subscriberDetection}. The counterpart features must be
+ * enabled on the publisher side.
+ *
+ * {@link Subscriber.undeclare} consumes the subscriber; every member throws once it has
+ * been undeclared.
+ */
 export declare class Subscriber {
+  /** The key expression this subscriber subscribes to. */
   get keyExpr(): KeyExpr
+  /** The global identifier of this subscriber. */
   get id(): EntityGlobalId
+  /**
+   * Declares a listener reporting the samples this subscriber missed.
+   *
+   * Missed samples can only be detected from publishers that enable
+   * {@link PublisherOptions.sampleMissDetection}.
+   */
   sampleMissListener(options?: SampleMissListenerOptions | undefined | null): Promise<SampleMissListener>
+  /**
+   * Declares a liveliness subscriber reporting the publishers matching this subscriber
+   * as they appear and disappear.
+   *
+   * Only publishers that enable {@link PublisherOptions.publisherDetection} can be
+   * detected.
+   */
   detectPublishers(options?: LivelinessSubscriberOptions | undefined | null): Promise<LivelinessSubscriber>
+  /**
+   * Undeclares this subscriber, so that no further sample is delivered to it.
+   *
+   * @throws If this subscriber has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Iterates over the samples delivered to this subscriber.
+   *
+   * @returns A {@link `SampleIter`} that yields each buffered sample and completes once
+   * the subscriber stops receiving, e.g. after it is undeclared or the session is
+   * closed.
+   * @throws If this subscriber has already been undeclared.
+   */
   receive(): SampleIter
 }
 
+/**
+ * A point in time produced by the hybrid logical clock of a Zenoh session.
+ *
+ * It pairs a 64-bit time with the id of the clock that produced it, so timestamps coming
+ * from different sessions can be told apart. In string form the two are joined by a `/`,
+ * as in `2024-07-01T13:51:12.129693000Z/33`.
+ */
 export declare class Timestamp {
+  /**
+   * Parses a timestamp from its RFC 3339 form, e.g.
+   * `2024-07-01T13:51:12.129693000Z/33`.
+   *
+   * @throws If the string is not a valid RFC 3339 timestamp followed by a clock id.
+   */
   static parseRfc3339(s: string): Timestamp
+  /**
+   * Returns this timestamp in RFC 3339 form with nanosecond precision, e.g.
+   * `2024-07-01T13:51:12.129693000Z/33`.
+   *
+   * The conversion is lossy: the fraction of a second is rounded to nanoseconds, so
+   * parsing the result back may not yield this exact timestamp. Use
+   * {@link Timestamp.getTime} for a lossless value.
+   */
   toStringRfc3339Lossy(): string
+  /**
+   * Returns the 64-bit time of this timestamp.
+   *
+   * Its upper 32 bits are the number of seconds since the UNIX epoch and its lower 32
+   * bits are the fraction of a second, whose last few bits carry the logical counter of
+   * the clock.
+   */
   getTime(): bigint
+  /** Returns the hexadecimal id of the clock that produced this timestamp. */
   getId(): string
+  /** Returns the time elapsed from `other` to this timestamp, in milliseconds. */
   getDiffDuration(other: Timestamp): number
 }
 
+/**
+ * A connection established to a remote Zenoh node.
+ *
+ * Several transports to the same node can coexist; a unicast and a multicast transport to
+ * the same node are both possible. Each transport carries one or more {@link `Link`}s, the
+ * data links actually established with the various protocols.
+ */
 export declare class Transport {
+  /** The Zenoh identifier of the remote node. */
   get zid(): string
+  /** The kind of the remote node: router, peer or client. */
   get whatami(): WhatAmI
+  /** Whether this transport supports `QoS`. */
   get isQos(): boolean
+  /** Whether this transport is multicast. */
   get isMulticast(): boolean
 }
 
+/** An event reported when a transport is opened or closed. */
 export declare class TransportEvent {
+  /** Whether the transport was opened (`Put`) or closed (`Delete`). */
   get kind(): SampleKind
+  /** The transport this event is about. */
   get transport(): Transport
 }
 
@@ -485,21 +1471,51 @@ export declare class TransportEventIter {
   [globalThis.Symbol.asyncIterator](): globalThis.__NapiRsAsyncGenerator<TransportEventIter, TransportEvent, void, undefined>
 }
 
+/** A listener receiving the transport events of a session. */
 export declare class TransportEventsListener {
+  /**
+   * Undeclares this listener and stops receiving transport events.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   undeclare(): void
+  /**
+   * Returns a stream of the transport events delivered to this listener.
+   *
+   * @throws If this listener has already been undeclared.
+   */
   receive(): TransportEventIter
 }
 
+/**
+ * A set of {@link `WhatAmI`} values, used to select the kinds of node a scout looks for.
+ *
+ * Start from {@link WhatAmIMatcher.empty} and add the kinds to match with
+ * {@link WhatAmIMatcher.router}, {@link WhatAmIMatcher.peer} and
+ * {@link WhatAmIMatcher.client}.
+ */
 export declare class WhatAmIMatcher {
+  /** Returns a matcher that matches no node kind. */
   static empty(): WhatAmIMatcher
+  /** Returns a copy of this matcher that also matches routers. */
   router(): WhatAmIMatcher
+  /** Returns a copy of this matcher that also matches peers. */
   peer(): WhatAmIMatcher
+  /** Returns a copy of this matcher that also matches clients. */
   client(): WhatAmIMatcher
+  /** Whether this matcher matches no node kind. */
   get isEmpty(): boolean
+  /** Returns whether this matcher matches the given node kind. */
   matches(w: WhatAmI): boolean
+  /** Returns the matched node kinds as their names joined by `|`, e.g. `router|peer`. */
   toStr(): string
 }
 
+/**
+ * A payload accepted wherever raw bytes are sent.
+ *
+ * A string is carried as its UTF-8 bytes; a `Uint8Array` is carried as-is.
+ */
 export type BytesBuffer =
   string | Uint8Array
 
@@ -515,13 +1531,45 @@ export interface CacheConfig {
   repliesConfig?: RepliesConfig
 }
 
-export type CongestionControl =  'Drop'|
+/**
+ * The strategy applied when a message has to be routed through a node whose queue is
+ * full.
+ */
+export type CongestionControl = /** The node may drop the message. */
+'Drop'|
+/** The node waits for the queue to progress. */
 'Block'|
+/**
+ * The node waits for the queue to progress| but only for the first message sent with
+ * this strategy; the following ones are dropped.
+ */
 'BlockFirst';
 
-export type ConsolidationMode =  'Auto'|
+/**
+ * The strategy applied to filter and reorder the replies to a query.
+ *
+ * Several replies may arrive for the same key, from the same or from different
+ * queryables.
+ */
+export type ConsolidationMode = /** Applies the consolidation Zenoh deems best given the query and the responders. */
+'Auto'|
+/**
+ * Applies no consolidation: several replies may be received for the same key and
+ * timestamp.
+ */
 'None'|
+/**
+ * Forwards replies immediately| except those for a key on which a reply with an equal
+ * or more recent timestamp was already forwarded.
+ *
+ * This optimizes latency while potentially reducing bandwidth. It does not reorder
+ * replies.
+ */
 'Monotonic'|
+/**
+ * Holds replies back to only deliver| for each key| the one with the highest
+ * timestamp.
+ */
 'Latest';
 
 /** Options for a session delete. */
@@ -553,10 +1601,15 @@ export interface DeleteOptions {
   attachment?: BytesBuffer
 }
 
+/** The parts an {@link `EndPoint`} is made of. */
 export interface EndPointParts {
+  /** The protocol part, e.g. `tcp`. */
   protocol: string
+  /** The address part, e.g. `127.0.0.1:7447`. */
   address: string
+  /** The metadata part, in its `<key>=<value>;...` string form. */
   metadata: string
+  /** The configuration part, in its `<key>=<value>;...` string form. */
   config: string
 }
 
@@ -666,6 +1719,7 @@ export interface HistoryConfig {
   maxAgeSecs?: number
 }
 
+/** A {@link `KeyExpr`} or the string to build one from. */
 export type KeyExprArg =
   string | KeyExpr
 
@@ -681,8 +1735,16 @@ export interface LinkEventsListenerOptions {
   channelCapacity?: number
 }
 
+/**
+ * The inclusive range of priorities a link is used for.
+ *
+ * The numeric values correspond to {@link `Priority`}, plus `0` for the control priority,
+ * which that enum does not expose. The lower the value, the higher the priority.
+ */
 export interface LinkPriorities {
+  /** Lowest numeric value of the range, i.e. the highest priority the link carries. */
   min: number
+  /** Highest numeric value of the range, i.e. the lowest priority the link carries. */
   max: number
 }
 
@@ -720,8 +1782,17 @@ export interface LivelinessSubscriberOptions {
   channelCapacity?: number
 }
 
-export type Locality =  'SessionLocal'|
+/**
+ * The locality of the entities an operation applies to.
+ *
+ * It restricts subscribers and queryables to receiving from, and publishers and queriers
+ * to sending to, only the entities of the given locality.
+ */
+export type Locality = /** Only the entities in the same session. */
+'SessionLocal'|
+/** Only the entities that are not in the same session. */
 'Remote'|
+/** Both local and remote entities. */
 'Any';
 
 /** Options for declaring a listener of matching status changes. */
@@ -751,6 +1822,7 @@ export interface MissDetectionConfig {
   heartbeat?: HeartbeatConfig
 }
 
+/** Selector parameters given as a record of key-value pairs. */
 export type ParametersLike =
   Record<string, string>
 
@@ -773,6 +1845,15 @@ export interface PeriodicQueriesRecovery {
   periodMs: number
 }
 
+/**
+ * The priority of a message.
+ *
+ * If `QoS` is enabled in the session configuration, Zenoh keeps one transmission queue
+ * per priority, and services those queues in the order the priorities are listed here,
+ * from `RealTime` down to `Background`.
+ *
+ * The default is `Data`.
+ */
 export type Priority =  'RealTime'|
 'InteractiveHigh'|
 'InteractiveLow'|
@@ -981,11 +2062,31 @@ export interface QueryableOptions {
   channelCapacity?: number
 }
 
-export type QueryTarget =  'BestMatching'|
+/**
+ * The queryables a query is delivered to.
+ *
+ * See also {@link QueryableOptions.complete}.
+ */
+export type QueryTarget = /**
+ * Requests the data from the queryable(s) Zenoh selects to get the fastest and most
+ * complete reply.
+ */
+'BestMatching'|
+/** Delivers the query to all the matching queryables. */
 'All'|
+/** Delivers the query to all the matching queryables that are declared as complete. */
 'AllComplete';
 
-export type Reliability =  'BestEffort'|
+/**
+ * The reliability requested when routing a message.
+ *
+ * Note: reliability does not trigger any data retransmission on the wire. It is a marker
+ * that may be used to select the best link available (e.g. TCP for reliable data and UDP
+ * for best effort data).
+ */
+export type Reliability = /** Accepts that messages may be lost. */
+'BestEffort'|
+/** Requests that messages be delivered reliably. */
 'Reliable';
 
 /** `QoS` applied to the replies served from a cache. */
@@ -1020,7 +2121,16 @@ export interface ReplyErrOptions {
   encoding?: string
 }
 
-export type ReplyKeyExpr =  'Any'|
+/**
+ * The kinds of replies a query accepts.
+ *
+ * A queryable may serve a glob-like key expression such as `foo/*` while replying on
+ * more specific ones. It may therefore receive a query for `foo/bar` and reply on
+ * `foo/baz`. By default such disjoint replies are rejected on the sending side.
+ */
+export type ReplyKeyExpr = /** Accepts replies whose key expression may not match the query's key expression. */
+'Any'|
+/** Accepts only replies whose key expression matches the query's key expression. */
 'MatchingQuery';
 
 /** Options for replying to a query with a payload. */
@@ -1037,20 +2147,30 @@ export interface ReplyOptions {
   attachment?: BytesBuffer
 }
 
+/** The result carried by a {@link Reply}, either data or an error. */
 export type ReplyResult =
   ReplyResultSample | ReplyResultError
 
+/** The failed variant of {@link `ReplyResult`}. */
 export interface ReplyResultError {
+  /** Always `null` on this variant. */
   sample: null
+  /** The error replied by the queryable. */
   error: ReplyError
 }
 
+/** The successful variant of {@link `ReplyResult`}. */
 export interface ReplyResultSample {
+  /** The data replied by the queryable. */
   sample: Sample
+  /** Always `null` on this variant. */
   error: null
 }
 
-export type SampleKind =  'Put'|
+/** The kind of operation a {@link Sample} was issued by. */
+export type SampleKind = /** The sample was issued by a put. */
+'Put'|
+/** The sample was issued by a delete. */
 'Delete';
 
 /** Options for declaring a listener of missed samples. */
@@ -1073,11 +2193,15 @@ export interface ScoutOptions {
   channelCapacity?: number
 }
 
+/** A {@link Selector}, a {@link `KeyExpr`} to use as one, or the string form of either. */
 export type SelectorArg =
   string | KeyExpr | Selector
 
+/** The two parts of a {@link Selector}, in string form. */
 export interface SelectorParts {
+  /** The key expression, i.e. everything before the first `?`. */
   keyExpr: string
+  /** The parameters, i.e. everything after the first `?`. */
   parameters: string
 }
 
@@ -1136,6 +2260,13 @@ export interface TransportEventsListenerOptions {
   channelCapacity?: number
 }
 
+/**
+ * The kind of a node in the Zenoh network.
+ *
+ * A peer searches for the other nodes and establishes direct connections with them, a
+ * client stays connected to a single node that gateways it to the rest of the network,
+ * and a router maintains a statically configured network topology.
+ */
 export type WhatAmI =  'Router'|
 'Peer'|
 'Client';

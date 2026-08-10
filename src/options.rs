@@ -2,7 +2,11 @@ use core::time::Duration;
 
 use napi_derive::napi;
 
-use crate::{bytes::BytesBuffer, qos::{CongestionControl, Priority, Reliability, Locality}, query::{ParametersLike, QueryTarget, ConsolidationMode, ReplyKeyExpr}};
+use crate::{
+  bytes::BytesBuffer,
+  qos::{CongestionControl, Locality, Priority, Reliability},
+  query::{ConsolidationMode, ParametersLike, QueryTarget, ReplyKeyExpr},
+};
 
 /// Options for a single publication on an existing publisher.
 #[derive(Default)]

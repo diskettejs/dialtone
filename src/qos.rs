@@ -1,10 +1,16 @@
 use napi_derive::napi;
 use zenoh as z;
 
+/// The strategy applied when a message has to be routed through a node whose queue is
+/// full.
 #[napi(string_enum)]
 pub enum CongestionControl {
+  /// The node may drop the message.
   Drop,
+  /// The node waits for the queue to progress.
   Block,
+  /// The node waits for the queue to progress, but only for the first message sent with
+  /// this strategy; the following ones are dropped.
   BlockFirst,
 }
 
@@ -28,6 +34,13 @@ impl From<z::qos::CongestionControl> for CongestionControl {
   }
 }
 
+/// The priority of a message.
+///
+/// If `QoS` is enabled in the session configuration, Zenoh keeps one transmission queue
+/// per priority, and services those queues in the order the priorities are listed here,
+/// from `RealTime` down to `Background`.
+///
+/// The default is `Data`.
 #[napi(string_enum)]
 pub enum Priority {
   RealTime,
@@ -67,9 +80,16 @@ impl From<z::qos::Priority> for Priority {
   }
 }
 
+/// The reliability requested when routing a message.
+///
+/// Note: reliability does not trigger any data retransmission on the wire. It is a marker
+/// that may be used to select the best link available (e.g. TCP for reliable data and UDP
+/// for best effort data).
 #[napi(string_enum)]
 pub enum Reliability {
+  /// Accepts that messages may be lost.
   BestEffort,
+  /// Requests that messages be delivered reliably.
   Reliable,
 }
 
@@ -91,10 +111,17 @@ impl From<z::qos::Reliability> for Reliability {
   }
 }
 
+/// The locality of the entities an operation applies to.
+///
+/// It restricts subscribers and queryables to receiving from, and publishers and queriers
+/// to sending to, only the entities of the given locality.
 #[napi(string_enum)]
 pub enum Locality {
+  /// Only the entities in the same session.
   SessionLocal,
+  /// Only the entities that are not in the same session.
   Remote,
+  /// Both local and remote entities.
   Any,
 }
 
