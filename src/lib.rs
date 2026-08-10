@@ -3,7 +3,6 @@ mod cancellation;
 mod config;
 mod key_expr;
 mod liveliness;
-mod logging;
 mod matching;
 mod miss;
 mod options;

@@ -703,7 +703,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -747,9 +747,7 @@ export { WhatAmIMatcher }
 export { CongestionControl }
 export { ConsolidationMode }
 export { HeartbeatMode }
-export { initLog }
 export { Locality }
-export { LogLevel }
 export { PeriodicQueriesMode }
 export { Priority }
 export { QueryTarget }
