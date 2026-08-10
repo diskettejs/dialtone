@@ -1,7 +1,7 @@
 use derive_more::From;
 use napi_derive::napi;
 
-use crate::{config::*, handlers::*, utils::*};
+use crate::{config::*, utils::*};
 
 #[derive(From)]
 #[napi]
@@ -24,7 +24,7 @@ impl Miss {
 #[from(forward)]
 #[napi]
 pub struct SampleMissListener(
-  Declared<zenoh_ext::SampleMissListener<HandlerImpl<zenoh_ext::Miss>>>,
+  Declared<zenoh_ext::SampleMissListener<zenoh::handlers::FifoChannelHandler<zenoh_ext::Miss>>>,
 );
 
 #[napi]
@@ -35,12 +35,14 @@ impl SampleMissListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<Miss> {
+    let miss = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(miss.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<Miss>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }

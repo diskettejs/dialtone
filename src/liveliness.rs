@@ -2,7 +2,7 @@ use derive_more::From;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::{config::*, handlers::*, key_expr::*, options::*, utils::*};
+use crate::{config::*, key_expr::*, options::*, query::Replies, sample::Sample, utils::*};
 
 #[derive(From)]
 #[napi]
@@ -30,8 +30,11 @@ impl Liveliness {
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
     let expr = KeyExpr::try_from(key_expr)?;
-    let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let LivelinessSubscriberOptions {
+      history,
+      channel_capacity,
+    } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
 
     let subscriber = self
       .0
@@ -50,16 +53,16 @@ impl Liveliness {
     &self,
     key_expr: KeyExprArg<'_>,
     options: Option<LivelinessGetOptions>,
-  ) -> napi::Result<Handler> {
+  ) -> napi::Result<Replies> {
     let expr = KeyExpr::try_from(key_expr)?;
     let LivelinessGetOptions {
       timeout,
       // cancellation_token,
-      channel,
+      channel_capacity,
     } = options.unwrap_or_default();
 
     let timeout = duration_ms(timeout)?;
-    let handler = into_handler(channel);
+    let handler = fifo(channel_capacity);
     let session = self.0.clone();
     let mut builder = session.liveliness().get(expr).with(handler);
 
@@ -89,7 +92,9 @@ impl LivelinessToken {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct LivelinessSubscriber(Declared<z::pubsub::Subscriber<HandlerImpl<z::sample::Sample>>>);
+pub struct LivelinessSubscriber(
+  Declared<z::pubsub::Subscriber<z::handlers::FifoChannelHandler<z::sample::Sample>>>,
+);
 
 #[napi]
 impl LivelinessSubscriber {
@@ -109,12 +114,14 @@ impl LivelinessSubscriber {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<Sample> {
+    let sample = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(sample.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }

@@ -111,6 +111,28 @@ describe('Publisher', () => {
 })
 
 describe('Subscriber', () => {
+  describe('declaration', () => {
+    test('plumbs channelCapacity to the receiving channel', async () => {
+      const key = 'test/pubsub/channel-capacity'
+      using publisher = await session.declarePublisher(key)
+      using subscriber = await session.declareSubscriber(key, { channelCapacity: 1 })
+
+      await publisher.put('first')
+
+      // The channel is full, so this put cannot settle until the buffer drains.
+      let settled = false
+      const second = publisher.put('second').then(() => {
+        settled = true
+      })
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      expect(settled).toBe(false)
+
+      expect((await subscriber.recv()).payload.tryToString()).toBe('first')
+      await second
+      expect((await subscriber.recv()).payload.tryToString()).toBe('second')
+    })
+  })
+
   describe('recv()', () => {
     test('returns the next sample', async () => {
       const key = 'test/pubsub/recv'

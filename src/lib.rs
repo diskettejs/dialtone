@@ -1,7 +1,6 @@
 mod bytes;
 mod cancellation;
 mod config;
-mod handlers;
 mod key_expr;
 mod liveliness;
 mod logging;

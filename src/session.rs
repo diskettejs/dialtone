@@ -4,8 +4,8 @@ use zenoh as z;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, options::*, pubsub::*,
-  qos::Reliability, query::*, sample::SampleKind, time::*, utils::*,
+  bytes::*, config::*, key_expr::*, liveliness::*, options::*, pubsub::*, qos::Reliability,
+  query::*, sample::SampleKind, time::*, utils::*,
 };
 
 #[derive(From, Into)]
@@ -112,7 +112,7 @@ impl Session {
     &self,
     selector: SelectorArg<'_>,
     options: Option<GetOptions>,
-  ) -> napi::Result<Handler> {
+  ) -> napi::Result<Replies> {
     let GetOptions {
       parameters,
       target,
@@ -126,11 +126,11 @@ impl Session {
       encoding,
       attachment,
       // cancellation_token,
-      channel,
+      channel_capacity,
     } = options.unwrap_or_default();
     let selector = Selector::resolve(selector, parameters)?;
     let timeout = duration_ms(timeout)?;
-    let handler = into_handler(channel);
+    let handler = fifo(channel_capacity);
     let session = self.0.clone();
 
     let mut builder = session.get(selector).with(handler);
@@ -305,10 +305,10 @@ impl Session {
     let QueryableOptions {
       allowed_origin,
       complete,
-      channel,
+      channel_capacity,
     } = options.unwrap_or_default();
     let expr = KeyExpr::try_from(key_expr)?;
-    let handler = into_handler(channel);
+    let handler = fifo(channel_capacity);
     let mut builder = self.0.declare_queryable(expr).with(handler);
 
     if let Some(allowed_origin) = allowed_origin {
@@ -338,10 +338,10 @@ impl Session {
       recovery,
       subscriber_detection,
       subscriber_detection_metadata,
-      channel,
+      channel_capacity,
     } = options.unwrap_or_default();
     let query_timeout = duration_ms(query_timeout_ms)?;
-    let handler = into_handler(channel);
+    let handler = fifo(channel_capacity);
     let session = self.0.clone();
 
     let mut builder = session
@@ -490,8 +490,11 @@ impl SessionInfo {
     &self,
     options: Option<TransportEventsListenerOptions>,
   ) -> napi::Result<TransportEventsListener> {
-    let TransportEventsListenerOptions { history, channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let TransportEventsListenerOptions {
+      history,
+      channel_capacity,
+    } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
     let mut builder = self.0.transport_events_listener().with(handler);
 
     if let Some(history) = history {
@@ -508,8 +511,11 @@ impl SessionInfo {
     &self,
     options: Option<LinkEventsListenerOptions>,
   ) -> napi::Result<LinkEventsListener> {
-    let LinkEventsListenerOptions { history, channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let LinkEventsListenerOptions {
+      history,
+      channel_capacity,
+    } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
     let mut builder = self.0.link_events_listener().with(handler);
 
     if let Some(history) = history {
@@ -570,7 +576,11 @@ impl TransportEvent {
 #[from(forward)]
 #[napi]
 pub struct TransportEventsListener(
-  Declared<z::session::TransportEventsListener<HandlerImpl<z::session::TransportEvent>>>,
+  Declared<
+    z::session::TransportEventsListener<
+      z::handlers::FifoChannelHandler<z::session::TransportEvent>,
+    >,
+  >,
 );
 
 #[napi]
@@ -581,13 +591,15 @@ impl TransportEventsListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<TransportEvent> {
+    let event = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(event.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<TransportEvent>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 
@@ -678,7 +690,7 @@ impl LinkEvent {
 #[from(forward)]
 #[napi]
 pub struct LinkEventsListener(
-  Declared<z::session::LinkEventsListener<HandlerImpl<z::session::LinkEvent>>>,
+  Declared<z::session::LinkEventsListener<z::handlers::FifoChannelHandler<z::session::LinkEvent>>>,
 );
 
 #[napi]
@@ -689,13 +701,15 @@ impl LinkEventsListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<LinkEvent> {
+    let event = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(event.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<LinkEvent>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 

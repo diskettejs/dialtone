@@ -6,8 +6,7 @@ use napi_derive::napi;
 use zenoh as z;
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, matching::*, options::*, qos::*, sample::*,
-  utils::*,
+  bytes::*, config::*, key_expr::*, matching::*, options::*, qos::*, sample::*, utils::*,
 };
 
 #[derive(From)]
@@ -354,7 +353,9 @@ impl From<ConsolidationMode> for z::query::QueryConsolidation {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Queryable(Declared<z::query::Queryable<HandlerImpl<z::query::Query>>>);
+pub struct Queryable(
+  Declared<z::query::Queryable<z::handlers::FifoChannelHandler<z::query::Query>>>,
+);
 
 #[napi]
 impl Queryable {
@@ -374,13 +375,35 @@ impl Queryable {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<Query> {
+    let query = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(query.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<Query>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
+  }
+}
+
+/// A stream of the replies to a single query.
+#[derive(From)]
+#[napi]
+pub struct Replies(z::handlers::FifoChannelHandler<z::query::Reply>);
+
+#[napi]
+impl Replies {
+  #[napi]
+  pub async fn recv(&self) -> napi::Result<Reply> {
+    let reply = self.0.recv_async().await.map_napi_err()?;
+
+    Ok(reply.into())
+  }
+
+  #[napi]
+  pub fn try_recv(&self) -> napi::Result<Option<Reply>> {
+    Ok(self.0.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 
@@ -417,16 +440,16 @@ impl Querier {
   }
 
   #[napi]
-  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<Handler> {
+  pub async fn get(&self, options: Option<QuerierGetOptions>) -> napi::Result<Replies> {
     let QuerierGetOptions {
       parameters,
       payload,
       encoding,
       attachment,
       // cancellation_token,
-      channel,
+      channel_capacity,
     } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let handler = fifo(channel_capacity);
     let mut builder = self.0.get()?.get().with(handler);
 
     if let Some(parameters) = parameters {
@@ -462,8 +485,8 @@ impl Querier {
     &self,
     options: Option<MatchingListenerOptions>,
   ) -> napi::Result<MatchingListener> {
-    let MatchingListenerOptions { channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let MatchingListenerOptions { channel_capacity } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
 
     let listener = self
       .0

@@ -703,15 +703,13 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, FifoChannel, Handler, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Reply, ReplyError, RingChannel, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, SourceInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, initLog, Locality, LogLevel, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
 export { Encoding }
 export { EndPoint }
 export { EntityGlobalId }
-export { FifoChannel }
-export { Handler }
 export { Hello }
 export { KeyExpr }
 export { Link }
@@ -730,9 +728,9 @@ export { Publisher }
 export { Querier }
 export { Query }
 export { Queryable }
+export { Replies }
 export { Reply }
 export { ReplyError }
-export { RingChannel }
 export { Sample }
 export { SampleMissListener }
 export { Scout }

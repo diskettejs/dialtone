@@ -147,7 +147,7 @@ describe('Querier', () => {
   })
 
   describe('get()', () => {
-    test('returns a ReplyHandler and plumbs QuerierGetOptions to the query', async () => {
+    test('returns Replies and plumbs QuerierGetOptions to the query', async () => {
       const key = 'test/querier/get'
       using queryable = await session.declareQueryable(key)
       using querier = await session.declareQuerier(key)

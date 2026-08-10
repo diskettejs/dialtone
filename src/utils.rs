@@ -47,3 +47,11 @@ pub(crate) fn duration_ms(ms: Option<f64>) -> napi::Result<Option<Duration>> {
   ms.map(|ms| Duration::try_from_secs_f64(ms / 1000.0).map_napi_err())
     .transpose()
 }
+
+/// Builds the channel backing a declaration, falling back to Zenoh's own default capacity.
+pub(crate) fn fifo(capacity: Option<u32>) -> zenoh::handlers::FifoChannel {
+  match capacity {
+    Some(capacity) => zenoh::handlers::FifoChannel::new(capacity as usize),
+    None => zenoh::handlers::FifoChannel::default(),
+  }
+}

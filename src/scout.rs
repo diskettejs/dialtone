@@ -2,12 +2,12 @@ use derive_more::{From, Into};
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::{config::*, handlers::*, options::*, session::*, utils::*};
+use crate::{config::*, options::*, session::*, utils::*};
 
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Scout(Declared<z::scouting::Scout<HandlerImpl<z::scouting::Hello>>>);
+pub struct Scout(Declared<z::scouting::Scout<z::handlers::FifoChannelHandler<z::scouting::Hello>>>);
 
 #[napi]
 #[allow(clippy::self_named_constructors)]
@@ -20,8 +20,8 @@ impl Scout {
   ) -> napi::Result<Scout> {
     let what: z::config::WhatAmIMatcher = *what.as_ref();
     let config = config.as_ref().clone();
-    let ScoutOptions { channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let ScoutOptions { channel_capacity } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
 
     let scout = z::scouting::scout(what, config)
       .with(handler)
@@ -40,13 +40,15 @@ impl Scout {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    self.0.get()?.recv().await
+  pub async fn recv(&self) -> napi::Result<Hello> {
+    let hello = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(hello.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<Hello>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }
 

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use napi_derive::napi;
 
-use crate::{bytes::*, handlers::*, qos::*, query::*};
+use crate::{bytes::*, qos::*, query::*};
 
 /// Options for a single publication on an existing publisher.
 #[derive(Default)]
@@ -91,8 +91,10 @@ pub struct SubscriberOptions {
   ///
   /// Defaults to `10000`.
   pub query_timeout_ms: Option<f64>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::sample::Sample>>,
+  /// Capacity of the channel buffering the received samples.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for a session put.
@@ -233,24 +235,30 @@ impl From<HeartbeatRecovery> for zenoh_ext::RecoveryConfig {
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct ScoutOptions {
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::scouting::Hello>>,
+  /// Capacity of the channel buffering the received hellos.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a listener of matching status changes.
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct MatchingListenerOptions {
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::matching::MatchingStatus>>,
+  /// Capacity of the channel buffering the received matching statuses.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a listener of missed samples.
 #[derive(Default)]
 #[napi(object, object_to_js = false)]
 pub struct SampleMissListenerOptions {
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh_ext::Miss>>,
+  /// Capacity of the channel buffering the received misses.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a listener of transport events.
@@ -259,8 +267,10 @@ pub struct SampleMissListenerOptions {
 pub struct TransportEventsListenerOptions {
   /// When `true`, emits events for the existing transports before the live events.
   pub history: Option<bool>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::session::TransportEvent>>,
+  /// Capacity of the channel buffering the received transport events.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a listener of link events.
@@ -269,8 +279,10 @@ pub struct TransportEventsListenerOptions {
 pub struct LinkEventsListenerOptions {
   /// When `true`, emits events for the existing links before the live events.
   pub history: Option<bool>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::session::LinkEvent>>,
+  /// Capacity of the channel buffering the received link events.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a liveliness subscriber.
@@ -283,8 +295,10 @@ pub struct LivelinessSubscriberOptions {
   /// When `false`, no such query is made, though currently live tokens may still be
   /// delivered to the subscriber.
   pub history: Option<bool>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::sample::Sample>>,
+  /// Capacity of the channel buffering the received samples.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for a liveliness query.
@@ -296,8 +310,10 @@ pub struct LivelinessGetOptions {
   /// Defaults to the session's `queries_default_timeout` configuration.
   pub timeout: Option<f64>,
   // pub cancellation_token: Option<Instance<CancellationToken>>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
+  /// Capacity of the channel buffering the received replies.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Configures the heartbeat published for sample miss detection.
@@ -440,8 +456,10 @@ pub struct QuerierGetOptions {
   /// Arbitrary user-defined data sent alongside the query.
   pub attachment: Option<BytesBuffer>,
   // pub cancellation_token: Option<Instance<CancellationToken>>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
+  /// Capacity of the channel buffering the received replies.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a queryable.
@@ -463,8 +481,10 @@ pub struct QueryableOptions {
   /// Restricts the matching queries received by this queryable to the ones with the given
   /// locality.
   pub allowed_origin: Option<Locality>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::query::Query>>,
+  /// Capacity of the channel buffering the received queries.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }
 
 /// Options for declaring a querier.
@@ -553,6 +573,8 @@ pub struct GetOptions {
   /// Arbitrary user-defined data sent alongside the query.
   pub attachment: Option<BytesBuffer>,
   // pub cancellation_token: Option<ClassInstance<'env, CancellationToken>>,
-  #[napi(ts_type = "FifoChannel | RingChannel")]
-  pub channel: Option<ChannelHandler<zenoh::query::Reply>>,
+  /// Capacity of the channel buffering the received replies.
+  ///
+  /// Defaults to Zenoh's own reception channel size.
+  pub channel_capacity: Option<u32>,
 }

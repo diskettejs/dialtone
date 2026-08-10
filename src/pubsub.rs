@@ -2,8 +2,8 @@ use derive_more::From;
 use napi_derive::napi;
 
 use crate::{
-  bytes::*, config::*, handlers::*, key_expr::*, liveliness::*, matching::*, miss::*, options::*,
-  qos::*, utils::*,
+  bytes::*, config::*, key_expr::*, liveliness::*, matching::*, miss::*, options::*, qos::*,
+  sample::Sample, utils::*,
 };
 
 #[derive(From)]
@@ -86,8 +86,8 @@ impl Publisher {
     &self,
     options: Option<MatchingListenerOptions>,
   ) -> napi::Result<MatchingListener> {
-    let MatchingListenerOptions { channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let MatchingListenerOptions { channel_capacity } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
 
     let listener = self
       .0
@@ -109,7 +109,11 @@ impl Publisher {
 #[derive(From)]
 #[from(forward)]
 #[napi]
-pub struct Subscriber(Declared<zenoh_ext::AdvancedSubscriber<HandlerImpl<zenoh::sample::Sample>>>);
+pub struct Subscriber(
+  Declared<
+    zenoh_ext::AdvancedSubscriber<zenoh::handlers::FifoChannelHandler<zenoh::sample::Sample>>,
+  >,
+);
 
 #[napi]
 impl Subscriber {
@@ -128,8 +132,8 @@ impl Subscriber {
     &self,
     options: Option<SampleMissListenerOptions>,
   ) -> napi::Result<SampleMissListener> {
-    let SampleMissListenerOptions { channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let SampleMissListenerOptions { channel_capacity } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
 
     let sample_listener = self
       .0
@@ -147,8 +151,11 @@ impl Subscriber {
     &self,
     options: Option<LivelinessSubscriberOptions>,
   ) -> napi::Result<LivelinessSubscriber> {
-    let LivelinessSubscriberOptions { history, channel } = options.unwrap_or_default();
-    let handler = into_handler(channel);
+    let LivelinessSubscriberOptions {
+      history,
+      channel_capacity,
+    } = options.unwrap_or_default();
+    let handler = fifo(channel_capacity);
     let mut builder = self.0.get()?.detect_publishers().with(handler);
 
     if let Some(history) = history {
@@ -166,13 +173,14 @@ impl Subscriber {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<DeferredJs> {
-    let handler = self.0.get()?.handler();
-    handler.recv().await
+  pub async fn recv(&self) -> napi::Result<Sample> {
+    let sample = self.0.get()?.recv_async().await.map_napi_err()?;
+
+    Ok(sample.into())
   }
 
   #[napi]
-  pub fn try_recv(&self) -> napi::Result<Option<DeferredJs>> {
-    self.0.get()?.try_recv()
+  pub fn try_recv(&self) -> napi::Result<Option<Sample>> {
+    Ok(self.0.get()?.try_recv().map_napi_err()?.map(Into::into))
   }
 }

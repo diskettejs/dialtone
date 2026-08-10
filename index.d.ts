@@ -5,83 +5,41 @@ import * as binding from './binding.js'
 declare module './binding.js' {
   interface Session {
     [Symbol.asyncDispose](): Promise<void>
-    get(
-      selector: binding.SelectorArg,
-      options?: binding.GetOptions | undefined | null,
-    ): Promise<TypedHandler<binding.Reply>>
   }
   interface Subscriber {
     [Symbol.dispose](): void
-    recv(): Promise<binding.Sample>
-    tryRecv(): binding.Sample | null
   }
   interface Publisher {
     [Symbol.dispose](): void
   }
   interface MatchingListener {
     [Symbol.dispose](): void
-    recv(): Promise<binding.MatchingStatus>
-    tryRecv(): binding.MatchingStatus | null
   }
   interface SampleMissListener {
     [Symbol.dispose](): void
-    recv(): Promise<binding.Miss>
-    tryRecv(): binding.Miss | null
   }
   interface Scout {
     [Symbol.dispose](): void
-    recv(): Promise<binding.Hello>
-    tryRecv(): binding.Hello | null
   }
   interface LivelinessToken {
     [Symbol.dispose](): void
   }
-  interface Liveliness {
-    get(
-      keyExpr: binding.KeyExprArg,
-      options?: binding.LivelinessGetOptions | undefined | null,
-    ): Promise<TypedHandler<binding.Reply>>
-  }
   interface LivelinessSubscriber {
     [Symbol.dispose](): void
-    recv(): Promise<binding.Sample>
-    tryRecv(): binding.Sample | null
   }
   interface Querier {
     [Symbol.dispose](): void
-    get(
-      options?: binding.QuerierGetOptions | undefined | null,
-    ): Promise<TypedHandler<binding.Reply>>
   }
   interface Queryable {
     [Symbol.dispose](): void
-    recv(): Promise<binding.Query>
-    tryRecv(): binding.Query | null
   }
   interface LinkEventsListener {
     [Symbol.dispose](): void
-    recv(): Promise<binding.LinkEvent>
-    tryRecv(): binding.LinkEvent | null
   }
   interface TransportEventsListener {
     [Symbol.dispose](): void
-    recv(): Promise<binding.TransportEvent>
-    tryRecv(): binding.TransportEvent | null
   }
 }
-
-export interface Handler<T> extends binding.Handler {
-  recv(): Promise<T>
-  tryRecv(): T | null
-}
-
-/**
- * File-scope aliases for use inside the `declare module './binding.js'` block
- * above: bare `Handler`/`Stream` there resolve to the augmented module's own
- * monomorphic classes (module-local names shadow this file's generics), and
- * `skipLibCheck` would silently turn the bogus instantiation into `any`.
- */
-type TypedHandler<T> = Handler<T>
 
 /** Node operating mode. Maps to Zenoh's `mode` key. */
 export type WhatAmI = 'router' | 'peer' | 'client'
