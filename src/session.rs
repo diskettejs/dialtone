@@ -1,4 +1,4 @@
-use derive_more::{From, Into};
+use derive_more::From;
 use napi_derive::napi;
 use zenoh as z;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
@@ -8,8 +8,8 @@ use crate::{
   query::*, sample::SampleKind, time::*, utils::*,
 };
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Session(z::Session);
 
 #[napi]
@@ -444,8 +444,8 @@ impl Session {
   }
 }
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct SessionInfo(z::session::SessionInfo);
 
 #[napi]
@@ -528,8 +528,8 @@ impl SessionInfo {
   }
 }
 
-#[derive(Clone, From, Into)]
 #[napi]
+#[derive(Clone, From)]
 pub struct Transport(z::session::Transport);
 
 #[napi]
@@ -555,8 +555,8 @@ impl Transport {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct TransportEvent(z::session::TransportEvent);
 
 #[napi]
@@ -572,9 +572,9 @@ impl TransportEvent {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct TransportEventsListener(
   Declared<
     z::session::TransportEventsListener<
@@ -609,8 +609,8 @@ pub struct LinkPriorities {
   pub max: u8,
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Link(z::session::Link);
 
 #[napi]
@@ -669,8 +669,8 @@ impl Link {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct LinkEvent(z::session::LinkEvent);
 
 #[napi]
@@ -686,9 +686,9 @@ impl LinkEvent {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct LinkEventsListener(
   Declared<z::session::LinkEventsListener<z::handlers::FifoChannelHandler<z::session::LinkEvent>>>,
 );
@@ -713,8 +713,8 @@ impl LinkEventsListener {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Locator(z::config::Locator);
 
 #[napi]
@@ -752,8 +752,8 @@ impl Locator {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Metadata(z::config::EndPoint);
 
 #[napi]
@@ -785,8 +785,8 @@ impl Metadata {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct EndPoint(z::config::EndPoint);
 
 #[napi(object)]

@@ -16,7 +16,7 @@ declare const reply: Reply
 describe('ReplyResult union discriminated by nullability', () => {
   test('union shape', () => {
     expectTypeOf<ReplyResult>().toEqualTypeOf<ReplyResultSample | ReplyResultError>()
-    expectTypeOf(reply.replierId).toEqualTypeOf<EntityGlobalId | null>()
+    expectTypeOf(reply.id).toEqualTypeOf<EntityGlobalId | null>()
     expectTypeOf(reply.result).toEqualTypeOf<ReplyResult>()
   })
 

@@ -6,9 +6,9 @@ use crate::{
   sample::Sample, utils::*,
 };
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Publisher(Declared<zenoh_ext::AdvancedPublisher<'static>>);
 
 #[napi]
@@ -106,9 +106,9 @@ impl Publisher {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Subscriber(
   Declared<
     zenoh_ext::AdvancedSubscriber<zenoh::handlers::FifoChannelHandler<zenoh::sample::Sample>>,

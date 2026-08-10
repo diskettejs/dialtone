@@ -4,8 +4,8 @@ use zenoh as z;
 
 use crate::{config::*, key_expr::*, options::*, query::Replies, sample::Sample, utils::*};
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct Liveliness(z::Session);
 
 #[napi]
@@ -76,9 +76,9 @@ impl Liveliness {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct LivelinessToken(Declared<z::liveliness::LivelinessToken>);
 
 #[napi]
@@ -89,9 +89,9 @@ impl LivelinessToken {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct LivelinessSubscriber(
   Declared<z::pubsub::Subscriber<z::handlers::FifoChannelHandler<z::sample::Sample>>>,
 );

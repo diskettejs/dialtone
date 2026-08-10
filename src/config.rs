@@ -1,12 +1,12 @@
-use derive_more::{AsRef, From, Into};
+use derive_more::{AsRef, From};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh as z;
 
 use crate::utils::*;
 
-#[derive(AsRef, From, Into)]
 #[napi]
+#[derive(From)]
 pub struct EntityGlobalId(z::session::EntityGlobalId);
 
 #[napi]
@@ -22,8 +22,8 @@ impl EntityGlobalId {
   }
 }
 
-#[derive(AsRef, From, Into)]
 #[napi]
+#[derive(AsRef, From)]
 pub struct Config(z::config::Config);
 
 #[napi]
@@ -72,8 +72,8 @@ impl Config {
   }
 }
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct SessionConfig(zenoh_config::GenericConfig);
 
 #[napi]
@@ -136,8 +136,8 @@ impl From<z::config::WhatAmI> for WhatAmI {
   }
 }
 
-#[derive(AsRef, From, Into)]
 #[napi]
+#[derive(AsRef, From)]
 pub struct WhatAmIMatcher(z::config::WhatAmIMatcher);
 
 #[napi]

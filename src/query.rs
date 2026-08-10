@@ -9,9 +9,9 @@ use crate::{
   bytes::*, config::*, key_expr::*, matching::*, options::*, qos::*, sample::*, utils::*,
 };
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Query(Declared<z::query::Query>);
 
 #[napi]
@@ -39,11 +39,6 @@ impl Query {
   #[napi(getter)]
   pub fn attachment(&self) -> napi::Result<Option<Bytes>> {
     Ok(self.0.get()?.attachment().cloned().map(Into::into))
-  }
-
-  #[napi(getter)]
-  pub fn source_info(&self) -> napi::Result<Option<SourceInfo>> {
-    Ok(self.0.get()?.source_info().cloned().map(Into::into))
   }
 
   #[napi(getter)]
@@ -172,14 +167,14 @@ impl From<z::query::ReplyKeyExpr> for ReplyKeyExpr {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Reply(z::query::Reply);
 
 #[napi]
 impl Reply {
   #[napi(getter)]
-  pub fn replier_id(&self) -> Option<EntityGlobalId> {
+  pub fn id(&self) -> Option<EntityGlobalId> {
     self.0.replier_id().map(EntityGlobalId::from)
   }
 
@@ -213,8 +208,8 @@ pub struct ReplyResultError<'env> {
 #[napi]
 pub type ReplyResult<'env> = Either<ReplyResultSample<'env>, ReplyResultError<'env>>;
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct ReplyError(z::query::ReplyError);
 
 #[napi]
@@ -239,8 +234,8 @@ impl<'s> From<ParametersLike> for Parameters<'s> {
   }
 }
 
-#[derive(Clone, From, Into)]
 #[napi]
+#[derive(Clone, From, Into)]
 pub struct Parameters<'s>(z::query::Parameters<'s>);
 
 #[napi]
@@ -350,9 +345,9 @@ impl From<ConsolidationMode> for z::query::QueryConsolidation {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Queryable(
   Declared<z::query::Queryable<z::handlers::FifoChannelHandler<z::query::Query>>>,
 );
@@ -388,8 +383,8 @@ impl Queryable {
 }
 
 /// A stream of the replies to a single query.
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct Replies(z::handlers::FifoChannelHandler<z::query::Reply>);
 
 #[napi]
@@ -407,9 +402,9 @@ impl Replies {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Querier(Declared<z::query::Querier<'static>>);
 
 #[napi]
@@ -505,8 +500,8 @@ impl Querier {
   }
 }
 
-#[derive(AsRef, From, Into)]
 #[napi]
+#[derive(AsRef, From, Into)]
 pub struct Selector(z::query::Selector<'static>);
 
 impl Selector {

@@ -4,8 +4,8 @@ use zenoh as z;
 
 use crate::utils::*;
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct MatchingStatus(z::matching::MatchingStatus);
 
 #[napi]
@@ -16,9 +16,9 @@ impl MatchingStatus {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct MatchingListener(
   Declared<
     z::matching::MatchingListener<z::handlers::FifoChannelHandler<z::matching::MatchingStatus>>,

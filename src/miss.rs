@@ -3,8 +3,8 @@ use napi_derive::napi;
 
 use crate::{config::*, utils::*};
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct Miss(zenoh_ext::Miss);
 
 #[napi]
@@ -20,9 +20,9 @@ impl Miss {
   }
 }
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct SampleMissListener(
   Declared<zenoh_ext::SampleMissListener<zenoh::handlers::FifoChannelHandler<zenoh_ext::Miss>>>,
 );

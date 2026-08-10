@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use napi::bindgen_prelude::*;
-
 pub(crate) trait MapNapiErr<T> {
   fn map_napi_err(self) -> napi::Result<T>;
 }
@@ -16,7 +14,6 @@ impl<T, E: std::fmt::Display> MapNapiErr<T> for std::result::Result<T, E> {
 /// behalf of the `#[napi]` class that exposes it.
 ///
 /// `get` borrows the entity and `take` consumes it; both fail once the entity is gone.
-#[derive(Clone)]
 pub struct Declared<T>(Option<T>);
 
 impl<T> From<T> for Declared<T> {
@@ -26,11 +23,11 @@ impl<T> From<T> for Declared<T> {
 }
 
 impl<T> Declared<T> {
-  pub fn get(&self) -> Result<&T> {
+  pub fn get(&self) -> napi::Result<&T> {
     self.0.as_ref().ok_or_else(Self::gone)
   }
 
-  pub fn take(&mut self) -> Result<T> {
+  pub fn take(&mut self) -> napi::Result<T> {
     self.0.take().ok_or_else(Self::gone)
   }
 

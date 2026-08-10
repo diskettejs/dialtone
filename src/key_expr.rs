@@ -1,11 +1,11 @@
-use derive_more::{AsRef, From, Into};
+use derive_more::{From, Into};
 use napi_derive::napi;
 use zenoh as z;
 
 use crate::utils::*;
 
-#[derive(Clone, AsRef, From, Into)]
 #[napi]
+#[derive(Clone, From, Into)]
 pub struct KeyExpr(z::key_expr::KeyExpr<'static>);
 
 #[napi]

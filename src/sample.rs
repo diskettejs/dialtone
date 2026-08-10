@@ -1,9 +1,8 @@
-use derive_more::{From, Into};
+use derive_more::From;
 use napi_derive::napi;
 
 use crate::{
   bytes::{Bytes, Encoding},
-  config::EntityGlobalId,
   key_expr::KeyExpr,
   qos::{CongestionControl, Priority, Reliability},
   time::Timestamp,
@@ -24,8 +23,8 @@ impl From<zenoh::sample::SampleKind> for SampleKind {
   }
 }
 
-#[derive(From)]
 #[napi]
+#[derive(From)]
 pub struct Sample(zenoh::sample::Sample);
 
 #[napi]
@@ -78,32 +77,5 @@ impl Sample {
   #[napi(getter)]
   pub fn attachment(&self) -> Option<Bytes> {
     self.0.attachment().cloned().map(Into::into)
-  }
-
-  #[napi(getter)]
-  pub fn source_info(&self) -> Option<SourceInfo> {
-    self.0.source_info().cloned().map(Into::into)
-  }
-}
-
-#[derive(Clone, From, Into)]
-#[napi]
-pub struct SourceInfo(zenoh::sample::SourceInfo);
-
-#[napi]
-impl SourceInfo {
-  #[napi(constructor)]
-  pub fn new(source_id: &EntityGlobalId, source_sn: u32) -> Self {
-    zenoh::sample::SourceInfo::new(*source_id.as_ref(), source_sn).into()
-  }
-
-  #[napi(getter)]
-  pub fn source_id(&self) -> EntityGlobalId {
-    (*self.0.source_id()).into()
-  }
-
-  #[napi(getter)]
-  pub fn source_sn(&self) -> u32 {
-    self.0.source_sn()
   }
 }

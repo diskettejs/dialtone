@@ -1,4 +1,4 @@
-use derive_more::{AsRef, From, Into};
+use derive_more::From;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use zenoh as z;
@@ -16,8 +16,8 @@ impl From<BytesBuffer> for z::bytes::ZBytes {
   }
 }
 
-#[derive(AsRef, From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Bytes(z::bytes::ZBytes);
 
 #[napi]
@@ -61,8 +61,8 @@ impl Bytes {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Encoding(z::bytes::Encoding);
 
 #[napi]

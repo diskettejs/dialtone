@@ -76,7 +76,7 @@ describe('Query', () => {
       await query.reply(key, 'pong', { encoding: 'text/plain', attachment: 'meta' })
 
       const reply = await replies.recv()
-      expect(reply.replierId).not.toBeNull()
+      expect(reply.id).not.toBeNull()
       expect(reply.result.error).toBeNull()
       expect(reply.result.sample?.payload.tryToString()).toBe('pong')
       expect(reply.result.sample?.encoding.toString()).toBe('text/plain')

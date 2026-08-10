@@ -1,9 +1,9 @@
-use derive_more::{From, Into};
-use napi::bindgen_prelude::*;
+use derive_more::From;
+use napi::bindgen_prelude::BigInt;
 use napi_derive::napi;
 
-#[derive(Clone, From, Into)]
 #[napi]
+#[derive(Clone, From)]
 pub struct Timestamp(zenoh::time::Timestamp);
 
 #[napi]

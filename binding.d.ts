@@ -246,7 +246,6 @@ export declare class Query {
   get payload(): Bytes | null
   get encoding(): Encoding | null
   get attachment(): Bytes | null
-  get sourceInfo(): SourceInfo | null
   get priority(): Priority
   get congestionControl(): CongestionControl
   get express(): boolean
@@ -273,7 +272,7 @@ export declare class Replies {
 }
 
 export declare class Reply {
-  get replierId(): EntityGlobalId | null
+  get id(): EntityGlobalId | null
   get result(): ReplyResult
 }
 
@@ -293,7 +292,6 @@ export declare class Sample {
   get congestionControl(): CongestionControl
   get reliability(): Reliability
   get attachment(): Bytes | null
-  get sourceInfo(): SourceInfo | null
 }
 
 export declare class SampleMissListener {
@@ -352,12 +350,6 @@ export declare class SessionInfo {
   links(): Promise<Array<Link>>
   transportEventsListener(options?: TransportEventsListenerOptions | undefined | null): Promise<TransportEventsListener>
   linkEventsListener(options?: LinkEventsListenerOptions | undefined | null): Promise<LinkEventsListener>
-}
-
-export declare class SourceInfo {
-  constructor(sourceId: EntityGlobalId, sourceSn: number)
-  get sourceId(): EntityGlobalId
-  get sourceSn(): number
 }
 
 export declare class Subscriber {

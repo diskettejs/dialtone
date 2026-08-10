@@ -1,12 +1,12 @@
-use derive_more::{From, Into};
+use derive_more::From;
 use napi_derive::napi;
 use zenoh as z;
 
 use crate::{config::*, options::*, session::*, utils::*};
 
+#[napi]
 #[derive(From)]
 #[from(forward)]
-#[napi]
 pub struct Scout(Declared<z::scouting::Scout<z::handlers::FifoChannelHandler<z::scouting::Hello>>>);
 
 #[napi]
@@ -52,8 +52,8 @@ impl Scout {
   }
 }
 
-#[derive(From, Into)]
 #[napi]
+#[derive(From)]
 pub struct Hello(z::scouting::Hello);
 
 #[napi]

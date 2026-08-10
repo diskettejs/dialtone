@@ -1,18 +1,17 @@
-use derive_more::{From, Into};
+use derive_more::From;
 use napi_derive::napi;
-use zenoh as z;
 
-use crate::utils::*;
+use crate::utils::MapNapiErr;
 
-#[derive(Clone, From, Into)]
 #[napi]
-pub struct CancellationToken(z::cancellation::CancellationToken);
+#[derive(Clone, From)]
+pub struct CancellationToken(zenoh::cancellation::CancellationToken);
 
 #[napi]
 impl CancellationToken {
   #[napi(constructor)]
   pub fn new() -> Self {
-    z::cancellation::CancellationToken::default().into()
+    zenoh::cancellation::CancellationToken::default().into()
   }
 
   #[napi]
