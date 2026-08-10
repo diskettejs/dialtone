@@ -4,14 +4,18 @@ import type {
   EntityGlobalId,
   Reply,
   ReplyError,
+  ReplyIter,
   ReplyResult,
   ReplyResultError,
   ReplyResultSample,
   Sample,
+  SampleIter,
 } from '../index.js'
 
 declare const result: ReplyResult
 declare const reply: Reply
+declare const samples: SampleIter
+declare const replies: ReplyIter
 
 describe('ReplyResult union discriminated by nullability', () => {
   test('union shape', () => {
@@ -29,6 +33,19 @@ describe('ReplyResult union discriminated by nullability', () => {
       expectTypeOf(result).toEqualTypeOf<ReplyResultError>()
       expectTypeOf(result.error).toEqualTypeOf<ReplyError>()
       expectTypeOf(result.sample).toEqualTypeOf<null>()
+    }
+  })
+})
+
+describe('generated iterators satisfy the async iterable protocol', () => {
+  test('iterator classes are assignable to AsyncIterable of their yield type', () => {
+    expectTypeOf(samples).toExtend<AsyncIterable<Sample>>()
+    expectTypeOf(replies).toExtend<AsyncIterable<Reply>>()
+  })
+
+  test('for await binds the yield type', async () => {
+    for await (const sample of samples) {
+      expectTypeOf(sample).toEqualTypeOf<Sample>()
     }
   })
 })

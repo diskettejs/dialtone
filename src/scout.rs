@@ -1,4 +1,5 @@
 use derive_more::From;
+use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 use zenoh as z;
 
@@ -40,10 +41,36 @@ impl Scout {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Hello> {
-    let hello = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<HelloIter> {
+    let handler = (**self.0.get()?).clone();
 
-    Ok(hello.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the hellos received while scouting.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct HelloIter(z::handlers::FifoChannelHandler<z::scouting::Hello>);
+
+#[napi]
+impl AsyncGenerator for HelloIter {
+  type Yield = Hello;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(hello) => Ok(Some(hello.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }
 

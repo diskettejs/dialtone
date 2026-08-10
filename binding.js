@@ -703,7 +703,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, Hello, KeyExpr, Link, LinkEvent, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, Metadata, Miss, Parameters, Publisher, Querier, Query, Queryable, Replies, Reply, ReplyError, Sample, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
+const { Bytes, CancellationToken, Config, Encoding, EndPoint, EntityGlobalId, Hello, HelloIter, KeyExpr, Link, LinkEvent, LinkEventIter, LinkEventsListener, Liveliness, LivelinessSubscriber, LivelinessToken, Locator, MatchingListener, MatchingStatus, MatchingStatusIter, Metadata, Miss, MissIter, Parameters, Publisher, Querier, Query, Queryable, QueryIter, Replies, Reply, ReplyError, ReplyIter, Sample, SampleIter, SampleMissListener, Scout, Selector, Session, SessionConfig, SessionInfo, Subscriber, Timestamp, Transport, TransportEvent, TransportEventIter, TransportEventsListener, WhatAmIMatcher, CongestionControl, ConsolidationMode, HeartbeatMode, Locality, PeriodicQueriesMode, Priority, QueryTarget, Reliability, ReplyKeyExpr, SampleKind, WhatAmI } = nativeBinding
 export { Bytes }
 export { CancellationToken }
 export { Config }
@@ -711,9 +711,11 @@ export { Encoding }
 export { EndPoint }
 export { EntityGlobalId }
 export { Hello }
+export { HelloIter }
 export { KeyExpr }
 export { Link }
 export { LinkEvent }
+export { LinkEventIter }
 export { LinkEventsListener }
 export { Liveliness }
 export { LivelinessSubscriber }
@@ -721,17 +723,22 @@ export { LivelinessToken }
 export { Locator }
 export { MatchingListener }
 export { MatchingStatus }
+export { MatchingStatusIter }
 export { Metadata }
 export { Miss }
+export { MissIter }
 export { Parameters }
 export { Publisher }
 export { Querier }
 export { Query }
 export { Queryable }
+export { QueryIter }
 export { Replies }
 export { Reply }
 export { ReplyError }
+export { ReplyIter }
 export { Sample }
+export { SampleIter }
 export { SampleMissListener }
 export { Scout }
 export { Selector }
@@ -742,6 +749,7 @@ export { Subscriber }
 export { Timestamp }
 export { Transport }
 export { TransportEvent }
+export { TransportEventIter }
 export { TransportEventsListener }
 export { WhatAmIMatcher }
 export { CongestionControl }

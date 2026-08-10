@@ -2,7 +2,7 @@ use derive_more::From;
 use napi_derive::napi;
 use zenoh as z;
 
-use crate::{config::*, key_expr::*, options::*, query::Replies, sample::Sample, utils::*};
+use crate::{config::*, key_expr::*, options::*, pubsub::SampleIter, query::Replies, utils::*};
 
 #[napi]
 #[derive(From)]
@@ -114,9 +114,9 @@ impl LivelinessSubscriber {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Sample> {
-    let sample = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<SampleIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(sample.into())
+    Ok(handler.into())
   }
 }

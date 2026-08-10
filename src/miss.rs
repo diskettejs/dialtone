@@ -1,4 +1,5 @@
 use derive_more::From;
+use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 
 use crate::{config::*, utils::*};
@@ -35,9 +36,35 @@ impl SampleMissListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Miss> {
-    let miss = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<MissIter> {
+    let handler = (**self.0.get()?).clone();
 
-    Ok(miss.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the missed samples reported to a listener.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct MissIter(zenoh::handlers::FifoChannelHandler<zenoh_ext::Miss>);
+
+#[napi]
+impl AsyncGenerator for MissIter {
+  type Yield = Miss;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(miss) => Ok(Some(miss.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }

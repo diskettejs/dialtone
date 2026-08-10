@@ -1,4 +1,5 @@
 use derive_more::From;
+use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 
 use crate::{
@@ -173,9 +174,35 @@ impl Subscriber {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Sample> {
-    let sample = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<SampleIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(sample.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the samples delivered to a subscriber.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct SampleIter(zenoh::handlers::FifoChannelHandler<zenoh::sample::Sample>);
+
+#[napi]
+impl AsyncGenerator for SampleIter {
+  type Yield = Sample;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(sample) => Ok(Some(sample.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }

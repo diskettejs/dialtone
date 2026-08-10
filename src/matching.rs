@@ -1,4 +1,5 @@
 use derive_more::From;
+use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 use zenoh as z;
 
@@ -33,9 +34,35 @@ impl MatchingListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<MatchingStatus> {
-    let status = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<MatchingStatusIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(status.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the matching status changes reported to a listener.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct MatchingStatusIter(z::handlers::FifoChannelHandler<z::matching::MatchingStatus>);
+
+#[napi]
+impl AsyncGenerator for MatchingStatusIter {
+  type Yield = MatchingStatus;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(status) => Ok(Some(status.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }

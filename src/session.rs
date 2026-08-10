@@ -1,4 +1,5 @@
 use derive_more::From;
+use napi::bindgen_prelude::AsyncGenerator;
 use napi_derive::napi;
 use zenoh as z;
 use zenoh_ext::{AdvancedPublisherBuilderExt, AdvancedSubscriberBuilderExt};
@@ -591,10 +592,36 @@ impl TransportEventsListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<TransportEvent> {
-    let event = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<TransportEventIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(event.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the transport events reported to a listener.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct TransportEventIter(z::handlers::FifoChannelHandler<z::session::TransportEvent>);
+
+#[napi]
+impl AsyncGenerator for TransportEventIter {
+  type Yield = TransportEvent;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(event) => Ok(Some(event.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }
 
@@ -696,10 +723,36 @@ impl LinkEventsListener {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<LinkEvent> {
-    let event = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<LinkEventIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(event.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the link events reported to a listener.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct LinkEventIter(z::handlers::FifoChannelHandler<z::session::LinkEvent>);
+
+#[napi]
+impl AsyncGenerator for LinkEventIter {
+  type Yield = LinkEvent;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(event) => Ok(Some(event.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }
 

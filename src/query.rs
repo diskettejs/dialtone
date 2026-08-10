@@ -370,10 +370,36 @@ impl Queryable {
   }
 
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Query> {
-    let query = self.0.get()?.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> napi::Result<QueryIter> {
+    let handler = self.0.get()?.handler().clone();
 
-    Ok(query.into())
+    Ok(handler.into())
+  }
+}
+
+/// A stream of the queries delivered to a queryable.
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct QueryIter(z::handlers::FifoChannelHandler<z::query::Query>);
+
+#[napi]
+impl AsyncGenerator for QueryIter {
+  type Yield = Query;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(query) => Ok(Some(query.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }
 
@@ -385,10 +411,33 @@ pub struct Replies(z::handlers::FifoChannelHandler<z::query::Reply>);
 #[napi]
 impl Replies {
   #[napi]
-  pub async fn recv(&self) -> napi::Result<Reply> {
-    let reply = self.0.recv_async().await.map_napi_err()?;
+  pub fn receive(&self) -> ReplyIter {
+    self.0.clone().into()
+  }
+}
 
-    Ok(reply.into())
+#[napi(async_iterator)]
+#[derive(From)]
+pub struct ReplyIter(z::handlers::FifoChannelHandler<z::query::Reply>);
+
+#[napi]
+impl AsyncGenerator for ReplyIter {
+  type Yield = Reply;
+  type Next = ();
+  type Return = ();
+
+  fn next(
+    &mut self,
+    _value: Option<Self::Next>,
+  ) -> impl Future<Output = napi::Result<Option<Self::Yield>>> + Send + 'static {
+    let receiver = self.0.clone();
+
+    async move {
+      match receiver.recv_async().await {
+        Ok(reply) => Ok(Some(reply.into())),
+        Err(_) => Ok(None),
+      }
+    }
   }
 }
 

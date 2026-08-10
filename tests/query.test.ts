@@ -28,11 +28,11 @@ describe('Queryable', () => {
   })
 
   describe('undeclare()', () => {
-    test('rejects recv() after undeclare', async () => {
+    test('throws on receive() after undeclare', async () => {
       const queryable = await session.declareQueryable('test/queryable/undeclare')
       queryable.undeclare()
 
-      await expect(queryable.recv()).rejects.toThrow(/has already been consumed./i)
+      expect(() => queryable.receive()).toThrow(/has already been consumed./i)
     })
   })
 })
@@ -49,11 +49,13 @@ describe('Query', () => {
         attachment: 'meta',
       })
 
-      const query = await queryable.recv()
-      expect(query.payload?.tryToString()).toBe('req')
-      expect(query.encoding?.toString()).toBe('text/plain')
-      expect(query.attachment?.tryToString()).toBe('meta')
-      expect(query.parameters.get('unit')).toBe('celsius')
+      for await (const query of queryable.receive()) {
+        expect(query.payload?.tryToString()).toBe('req')
+        expect(query.encoding?.toString()).toBe('text/plain')
+        expect(query.attachment?.tryToString()).toBe('meta')
+        expect(query.parameters.get('unit')).toBe('celsius')
+        break
+      }
     })
 
     test('marshal an absent payload as null', async () => {
@@ -61,8 +63,10 @@ describe('Query', () => {
       using queryable = await session.declareQueryable(key)
       await session.get(key, { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      expect(query.payload).toBeNull()
+      for await (const query of queryable.receive()) {
+        expect(query.payload).toBeNull()
+        break
+      }
     })
   })
 
@@ -72,15 +76,19 @@ describe('Query', () => {
       using queryable = await session.declareQueryable(key)
       const replies = await session.get(key, { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      await query.reply(key, 'pong', { encoding: 'text/plain', attachment: 'meta' })
+      for await (const query of queryable.receive()) {
+        await query.reply(key, 'pong', { encoding: 'text/plain', attachment: 'meta' })
+        break
+      }
 
-      const reply = await replies.recv()
-      expect(reply.id).not.toBeNull()
-      expect(reply.result.error).toBeNull()
-      expect(reply.result.sample?.payload.tryToString()).toBe('pong')
-      expect(reply.result.sample?.encoding.toString()).toBe('text/plain')
-      expect(reply.result.sample?.attachment?.tryToString()).toBe('meta')
+      for await (const reply of replies.receive()) {
+        expect(reply.id).not.toBeNull()
+        expect(reply.result.error).toBeNull()
+        expect(reply.result.sample?.payload.tryToString()).toBe('pong')
+        expect(reply.result.sample?.encoding.toString()).toBe('text/plain')
+        expect(reply.result.sample?.attachment?.tryToString()).toBe('meta')
+        break
+      }
     })
   })
 
@@ -90,13 +98,17 @@ describe('Query', () => {
       using queryable = await session.declareQueryable(key)
       const replies = await session.get(key, { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      await query.replyErr('boom', { encoding: 'text/plain' })
+      for await (const query of queryable.receive()) {
+        await query.replyErr('boom', { encoding: 'text/plain' })
+        break
+      }
 
-      const reply = await replies.recv()
-      expect(reply.result.sample).toBeNull()
-      expect(reply.result.error?.payload.tryToString()).toBe('boom')
-      expect(reply.result.error?.encoding.toString()).toBe('text/plain')
+      for await (const reply of replies.receive()) {
+        expect(reply.result.sample).toBeNull()
+        expect(reply.result.error?.payload.tryToString()).toBe('boom')
+        expect(reply.result.error?.encoding.toString()).toBe('text/plain')
+        break
+      }
     })
   })
 
@@ -106,11 +118,15 @@ describe('Query', () => {
       using queryable = await session.declareQueryable(key)
       const replies = await session.get(key, { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      await query.replyDel(key)
+      for await (const query of queryable.receive()) {
+        await query.replyDel(key)
+        break
+      }
 
-      const reply = await replies.recv()
-      expect(reply.result.sample?.kind).toBe('Delete')
+      for await (const reply of replies.receive()) {
+        expect(reply.result.sample?.kind).toBe('Delete')
+        break
+      }
     })
   })
 
@@ -120,10 +136,11 @@ describe('Query', () => {
       using queryable = await session.declareQueryable(key)
       await session.get(key, { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      query.drop()
-
-      await expect(query.reply(key, 'late')).rejects.toThrow(/has already been consumed/i)
+      for await (const query of queryable.receive()) {
+        query.drop()
+        await expect(query.reply(key, 'late')).rejects.toThrow(/has already been consumed/i)
+        break
+      }
     })
   })
 })
@@ -153,11 +170,13 @@ describe('Querier', () => {
       using querier = await session.declareQuerier(key)
 
       const replies = await querier.get({ payload: 'ping', parameters: { n: '1' } })
-      expect(typeof replies.recv).toBe('function')
+      expect(typeof replies.receive).toBe('function')
 
-      const query = await queryable.recv()
-      expect(query.payload?.tryToString()).toBe('ping')
-      expect(query.parameters.get('n')).toBe('1')
+      for await (const query of queryable.receive()) {
+        expect(query.payload?.tryToString()).toBe('ping')
+        expect(query.parameters.get('n')).toBe('1')
+        break
+      }
     })
   })
 
@@ -178,9 +197,11 @@ describe('Session.get()', () => {
       using queryable = await session.declareQueryable(key)
       await session.get(new Selector(key, 'mode=fast'), { consolidation: 'None' })
 
-      const query = await queryable.recv()
-      expect(query.selector.keyExpr.toString()).toBe(key)
-      expect(query.parameters.get('mode')).toBe('fast')
+      for await (const query of queryable.receive()) {
+        expect(query.selector.keyExpr.toString()).toBe(key)
+        expect(query.parameters.get('mode')).toBe('fast')
+        break
+      }
     })
 
     test('overrides selector parameters with the parameters option', async () => {
@@ -191,9 +212,11 @@ describe('Session.get()', () => {
         parameters: { used: '1' },
       })
 
-      const query = await queryable.recv()
-      expect(query.parameters.get('used')).toBe('1')
-      expect(query.parameters.containsKey('ignored')).toBe(false)
+      for await (const query of queryable.receive()) {
+        expect(query.parameters.get('used')).toBe('1')
+        expect(query.parameters.containsKey('ignored')).toBe(false)
+        break
+      }
     })
   })
 })

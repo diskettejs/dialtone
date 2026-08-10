@@ -33,11 +33,13 @@ describe('Publisher', () => {
       using subscriber = await session.declareSubscriber(key)
 
       await publisher.put('hello')
-      const sample = await subscriber.recv()
 
-      expect(sample.payload.tryToString()).toBe('hello')
-      expect(sample.keyExpr.toString()).toBe(key)
-      expect(sample.kind).toBe('Put')
+      for await (const sample of subscriber.receive()) {
+        expect(sample.payload.tryToString()).toBe('hello')
+        expect(sample.keyExpr.toString()).toBe(key)
+        expect(sample.kind).toBe('Put')
+        break
+      }
     })
 
     test('applies encoding and attachment from PublisherPutOptions', async () => {
@@ -46,10 +48,12 @@ describe('Publisher', () => {
       using subscriber = await session.declareSubscriber(key)
 
       await publisher.put('with options', { encoding: 'text/plain', attachment: 'meta' })
-      const sample = await subscriber.recv()
 
-      expect(sample.encoding.toString()).toBe('text/plain')
-      expect(sample.attachment?.tryToString()).toBe('meta')
+      for await (const sample of subscriber.receive()) {
+        expect(sample.encoding.toString()).toBe('text/plain')
+        expect(sample.attachment?.tryToString()).toBe('meta')
+        break
+      }
     })
   })
 
@@ -60,9 +64,11 @@ describe('Publisher', () => {
       using subscriber = await session.declareSubscriber(key)
 
       await publisher.delete()
-      const sample = await subscriber.recv()
 
-      expect(sample.kind).toBe('Delete')
+      for await (const sample of subscriber.receive()) {
+        expect(sample.kind).toBe('Delete')
+        break
+      }
     })
 
     test('applies attachment from PublisherDeleteOptions', async () => {
@@ -71,9 +77,11 @@ describe('Publisher', () => {
       using subscriber = await session.declareSubscriber(key)
 
       await publisher.delete({ attachment: 'meta' })
-      const sample = await subscriber.recv()
 
-      expect(sample.attachment?.tryToString()).toBe('meta')
+      for await (const sample of subscriber.receive()) {
+        expect(sample.attachment?.tryToString()).toBe('meta')
+        break
+      }
     })
   })
 
@@ -93,9 +101,11 @@ describe('Publisher', () => {
       using publisher = await session.declarePublisher(key)
 
       using listener = await publisher.matchingListener()
-      const status = await listener.recv()
 
-      expect(status.matching).toBe(true)
+      for await (const status of listener.receive()) {
+        expect(status.matching).toBe(true)
+        break
+      }
     })
   })
 
@@ -126,22 +136,59 @@ describe('Subscriber', () => {
       await new Promise((resolve) => setTimeout(resolve, 100))
       expect(settled).toBe(false)
 
-      expect((await subscriber.recv()).payload.tryToString()).toBe('first')
+      // Draining the buffer lets the blocked put through, in order.
+      const seen: (string | null)[] = []
+      for await (const sample of subscriber.receive()) {
+        seen.push(sample.payload.tryToString())
+        if (seen.length === 2) break
+      }
       await second
-      expect((await subscriber.recv()).payload.tryToString()).toBe('second')
+
+      expect(seen).toEqual(['first', 'second'])
     })
   })
 
-  describe('recv()', () => {
-    test('returns the next sample', async () => {
-      const key = 'test/pubsub/recv'
+  describe('receive()', () => {
+    test('drives a for await loop across successive samples', async () => {
+      const key = 'test/pubsub/receive-loop'
       using publisher = await session.declarePublisher(key)
       using subscriber = await session.declareSubscriber(key)
 
-      await publisher.put('hello')
-      const sample = await subscriber.recv()
+      await publisher.put('one')
+      await publisher.put('two')
+      await publisher.put('three')
 
-      expect(sample.payload.tryToString()).toBe('hello')
+      const seen: (string | null)[] = []
+      for await (const sample of subscriber.receive()) {
+        seen.push(sample.payload.tryToString())
+        if (seen.length === 3) break
+      }
+
+      expect(seen).toEqual(['one', 'two', 'three'])
+    })
+
+    test('completes the stream instead of throwing once the subscriber is undeclared', async () => {
+      const key = 'test/pubsub/receive-after-undeclare'
+      using publisher = await session.declarePublisher(key)
+      const subscriber = await session.declareSubscriber(key)
+
+      await publisher.put('last')
+
+      // Undeclaring from inside the loop closes the channel, ending iteration.
+      const seen: (string | null)[] = []
+      for await (const sample of subscriber.receive()) {
+        seen.push(sample.payload.tryToString())
+        subscriber.undeclare()
+      }
+
+      expect(seen).toEqual(['last'])
+    })
+
+    test('throws on receive() after undeclare', async () => {
+      const subscriber = await session.declareSubscriber('test/pubsub/receive-undeclared')
+      subscriber.undeclare()
+
+      expect(() => subscriber.receive()).toThrow(/has already been consumed/i)
     })
   })
 
@@ -152,7 +199,11 @@ describe('Subscriber', () => {
       using detector = await subscriber.detectPublishers()
 
       using _publisher = await session.declarePublisher(key, { publisherDetection: true })
-      expect((await detector.recv()).kind).toBe('Put')
+
+      for await (const sample of detector.receive()) {
+        expect(sample.kind).toBe('Put')
+        break
+      }
     })
   })
 })
