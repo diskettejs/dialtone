@@ -53,7 +53,7 @@ impl SampleMissListener {
 
   /// Iterates over the misses reported to this listener.
   ///
-  /// @returns A {@link `MissIter`} that yields each buffered {@link `Miss`} and completes
+  /// @returns A {@link MissIter} that yields each buffered {@link Miss} and completes
   /// once the listener stops receiving.
   /// @throws If this listener has already been undeclared.
   #[napi]

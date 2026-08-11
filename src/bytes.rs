@@ -22,7 +22,7 @@ impl From<BytesBuffer> for z::bytes::ZBytes {
 /// The raw bytes carried by a sample, a reply or an attachment.
 ///
 /// Zenoh does not interpret the payload; how it should be read is conveyed separately by
-/// an {@link `Encoding`}.
+/// an {@link Encoding}.
 #[napi]
 #[derive(From)]
 pub struct Bytes(z::bytes::ZBytes);

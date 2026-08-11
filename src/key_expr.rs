@@ -22,7 +22,7 @@ use crate::utils::MapNapiErr;
 #[derive(Clone, From, Into)]
 pub struct KeyExpr(z::key_expr::KeyExpr<'static>);
 
-/// A {@link `KeyExpr`} or the string to build one from.
+/// A {@link KeyExpr} or the string to build one from.
 #[napi]
 pub type KeyExprArg<'a> = napi::Either<String, &'a KeyExpr>;
 
@@ -58,7 +58,7 @@ impl KeyExpr {
     Ok(inner.into())
   }
 
-  /// Creates a key expression from its string form, same as the {@link `KeyExpr`}
+  /// Creates a key expression from its string form, same as the {@link KeyExpr}
   /// constructor.
   ///
   /// @throws If the string is not a valid, canonical key expression.

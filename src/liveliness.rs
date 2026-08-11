@@ -163,7 +163,7 @@ impl LivelinessSubscriber {
 
   /// Iterates over the liveliness changes delivered to this subscriber.
   ///
-  /// @returns A {@link `SampleIter`} that yields a sample whose kind is `Put` for each
+  /// @returns A {@link SampleIter} that yields a sample whose kind is `Put` for each
   /// token that became alive and `Delete` for each token that was lost, and completes
   /// once the subscriber stops receiving.
   /// @throws If this subscriber has already been undeclared.

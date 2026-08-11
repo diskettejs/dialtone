@@ -623,7 +623,7 @@ impl SessionInfo {
 /// A connection established to a remote Zenoh node.
 ///
 /// Several transports to the same node can coexist; a unicast and a multicast transport to
-/// the same node are both possible. Each transport carries one or more {@link `Link`}s, the
+/// the same node are both possible. Each transport carries one or more {@link Link}s, the
 /// data links actually established with the various protocols.
 #[napi]
 #[derive(Clone, From)]
@@ -737,7 +737,7 @@ impl AsyncGenerator for TransportEventIter {
 
 /// The inclusive range of priorities a link is used for.
 ///
-/// The numeric values correspond to {@link `Priority`}, plus `0` for the control priority,
+/// The numeric values correspond to {@link Priority}, plus `0` for the control priority,
 /// which that enum does not expose. The lower the value, the higher the priority.
 #[napi(object)]
 pub struct LinkPriorities {
@@ -747,7 +747,7 @@ pub struct LinkPriorities {
   pub max: u8,
 }
 
-/// A concrete data link within a {@link `Transport`}.
+/// A concrete data link within a {@link Transport}.
 ///
 /// Zenoh can establish several links to the same remote node using different protocols,
 /// e.g. TCP, UDP or QUIC.
@@ -953,7 +953,7 @@ impl Locator {
   }
 }
 
-/// The metadata part of a {@link `Locator`} or an {@link `EndPoint`}.
+/// The metadata part of a {@link Locator} or an {@link EndPoint}.
 ///
 /// Metadata is a `;`-separated list of `<key>=<value>` pairs. Zenoh reads `prio`, an
 /// inclusive priority range such as `1-3`, and `rel`, either `0` for best effort or `1` for
@@ -1001,7 +1001,7 @@ impl Metadata {
   }
 }
 
-/// A {@link `Locator`} extended with a configuration part, in the canonical form
+/// A {@link Locator} extended with a configuration part, in the canonical form
 /// `<protocol>/<address>[?<metadata>][#<config>]`.
 ///
 /// The configuration part is a `;`-separated list of `<key>=<value>` pairs, sorted
@@ -1011,7 +1011,7 @@ impl Metadata {
 #[derive(From)]
 pub struct EndPoint(z::config::EndPoint);
 
-/// The parts an {@link `EndPoint`} is made of.
+/// The parts an {@link EndPoint} is made of.
 #[napi(object)]
 pub struct EndPointParts {
   /// The protocol part, e.g. `tcp`.

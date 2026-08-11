@@ -112,7 +112,7 @@ impl Config {
   }
 }
 
-/// The configuration an open {@link `Session`} is currently running with.
+/// The configuration an open {@link Session} is currently running with.
 ///
 /// It reads the whole configuration of the session, and applies changes to the plugin part
 /// of it.
@@ -199,7 +199,7 @@ impl From<z::config::WhatAmI> for WhatAmI {
   }
 }
 
-/// A set of {@link `WhatAmI`} values, used to select the kinds of node a scout looks for.
+/// A set of {@link WhatAmI} values, used to select the kinds of node a scout looks for.
 ///
 /// Start from {@link WhatAmIMatcher.empty} and add the kinds to match with
 /// {@link WhatAmIMatcher.router}, {@link WhatAmIMatcher.peer} and

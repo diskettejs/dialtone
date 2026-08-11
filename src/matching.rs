@@ -21,7 +21,7 @@ impl MatchingStatus {
   }
 }
 
-/// A listener notified each time the {@link `MatchingStatus`} of the entity that declared
+/// A listener notified each time the {@link MatchingStatus} of the entity that declared
 /// it changes.
 ///
 /// {@link MatchingListener.undeclare} consumes the listener; every member throws once it
@@ -47,8 +47,8 @@ impl MatchingListener {
 
   /// Iterates over the matching status changes reported to this listener.
   ///
-  /// @returns A {@link `MatchingStatusIter`} that yields each buffered
-  /// {@link `MatchingStatus`} and completes once the listener stops receiving.
+  /// @returns A {@link MatchingStatusIter} that yields each buffered
+  /// {@link MatchingStatus} and completes once the listener stops receiving.
   /// @throws If this listener has already been undeclared.
   #[napi]
   pub fn receive(&self) -> napi::Result<MatchingStatusIter> {

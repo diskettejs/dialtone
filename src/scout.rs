@@ -12,7 +12,7 @@ use crate::{
 
 /// A running scout, discovering the Zenoh processes reachable on the network.
 ///
-/// Scouting periodically sends scout messages and collects the {@link `Hello`} replies of
+/// Scouting periodically sends scout messages and collects the {@link Hello} replies of
 /// the processes that answer them.
 ///
 /// {@link Scout.stop} consumes the scout; every member throws once it has been stopped.
@@ -58,7 +58,7 @@ impl Scout {
 
   /// Iterates over the hellos received while scouting.
   ///
-  /// @returns A {@link `HelloIter`} that yields each buffered hello and completes once
+  /// @returns A {@link HelloIter} that yields each buffered hello and completes once
   /// scouting stops.
   /// @throws If this scout has already been stopped.
   #[napi]

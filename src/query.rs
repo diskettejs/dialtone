@@ -96,7 +96,7 @@ impl Query {
 
   /// Whether this query accepts replies whose key expression does not intersect its own.
   ///
-  /// See {@link `ReplyKeyExpr`}.
+  /// See {@link ReplyKeyExpr}.
   #[napi(getter)]
   pub fn accepts_replies(&self) -> napi::Result<ReplyKeyExpr> {
     Ok(self.0.get()?.accepts_replies().into())
@@ -238,7 +238,7 @@ impl From<z::query::ReplyKeyExpr> for ReplyKeyExpr {
 
 /// An answer received from a {@link Queryable}.
 ///
-/// A reply holds either a successful {@link Sample} or a {@link `ReplyError`}; read
+/// A reply holds either a successful {@link Sample} or a {@link ReplyError}; read
 /// {@link Reply.result} to tell them apart.
 #[napi]
 #[derive(From)]
@@ -272,7 +272,7 @@ impl Reply {
   }
 }
 
-/// The successful variant of {@link `ReplyResult`}.
+/// The successful variant of {@link ReplyResult}.
 #[napi(object)]
 pub struct ReplyResultSample<'env> {
   /// The data replied by the queryable.
@@ -281,7 +281,7 @@ pub struct ReplyResultSample<'env> {
   pub error: Null,
 }
 
-/// The failed variant of {@link `ReplyResult`}.
+/// The failed variant of {@link ReplyResult}.
 #[napi(object)]
 pub struct ReplyResultError<'env> {
   /// Always `null` on this variant.
@@ -652,7 +652,7 @@ impl Querier {
   /// Whether this querier accepts replies whose key expression does not intersect its
   /// own.
   ///
-  /// See {@link `ReplyKeyExpr`}.
+  /// See {@link ReplyKeyExpr}.
   #[napi(getter)]
   pub fn accept_replies(&self) -> napi::Result<ReplyKeyExpr> {
     Ok(self.0.get()?.accept_replies().into())
@@ -820,7 +820,7 @@ impl Selector {
   }
 }
 
-/// A {@link Selector}, a {@link `KeyExpr`} to use as one, or the string form of either.
+/// A {@link Selector}, a {@link KeyExpr} to use as one, or the string form of either.
 #[napi]
 pub type SelectorArg<'a> = Either3<String, &'a KeyExpr, &'a Selector>;
 

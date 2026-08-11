@@ -184,13 +184,13 @@ impl From<HistoryConfig> for zenoh_ext::HistoryConfig {
   }
 }
 
-/// Discriminant selecting {@link `PeriodicQueriesRecovery`}.
+/// Discriminant selecting {@link PeriodicQueriesRecovery}.
 #[napi(string_enum)]
 pub enum PeriodicQueriesMode {
   PeriodicQueries,
 }
 
-/// Discriminant selecting {@link `HeartbeatRecovery`}.
+/// Discriminant selecting {@link HeartbeatRecovery}.
 #[napi(string_enum)]
 pub enum HeartbeatMode {
   Heartbeat,
@@ -341,7 +341,7 @@ pub struct MissDetectionConfig {
   /// Allows last sample miss detection by periodically publishing the last sample's
   /// sequence number.
   ///
-  /// Subscribers can recover the last sample with {@link `HeartbeatRecovery`}.
+  /// Subscribers can recover the last sample with {@link HeartbeatRecovery}.
   pub heartbeat: Option<HeartbeatConfig>,
 }
 
@@ -478,7 +478,7 @@ pub struct QueryableOptions {
   /// `foo/bar` does not cover the whole of `foo/*`, so a query for `foo/*` is still sent
   /// to other queryables as well.
   ///
-  /// This applies to the default {@link `QueryTarget`} `BestMatching`. `All` forcibly
+  /// This applies to the default {@link QueryTarget} `BestMatching`. `All` forcibly
   /// requests every available queryable, and `AllComplete` requests only the complete
   /// ones.
   pub complete: Option<bool>,

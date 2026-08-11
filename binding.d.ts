@@ -13,7 +13,7 @@ declare global {
  * The raw bytes carried by a sample, a reply or an attachment.
  *
  * Zenoh does not interpret the payload; how it should be read is conveyed separately by
- * an {@link `Encoding`}.
+ * an {@link Encoding}.
  */
 export declare class Bytes {
   /** Creates an empty payload. */
@@ -264,7 +264,7 @@ export declare class Encoding {
 }
 
 /**
- * A {@link `Locator`} extended with a configuration part, in the canonical form
+ * A {@link Locator} extended with a configuration part, in the canonical form
  * `<protocol>/<address>[?<metadata>][#<config>]`.
  *
  * The configuration part is a `;`-separated list of `<key>=<value>` pairs, sorted
@@ -359,7 +359,7 @@ export declare class KeyExpr {
    */
   static autocanonize(expr: string): KeyExpr
   /**
-   * Creates a key expression from its string form, same as the {@link `KeyExpr`}
+   * Creates a key expression from its string form, same as the {@link KeyExpr}
    * constructor.
    *
    * @throws If the string is not a valid, canonical key expression.
@@ -400,7 +400,7 @@ export declare class KeyExpr {
 }
 
 /**
- * A concrete data link within a {@link `Transport`}.
+ * A concrete data link within a {@link Transport}.
  *
  * Zenoh can establish several links to the same remote node using different protocols,
  * e.g. TCP, UDP or QUIC.
@@ -525,7 +525,7 @@ export declare class LivelinessSubscriber {
   /**
    * Iterates over the liveliness changes delivered to this subscriber.
    *
-   * @returns A {@link `SampleIter`} that yields a sample whose kind is `Put` for each
+   * @returns A {@link SampleIter} that yields a sample whose kind is `Put` for each
    * token that became alive and `Delete` for each token that was lost, and completes
    * once the subscriber stops receiving.
    * @throws If this subscriber has already been undeclared.
@@ -580,7 +580,7 @@ export declare class Locator {
 }
 
 /**
- * A listener notified each time the {@link `MatchingStatus`} of the entity that declared
+ * A listener notified each time the {@link MatchingStatus} of the entity that declared
  * it changes.
  *
  * {@link MatchingListener.undeclare} consumes the listener; every member throws once it
@@ -596,8 +596,8 @@ export declare class MatchingListener {
   /**
    * Iterates over the matching status changes reported to this listener.
    *
-   * @returns A {@link `MatchingStatusIter`} that yields each buffered
-   * {@link `MatchingStatus`} and completes once the listener stops receiving.
+   * @returns A {@link MatchingStatusIter} that yields each buffered
+   * {@link MatchingStatus} and completes once the listener stops receiving.
    * @throws If this listener has already been undeclared.
    */
   receive(): MatchingStatusIter
@@ -627,7 +627,7 @@ export declare class MatchingStatusIter {
 }
 
 /**
- * The metadata part of a {@link `Locator`} or an {@link `EndPoint`}.
+ * The metadata part of a {@link Locator} or an {@link EndPoint}.
  *
  * Metadata is a `;`-separated list of `<key>=<value>` pairs. Zenoh reads `prio`, an
  * inclusive priority range such as `1-3`, and `rel`, either `0` for best effort or `1` for
@@ -770,7 +770,7 @@ export declare class Publisher {
   /**
    * Reads the current matching status of this publisher.
    *
-   * @returns A {@link `MatchingStatus`} whose {@link MatchingStatus.matching} is `true`
+   * @returns A {@link MatchingStatus} whose {@link MatchingStatus.matching} is `true`
    * if there exist subscribers matching this publisher's key expression.
    */
   matchingStatus(): Promise<MatchingStatus>
@@ -810,7 +810,7 @@ export declare class Querier {
    * Whether this querier accepts replies whose key expression does not intersect its
    * own.
    *
-   * See {@link `ReplyKeyExpr`}.
+   * See {@link ReplyKeyExpr}.
    */
   get acceptReplies(): ReplyKeyExpr
   /**
@@ -888,7 +888,7 @@ export declare class Query {
   /**
    * Whether this query accepts replies whose key expression does not intersect its own.
    *
-   * See {@link `ReplyKeyExpr`}.
+   * See {@link ReplyKeyExpr}.
    */
   get acceptsReplies(): ReplyKeyExpr
   /**
@@ -988,7 +988,7 @@ export declare class Replies {
 /**
  * An answer received from a {@link Queryable}.
  *
- * A reply holds either a successful {@link Sample} or a {@link `ReplyError`}; read
+ * A reply holds either a successful {@link Sample} or a {@link ReplyError}; read
  * {@link Reply.result} to tell them apart.
  */
 export declare class Reply {
@@ -1095,7 +1095,7 @@ export declare class SampleMissListener {
   /**
    * Iterates over the misses reported to this listener.
    *
-   * @returns A {@link `MissIter`} that yields each buffered {@link `Miss`} and completes
+   * @returns A {@link MissIter} that yields each buffered {@link Miss} and completes
    * once the listener stops receiving.
    * @throws If this listener has already been undeclared.
    */
@@ -1105,7 +1105,7 @@ export declare class SampleMissListener {
 /**
  * A running scout, discovering the Zenoh processes reachable on the network.
  *
- * Scouting periodically sends scout messages and collects the {@link `Hello`} replies of
+ * Scouting periodically sends scout messages and collects the {@link Hello} replies of
  * the processes that answer them.
  *
  * {@link Scout.stop} consumes the scout; every member throws once it has been stopped.
@@ -1125,7 +1125,7 @@ export declare class Scout {
   /**
    * Iterates over the hellos received while scouting.
    *
-   * @returns A {@link `HelloIter`} that yields each buffered hello and completes once
+   * @returns A {@link HelloIter} that yields each buffered hello and completes once
    * scouting stops.
    * @throws If this scout has already been stopped.
    */
@@ -1276,7 +1276,7 @@ export declare class Session {
 }
 
 /**
- * The configuration an open {@link `Session`} is currently running with.
+ * The configuration an open {@link Session} is currently running with.
  *
  * It reads the whole configuration of the session, and applies changes to the plugin part
  * of it.
@@ -1386,7 +1386,7 @@ export declare class Subscriber {
   /**
    * Iterates over the samples delivered to this subscriber.
    *
-   * @returns A {@link `SampleIter`} that yields each buffered sample and completes once
+   * @returns A {@link SampleIter} that yields each buffered sample and completes once
    * the subscriber stops receiving, e.g. after it is undeclared or the session is
    * closed.
    * @throws If this subscriber has already been undeclared.
@@ -1436,7 +1436,7 @@ export declare class Timestamp {
  * A connection established to a remote Zenoh node.
  *
  * Several transports to the same node can coexist; a unicast and a multicast transport to
- * the same node are both possible. Each transport carries one or more {@link `Link`}s, the
+ * the same node are both possible. Each transport carries one or more {@link Link}s, the
  * data links actually established with the various protocols.
  */
 export declare class Transport {
@@ -1488,7 +1488,7 @@ export declare class TransportEventsListener {
 }
 
 /**
- * A set of {@link `WhatAmI`} values, used to select the kinds of node a scout looks for.
+ * A set of {@link WhatAmI} values, used to select the kinds of node a scout looks for.
  *
  * Start from {@link WhatAmIMatcher.empty} and add the kinds to match with
  * {@link WhatAmIMatcher.router}, {@link WhatAmIMatcher.peer} and
@@ -1601,7 +1601,7 @@ export interface DeleteOptions {
   attachment?: BytesBuffer
 }
 
-/** The parts an {@link `EndPoint`} is made of. */
+/** The parts an {@link EndPoint} is made of. */
 export interface EndPointParts {
   /** The protocol part, e.g. `tcp`. */
   protocol: string
@@ -1688,7 +1688,7 @@ export interface HeartbeatConfig {
   sporadic?: boolean
 }
 
-/** Discriminant selecting {@link `HeartbeatRecovery`}. */
+/** Discriminant selecting {@link HeartbeatRecovery}. */
 export type HeartbeatMode =  'Heartbeat';
 
 /**
@@ -1719,7 +1719,7 @@ export interface HistoryConfig {
   maxAgeSecs?: number
 }
 
-/** A {@link `KeyExpr`} or the string to build one from. */
+/** A {@link KeyExpr} or the string to build one from. */
 export type KeyExprArg =
   string | KeyExpr
 
@@ -1738,7 +1738,7 @@ export interface LinkEventsListenerOptions {
 /**
  * The inclusive range of priorities a link is used for.
  *
- * The numeric values correspond to {@link `Priority`}, plus `0` for the control priority,
+ * The numeric values correspond to {@link Priority}, plus `0` for the control priority,
  * which that enum does not expose. The lower the value, the higher the priority.
  */
 export interface LinkPriorities {
@@ -1817,7 +1817,7 @@ export interface MissDetectionConfig {
    * Allows last sample miss detection by periodically publishing the last sample's
    * sequence number.
    *
-   * Subscribers can recover the last sample with {@link `HeartbeatRecovery`}.
+   * Subscribers can recover the last sample with {@link HeartbeatRecovery}.
    */
   heartbeat?: HeartbeatConfig
 }
@@ -1826,7 +1826,7 @@ export interface MissDetectionConfig {
 export type ParametersLike =
   Record<string, string>
 
-/** Discriminant selecting {@link `PeriodicQueriesRecovery`}. */
+/** Discriminant selecting {@link PeriodicQueriesRecovery}. */
 export type PeriodicQueriesMode =  'PeriodicQueries';
 
 /**
@@ -2044,7 +2044,7 @@ export interface QueryableOptions {
    * `foo/bar` does not cover the whole of `foo/*`, so a query for `foo/*` is still sent
    * to other queryables as well.
    *
-   * This applies to the default {@link `QueryTarget`} `BestMatching`. `All` forcibly
+   * This applies to the default {@link QueryTarget} `BestMatching`. `All` forcibly
    * requests every available queryable, and `AllComplete` requests only the complete
    * ones.
    */
@@ -2151,7 +2151,7 @@ export interface ReplyOptions {
 export type ReplyResult =
   ReplyResultSample | ReplyResultError
 
-/** The failed variant of {@link `ReplyResult`}. */
+/** The failed variant of {@link ReplyResult}. */
 export interface ReplyResultError {
   /** Always `null` on this variant. */
   sample: null
@@ -2159,7 +2159,7 @@ export interface ReplyResultError {
   error: ReplyError
 }
 
-/** The successful variant of {@link `ReplyResult`}. */
+/** The successful variant of {@link ReplyResult}. */
 export interface ReplyResultSample {
   /** The data replied by the queryable. */
   sample: Sample
@@ -2193,7 +2193,7 @@ export interface ScoutOptions {
   channelCapacity?: number
 }
 
-/** A {@link Selector}, a {@link `KeyExpr`} to use as one, or the string form of either. */
+/** A {@link Selector}, a {@link KeyExpr} to use as one, or the string form of either. */
 export type SelectorArg =
   string | KeyExpr | Selector
 

@@ -113,7 +113,7 @@ impl Publisher {
 
   /// Reads the current matching status of this publisher.
   ///
-  /// @returns A {@link `MatchingStatus`} whose {@link MatchingStatus.matching} is `true`
+  /// @returns A {@link MatchingStatus} whose {@link MatchingStatus.matching} is `true`
   /// if there exist subscribers matching this publisher's key expression.
   #[napi]
   pub async fn matching_status(&self) -> napi::Result<MatchingStatus> {
@@ -245,7 +245,7 @@ impl Subscriber {
 
   /// Iterates over the samples delivered to this subscriber.
   ///
-  /// @returns A {@link `SampleIter`} that yields each buffered sample and completes once
+  /// @returns A {@link SampleIter} that yields each buffered sample and completes once
   /// the subscriber stops receiving, e.g. after it is undeclared or the session is
   /// closed.
   /// @throws If this subscriber has already been undeclared.
