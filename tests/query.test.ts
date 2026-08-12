@@ -12,7 +12,7 @@ afterAll(async () => {
   await session.close()
 })
 
-// `consolidation: 'None'` is a test fixture, not an assertion target: it lets a single
+// `consolidation: 'none'` is a test fixture, not an assertion target: it lets a single
 // reply be observed synchronously. The default Auto consolidation buffers replies until
 // the query is finalized, which would couple seam tests to drop()/GC timing.
 
@@ -43,7 +43,7 @@ describe('Query', () => {
       const key = 'test/query/request'
       using queryable = await session.declareQueryable(key)
       await session.get(`${key}?unit=celsius`, {
-        consolidation: 'None',
+        consolidation: 'none',
         payload: 'req',
         encoding: 'text/plain',
         attachment: 'meta',
@@ -61,7 +61,7 @@ describe('Query', () => {
     test('marshal an absent payload as null', async () => {
       const key = 'test/query/no-payload'
       using queryable = await session.declareQueryable(key)
-      await session.get(key, { consolidation: 'None' })
+      await session.get(key, { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         expect(query.payload).toBeNull()
@@ -74,7 +74,7 @@ describe('Query', () => {
     test('yields the sample arm and applies ReplyOptions', async () => {
       const key = 'test/query/reply'
       using queryable = await session.declareQueryable(key)
-      const replies = await session.get(key, { consolidation: 'None' })
+      const replies = await session.get(key, { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         await query.reply(key, 'pong', { encoding: 'text/plain', attachment: 'meta' })
@@ -96,7 +96,7 @@ describe('Query', () => {
     test('yields the error arm and applies ReplyErrOptions', async () => {
       const key = 'test/query/reply-err'
       using queryable = await session.declareQueryable(key)
-      const replies = await session.get(key, { consolidation: 'None' })
+      const replies = await session.get(key, { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         await query.replyErr('boom', { encoding: 'text/plain' })
@@ -116,7 +116,7 @@ describe('Query', () => {
     test('delivers a Delete-kind reply', async () => {
       const key = 'test/query/reply-del'
       using queryable = await session.declareQueryable(key)
-      const replies = await session.get(key, { consolidation: 'None' })
+      const replies = await session.get(key, { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         await query.replyDel(key)
@@ -124,7 +124,7 @@ describe('Query', () => {
       }
 
       for await (const reply of replies.receive()) {
-        expect(reply.result.sample?.kind).toBe('Delete')
+        expect(reply.result.sample?.kind).toBe('delete')
         break
       }
     })
@@ -134,7 +134,7 @@ describe('Query', () => {
     test('rejects reply() after drop', async () => {
       const key = 'test/query/drop'
       using queryable = await session.declareQueryable(key)
-      await session.get(key, { consolidation: 'None' })
+      await session.get(key, { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         query.drop()
@@ -150,16 +150,16 @@ describe('Querier', () => {
     test('applies priority, congestionControl, and acceptReplies from QuerierOptions', async () => {
       const key = 'test/querier'
       using querier = await session.declareQuerier(key, {
-        priority: 'DataHigh',
-        congestionControl: 'Block',
-        acceptReplies: 'Any',
+        priority: 'data_high',
+        congestionControl: 'block',
+        acceptReplies: 'any',
       })
 
       expect(querier.keyExpr.toString()).toBe(key)
       expect(typeof querier.id.zid).toBe('string')
-      expect(querier.priority).toBe('DataHigh')
-      expect(querier.congestionControl).toBe('Block')
-      expect(querier.acceptReplies).toBe('Any')
+      expect(querier.priority).toBe('data_high')
+      expect(querier.congestionControl).toBe('block')
+      expect(querier.acceptReplies).toBe('any')
     })
   })
 
@@ -195,7 +195,7 @@ describe('Session.get()', () => {
     test('accepts a Selector instance', async () => {
       const key = 'test/select/instance'
       using queryable = await session.declareQueryable(key)
-      await session.get(new Selector(key, 'mode=fast'), { consolidation: 'None' })
+      await session.get(new Selector(key, 'mode=fast'), { consolidation: 'none' })
 
       for await (const query of queryable.receive()) {
         expect(query.selector.keyExpr.toString()).toBe(key)
@@ -208,7 +208,7 @@ describe('Session.get()', () => {
       const key = 'test/select/override'
       using queryable = await session.declareQueryable(key)
       await session.get(`${key}?ignored=1`, {
-        consolidation: 'None',
+        consolidation: 'none',
         parameters: { used: '1' },
       })
 

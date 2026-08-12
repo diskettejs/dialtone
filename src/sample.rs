@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// The kind of operation a {@link Sample} was issued by.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum SampleKind {
   /// The sample was issued by a put.
   Put,

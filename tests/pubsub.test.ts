@@ -17,12 +17,12 @@ describe('Publisher', () => {
     test('applies priority and congestionControl from PublisherOptions', async () => {
       const key = 'test/pubsub/declare-options'
       using publisher = await session.declarePublisher(key, {
-        priority: 'DataHigh',
-        congestionControl: 'Block',
+        priority: 'data_high',
+        congestionControl: 'block',
       })
 
-      expect(publisher.priority).toBe('DataHigh')
-      expect(publisher.congestionControl).toBe('Block')
+      expect(publisher.priority).toBe('data_high')
+      expect(publisher.congestionControl).toBe('block')
     })
   })
 
@@ -37,7 +37,7 @@ describe('Publisher', () => {
       for await (const sample of subscriber.receive()) {
         expect(sample.payload.toString()).toBe('hello')
         expect(sample.keyExpr.toString()).toBe(key)
-        expect(sample.kind).toBe('Put')
+        expect(sample.kind).toBe('put')
         break
       }
     })
@@ -66,7 +66,7 @@ describe('Publisher', () => {
       await publisher.delete()
 
       for await (const sample of subscriber.receive()) {
-        expect(sample.kind).toBe('Delete')
+        expect(sample.kind).toBe('delete')
         break
       }
     })
@@ -201,7 +201,7 @@ describe('Subscriber', () => {
       using _publisher = await session.declarePublisher(key, { publisherDetection: true })
 
       for await (const sample of detector.receive()) {
-        expect(sample.kind).toBe('Put')
+        expect(sample.kind).toBe('put')
         break
       }
     })

@@ -185,13 +185,13 @@ impl From<HistoryConfig> for zenoh_ext::HistoryConfig {
 }
 
 /// Discriminant selecting {@link PeriodicQueriesRecovery}.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum PeriodicQueriesMode {
   PeriodicQueries,
 }
 
 /// Discriminant selecting {@link HeartbeatRecovery}.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum HeartbeatMode {
   Heartbeat,
 }

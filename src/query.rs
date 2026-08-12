@@ -210,7 +210,7 @@ impl Query {
 /// A queryable may serve a glob-like key expression such as `foo/*` while replying on
 /// more specific ones. It may therefore receive a query for `foo/bar` and reply on
 /// `foo/baz`. By default such disjoint replies are rejected on the sending side.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum ReplyKeyExpr {
   /// Accepts replies whose key expression may not match the query's key expression.
   Any,
@@ -433,7 +433,7 @@ impl Parameters<'_> {
 /// The queryables a query is delivered to.
 ///
 /// See also {@link QueryableOptions.complete}.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum QueryTarget {
   /// Requests the data from the queryable(s) Zenoh selects to get the fastest and most
   /// complete reply.
@@ -458,7 +458,7 @@ impl From<QueryTarget> for z::query::QueryTarget {
 ///
 /// Several replies may arrive for the same key, from the same or from different
 /// queryables.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum ConsolidationMode {
   /// Applies the consolidation Zenoh deems best given the query and the responders.
   Auto,

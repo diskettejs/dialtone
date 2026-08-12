@@ -171,7 +171,7 @@ impl SessionConfig {
 /// A peer searches for the other nodes and establishes direct connections with them, a
 /// client stays connected to a single node that gateways it to the rest of the network,
 /// and a router maintains a statically configured network topology.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 #[derive(Clone)]
 pub enum WhatAmI {
   Router,

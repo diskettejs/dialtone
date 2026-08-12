@@ -3,7 +3,7 @@ use zenoh as z;
 
 /// The strategy applied when a message has to be routed through a node whose queue is
 /// full.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum CongestionControl {
   /// The node may drop the message.
   Drop,
@@ -41,7 +41,7 @@ impl From<z::qos::CongestionControl> for CongestionControl {
 /// from `RealTime` down to `Background`.
 ///
 /// The default is `Data`.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum Priority {
   RealTime,
   InteractiveHigh,
@@ -85,7 +85,7 @@ impl From<z::qos::Priority> for Priority {
 /// Note: reliability does not trigger any data retransmission on the wire. It is a marker
 /// that may be used to select the best link available (e.g. TCP for reliable data and UDP
 /// for best effort data).
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum Reliability {
   /// Accepts that messages may be lost.
   BestEffort,
@@ -115,7 +115,7 @@ impl From<z::qos::Reliability> for Reliability {
 ///
 /// It restricts subscribers and queryables to receiving from, and publishers and queriers
 /// to sending to, only the entities of the given locality.
-#[napi(string_enum)]
+#[napi(string_enum = "snake_case")]
 pub enum Locality {
   /// Only the entities in the same session.
   SessionLocal,

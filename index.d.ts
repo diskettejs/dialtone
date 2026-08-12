@@ -41,9 +41,6 @@ declare module './binding.js' {
   }
 }
 
-/** Node operating mode. Maps to Zenoh's `mode` key. */
-export type WhatAmI = 'router' | 'peer' | 'client'
-
 /**
  * A value that is either applied uniformly, or per-mode.
  *
@@ -52,21 +49,16 @@ export type WhatAmI = 'router' | 'peer' | 'client'
  */
 export type ModeDependent<T> = T | { router?: T; peer?: T; client?: T }
 
-/**
- * A locator string, e.g. `"tcp/127.0.0.1:7447"`. Mirrors Zenoh's `EndPoint`.
- */
-export type EndPoint = string
-
 export interface ConnectConfig {
   timeout_ms?: ModeDependent<number>
-  endpoints?: ModeDependent<EndPoint[]>
+  endpoints?: ModeDependent<string[]>
   exit_on_failure?: ModeDependent<boolean>
   retry?: Record<string, unknown>
 }
 
 export interface ListenConfig {
   timeout_ms?: ModeDependent<number>
-  endpoints?: ModeDependent<EndPoint[]>
+  endpoints?: ModeDependent<string[]>
   exit_on_failure?: ModeDependent<boolean>
   retry?: Record<string, unknown>
 }
@@ -83,7 +75,7 @@ export interface ScoutingMulticastConfig {
   address?: string
   interface?: string
   ttl?: number
-  autoconnect?: ModeDependent<WhatAmI[]>
+  autoconnect?: ModeDependent<binding.WhatAmI[]>
   autoconnect_strategy?: unknown
   listen?: ModeDependent<boolean>
 }
@@ -91,8 +83,8 @@ export interface ScoutingMulticastConfig {
 export interface ScoutingGossipConfig {
   enabled?: boolean
   multihop?: boolean
-  target?: ModeDependent<WhatAmI[]>
-  autoconnect?: ModeDependent<WhatAmI[]>
+  target?: ModeDependent<binding.WhatAmI[]>
+  autoconnect?: ModeDependent<binding.WhatAmI[]>
   autoconnect_strategy?: unknown
 }
 
@@ -122,7 +114,7 @@ export interface AggregationConfig {
 export interface ZenohConfig {
   id?: string
   metadata?: Record<string, unknown>
-  mode?: WhatAmI
+  mode?: binding.WhatAmI
   region_name?: string
   namespace?: string
   queries_default_timeout?: number

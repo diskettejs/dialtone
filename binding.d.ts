@@ -1536,14 +1536,14 @@ export interface CacheConfig {
  * full.
  */
 export type CongestionControl = /** The node may drop the message. */
-'Drop'|
+'drop'|
 /** The node waits for the queue to progress. */
-'Block'|
+'block'|
 /**
  * The node waits for the queue to progress| but only for the first message sent with
  * this strategy; the following ones are dropped.
  */
-'BlockFirst';
+'block_first';
 
 /**
  * The strategy applied to filter and reorder the replies to a query.
@@ -1552,12 +1552,12 @@ export type CongestionControl = /** The node may drop the message. */
  * queryables.
  */
 export type ConsolidationMode = /** Applies the consolidation Zenoh deems best given the query and the responders. */
-'Auto'|
+'auto'|
 /**
  * Applies no consolidation: several replies may be received for the same key and
  * timestamp.
  */
-'None'|
+'none'|
 /**
  * Forwards replies immediately| except those for a key on which a reply with an equal
  * or more recent timestamp was already forwarded.
@@ -1565,12 +1565,12 @@ export type ConsolidationMode = /** Applies the consolidation Zenoh deems best g
  * This optimizes latency while potentially reducing bandwidth. It does not reorder
  * replies.
  */
-'Monotonic'|
+'monotonic'|
 /**
  * Holds replies back to only deliver| for each key| the one with the highest
  * timestamp.
  */
-'Latest';
+'latest';
 
 /** Options for a session delete. */
 export interface DeleteOptions {
@@ -1689,7 +1689,7 @@ export interface HeartbeatConfig {
 }
 
 /** Discriminant selecting {@link HeartbeatRecovery}. */
-export type HeartbeatMode =  'Heartbeat';
+export type HeartbeatMode =  'heartbeat';
 
 /**
  * Recovers missed samples by subscribing to publisher heartbeats.
@@ -1789,11 +1789,11 @@ export interface LivelinessSubscriberOptions {
  * to sending to, only the entities of the given locality.
  */
 export type Locality = /** Only the entities in the same session. */
-'SessionLocal'|
+'session_local'|
 /** Only the entities that are not in the same session. */
-'Remote'|
+'remote'|
 /** Both local and remote entities. */
-'Any';
+'any';
 
 /** Options for declaring a listener of matching status changes. */
 export interface MatchingListenerOptions {
@@ -1827,7 +1827,7 @@ export type ParametersLike =
   Record<string, string>
 
 /** Discriminant selecting {@link PeriodicQueriesRecovery}. */
-export type PeriodicQueriesMode =  'PeriodicQueries';
+export type PeriodicQueriesMode =  'periodic_queries';
 
 /**
  * Recovers missed samples by periodically querying for not yet received ones.
@@ -1854,13 +1854,13 @@ export interface PeriodicQueriesRecovery {
  *
  * The default is `Data`.
  */
-export type Priority =  'RealTime'|
-'InteractiveHigh'|
-'InteractiveLow'|
-'DataHigh'|
-'Data'|
-'DataLow'|
-'Background';
+export type Priority =  'real_time'|
+'interactive_high'|
+'interactive_low'|
+'data_high'|
+'data'|
+'data_low'|
+'background';
 
 /** Options for a single delete on an existing publisher. */
 export interface PublisherDeleteOptions {
@@ -2071,11 +2071,11 @@ export type QueryTarget = /**
  * Requests the data from the queryable(s) Zenoh selects to get the fastest and most
  * complete reply.
  */
-'BestMatching'|
+'best_matching'|
 /** Delivers the query to all the matching queryables. */
-'All'|
+'all'|
 /** Delivers the query to all the matching queryables that are declared as complete. */
-'AllComplete';
+'all_complete';
 
 /**
  * The reliability requested when routing a message.
@@ -2085,9 +2085,9 @@ export type QueryTarget = /**
  * for best effort data).
  */
 export type Reliability = /** Accepts that messages may be lost. */
-'BestEffort'|
+'best_effort'|
 /** Requests that messages be delivered reliably. */
-'Reliable';
+'reliable';
 
 /** `QoS` applied to the replies served from a cache. */
 export interface RepliesConfig {
@@ -2129,9 +2129,9 @@ export interface ReplyErrOptions {
  * `foo/baz`. By default such disjoint replies are rejected on the sending side.
  */
 export type ReplyKeyExpr = /** Accepts replies whose key expression may not match the query's key expression. */
-'Any'|
+'any'|
 /** Accepts only replies whose key expression matches the query's key expression. */
-'MatchingQuery';
+'matching_query';
 
 /** Options for replying to a query with a payload. */
 export interface ReplyOptions {
@@ -2169,9 +2169,9 @@ export interface ReplyResultSample {
 
 /** The kind of operation a {@link Sample} was issued by. */
 export type SampleKind = /** The sample was issued by a put. */
-'Put'|
+'put'|
 /** The sample was issued by a delete. */
-'Delete';
+'delete';
 
 /** Options for declaring a listener of missed samples. */
 export interface SampleMissListenerOptions {
@@ -2267,6 +2267,6 @@ export interface TransportEventsListenerOptions {
  * client stays connected to a single node that gateways it to the rest of the network,
  * and a router maintains a statically configured network topology.
  */
-export type WhatAmI =  'Router'|
-'Peer'|
-'Client';
+export type WhatAmI =  'router'|
+'peer'|
+'client';
