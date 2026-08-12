@@ -9,11 +9,12 @@ use crate::{
 };
 
 /// The kind of operation a {@link Sample} was issued by.
+///
+/// - `put` - The sample was issued by a put.
+/// - `delete` - The sample was issued by a delete.
 #[napi(string_enum = "snake_case")]
 pub enum SampleKind {
-  /// The sample was issued by a put.
   Put,
-  /// The sample was issued by a delete.
   Delete,
 }
 

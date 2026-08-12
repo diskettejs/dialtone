@@ -1534,15 +1534,13 @@ export interface CacheConfig {
 /**
  * The strategy applied when a message has to be routed through a node whose queue is
  * full.
+ *
+ * - `drop`  - The node may drop the message.
+ * - `block` - The node waits for the queue to progress.
+ * - `block_first` - The node waits for the queue to progress, but only for the first message sent with this strategy; the following ones are dropped.
  */
-export type CongestionControl = /** The node may drop the message. */
-'drop'|
-/** The node waits for the queue to progress. */
+export type CongestionControl =  'drop'|
 'block'|
-/**
- * The node waits for the queue to progress| but only for the first message sent with
- * this strategy; the following ones are dropped.
- */
 'block_first';
 
 /**
@@ -1550,26 +1548,15 @@ export type CongestionControl = /** The node may drop the message. */
  *
  * Several replies may arrive for the same key, from the same or from different
  * queryables.
- */
-export type ConsolidationMode = /** Applies the consolidation Zenoh deems best given the query and the responders. */
-'auto'|
-/**
- * Applies no consolidation: several replies may be received for the same key and
- * timestamp.
- */
-'none'|
-/**
- * Forwards replies immediately| except those for a key on which a reply with an equal
- * or more recent timestamp was already forwarded.
  *
- * This optimizes latency while potentially reducing bandwidth. It does not reorder
- * replies.
+ * - `auto` - Applies the consolidation Zenoh deems best given the query and the responders.
+ * - `none` - Applies no consolidation: several replies may be received for the same key and timestamp.
+ * - `monotonic` - Forwards replies immediately, except those for a key on which a reply with an equal or more recent timestamp was already forwarded. This optimizes latency while potentially reducing bandwidth. It does not reorder replies.
+ * - `latest` - Holds replies back to only deliver, for each key, the one with the highest timestamp.
  */
+export type ConsolidationMode =  'auto'|
+'none'|
 'monotonic'|
-/**
- * Holds replies back to only deliver| for each key| the one with the highest
- * timestamp.
- */
 'latest';
 
 /** Options for a session delete. */
@@ -1787,13 +1774,14 @@ export interface LivelinessSubscriberOptions {
  *
  * It restricts subscribers and queryables to receiving from, and publishers and queriers
  * to sending to, only the entities of the given locality.
+ *
+ * - `any` - Both local and remote entities.
+ * - `remote` - Only the entities that are not in the same session.
+ * - `session_local` - Only the entities in the same session.
  */
-export type Locality = /** Only the entities in the same session. */
-'session_local'|
-/** Only the entities that are not in the same session. */
+export type Locality =  'any'|
 'remote'|
-/** Both local and remote entities. */
-'any';
+'session_local';
 
 /** Options for declaring a listener of matching status changes. */
 export interface MatchingListenerOptions {
@@ -2066,15 +2054,13 @@ export interface QueryableOptions {
  * The queryables a query is delivered to.
  *
  * See also {@link QueryableOptions.complete}.
+ *
+ * - `best_matching` - Requests the data from the queryable(s) Zenoh selects to get the fastest and most complete reply.
+ * - `all` - Delivers the query to all the matching queryables.
+ * - `all_complete` - Delivers the query to all the matching queryables that are declared as complete.
  */
-export type QueryTarget = /**
- * Requests the data from the queryable(s) Zenoh selects to get the fastest and most
- * complete reply.
- */
-'best_matching'|
-/** Delivers the query to all the matching queryables. */
+export type QueryTarget =  'best_matching'|
 'all'|
-/** Delivers the query to all the matching queryables that are declared as complete. */
 'all_complete';
 
 /**
@@ -2083,10 +2069,11 @@ export type QueryTarget = /**
  * Note: reliability does not trigger any data retransmission on the wire. It is a marker
  * that may be used to select the best link available (e.g. TCP for reliable data and UDP
  * for best effort data).
+ *
+ * - `best_effort` - Accepts that messages may be lost.
+ * - `reliable` - Requests that messages be delivered reliably.
  */
-export type Reliability = /** Accepts that messages may be lost. */
-'best_effort'|
-/** Requests that messages be delivered reliably. */
+export type Reliability =  'best_effort'|
 'reliable';
 
 /** `QoS` applied to the replies served from a cache. */
@@ -2127,10 +2114,11 @@ export interface ReplyErrOptions {
  * A queryable may serve a glob-like key expression such as `foo/*` while replying on
  * more specific ones. It may therefore receive a query for `foo/bar` and reply on
  * `foo/baz`. By default such disjoint replies are rejected on the sending side.
+ *
+ * - `any` - Accepts replies whose key expression may not match the query's key expression.
+ * - `matching_query` - Accepts only replies whose key expression matches the query's key expression.
  */
-export type ReplyKeyExpr = /** Accepts replies whose key expression may not match the query's key expression. */
-'any'|
-/** Accepts only replies whose key expression matches the query's key expression. */
+export type ReplyKeyExpr =  'any'|
 'matching_query';
 
 /** Options for replying to a query with a payload. */
@@ -2167,10 +2155,13 @@ export interface ReplyResultSample {
   error: null
 }
 
-/** The kind of operation a {@link Sample} was issued by. */
-export type SampleKind = /** The sample was issued by a put. */
-'put'|
-/** The sample was issued by a delete. */
+/**
+ * The kind of operation a {@link Sample} was issued by.
+ *
+ * - `put` - The sample was issued by a put.
+ * - `delete` - The sample was issued by a delete.
+ */
+export type SampleKind =  'put'|
 'delete';
 
 /** Options for declaring a listener of missed samples. */

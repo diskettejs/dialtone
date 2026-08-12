@@ -3,14 +3,14 @@ use zenoh as z;
 
 /// The strategy applied when a message has to be routed through a node whose queue is
 /// full.
+///
+/// - `drop`  - The node may drop the message.
+/// - `block` - The node waits for the queue to progress.
+/// - `block_first` - The node waits for the queue to progress, but only for the first message sent with this strategy; the following ones are dropped.
 #[napi(string_enum = "snake_case")]
 pub enum CongestionControl {
-  /// The node may drop the message.
   Drop,
-  /// The node waits for the queue to progress.
   Block,
-  /// The node waits for the queue to progress, but only for the first message sent with
-  /// this strategy; the following ones are dropped.
   BlockFirst,
 }
 
@@ -85,11 +85,12 @@ impl From<z::qos::Priority> for Priority {
 /// Note: reliability does not trigger any data retransmission on the wire. It is a marker
 /// that may be used to select the best link available (e.g. TCP for reliable data and UDP
 /// for best effort data).
+///
+/// - `best_effort` - Accepts that messages may be lost.
+/// - `reliable` - Requests that messages be delivered reliably.
 #[napi(string_enum = "snake_case")]
 pub enum Reliability {
-  /// Accepts that messages may be lost.
   BestEffort,
-  /// Requests that messages be delivered reliably.
   Reliable,
 }
 
@@ -115,14 +116,15 @@ impl From<z::qos::Reliability> for Reliability {
 ///
 /// It restricts subscribers and queryables to receiving from, and publishers and queriers
 /// to sending to, only the entities of the given locality.
+///
+/// - `any` - Both local and remote entities.
+/// - `remote` - Only the entities that are not in the same session.
+/// - `session_local` - Only the entities in the same session.
 #[napi(string_enum = "snake_case")]
 pub enum Locality {
-  /// Only the entities in the same session.
-  SessionLocal,
-  /// Only the entities that are not in the same session.
-  Remote,
-  /// Both local and remote entities.
   Any,
+  Remote,
+  SessionLocal,
 }
 
 impl From<Locality> for z::sample::Locality {

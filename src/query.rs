@@ -210,11 +210,12 @@ impl Query {
 /// A queryable may serve a glob-like key expression such as `foo/*` while replying on
 /// more specific ones. It may therefore receive a query for `foo/bar` and reply on
 /// `foo/baz`. By default such disjoint replies are rejected on the sending side.
+///
+/// - `any` - Accepts replies whose key expression may not match the query's key expression.
+/// - `matching_query` - Accepts only replies whose key expression matches the query's key expression.
 #[napi(string_enum = "snake_case")]
 pub enum ReplyKeyExpr {
-  /// Accepts replies whose key expression may not match the query's key expression.
   Any,
-  /// Accepts only replies whose key expression matches the query's key expression.
   MatchingQuery,
 }
 
@@ -433,14 +434,14 @@ impl Parameters<'_> {
 /// The queryables a query is delivered to.
 ///
 /// See also {@link QueryableOptions.complete}.
+///
+/// - `best_matching` - Requests the data from the queryable(s) Zenoh selects to get the fastest and most complete reply.
+/// - `all` - Delivers the query to all the matching queryables.
+/// - `all_complete` - Delivers the query to all the matching queryables that are declared as complete.
 #[napi(string_enum = "snake_case")]
 pub enum QueryTarget {
-  /// Requests the data from the queryable(s) Zenoh selects to get the fastest and most
-  /// complete reply.
   BestMatching,
-  /// Delivers the query to all the matching queryables.
   All,
-  /// Delivers the query to all the matching queryables that are declared as complete.
   AllComplete,
 }
 
@@ -458,21 +459,16 @@ impl From<QueryTarget> for z::query::QueryTarget {
 ///
 /// Several replies may arrive for the same key, from the same or from different
 /// queryables.
+///
+/// - `auto` - Applies the consolidation Zenoh deems best given the query and the responders.
+/// - `none` - Applies no consolidation: several replies may be received for the same key and timestamp.
+/// - `monotonic` - Forwards replies immediately, except those for a key on which a reply with an equal or more recent timestamp was already forwarded. This optimizes latency while potentially reducing bandwidth. It does not reorder replies.
+/// - `latest` - Holds replies back to only deliver, for each key, the one with the highest timestamp.
 #[napi(string_enum = "snake_case")]
 pub enum ConsolidationMode {
-  /// Applies the consolidation Zenoh deems best given the query and the responders.
   Auto,
-  /// Applies no consolidation: several replies may be received for the same key and
-  /// timestamp.
   None,
-  /// Forwards replies immediately, except those for a key on which a reply with an equal
-  /// or more recent timestamp was already forwarded.
-  ///
-  /// This optimizes latency while potentially reducing bandwidth. It does not reorder
-  /// replies.
   Monotonic,
-  /// Holds replies back to only deliver, for each key, the one with the highest
-  /// timestamp.
   Latest,
 }
 
