@@ -11,17 +11,24 @@ keywords = ["NodeJS", "Node", "FFI", "NAPI", "n-api", "Zenoh"]
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "3.12.1", default-features = false, features = ["napi10", "async"] }
-napi-derive = "3.6.3"
+napi = { version = "3.13.0", default-features = false, features = [
+  "napi10",
+  "async",
+] }
+napi-derive = "3.6.9"
 
 zenoh = { version = "1.9.0", features = ["unstable"] }
 zenoh-ext = { version = "1.9.0", features = ["unstable"] }
 zenoh-config = { version = "1.9.0" }
 
-derive_more = { version = "2.1.1", default-features = false, features = ["from", "as_ref", "into"] }
+derive_more = { version = "2.1.1", default-features = false, features = [
+  "from",
+  "as_ref",
+  "into",
+] }
 
 [build-dependencies]
-napi-build = "2.4.1"
+napi-build = "2.5.0"
 
 [profile.release]
 codegen-units = 1
