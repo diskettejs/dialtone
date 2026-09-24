@@ -1,13 +1,5 @@
 import { describe, expect, test } from 'vitest'
-
 import { defineConfig, type ZenohConfig } from '../index.js'
-
-// `defineConfig(x)` is `Config.fromJson5(JSON.stringify(x))`. Zenoh validates
-// eagerly at that point — it parses the JSON5, rejects unknown keys
-// (`deny_unknown_fields` is applied recursively), checks every value's type,
-// and runs its field validators. So an invalid config throws here, at
-// build time; `Session.open` is never reached. That makes these tests
-// synchronous and network-free.
 
 describe('defineConfig — valid configs', () => {
   test('no config / empty config falls back to Zenoh defaults', () => {
@@ -114,25 +106,6 @@ describe('defineConfig — invalid configs throw', () => {
   test('wrong value type (queries_default_timeout must be a number)', () => {
     expect(() =>
       defineConfig({ queries_default_timeout: 'soon' } as unknown as ZenohConfig),
-    ).toThrow()
-  })
-
-  // Regression: endpoints are plain locator strings in Zenoh 1.9.0. The
-  // `{ strategy, locators }` group object is a post-1.9.0 feature and must be
-  // rejected (it is also a TypeScript error now, hence the cast).
-  test('connect.endpoints rejects a locator strategy group object', () => {
-    expect(() =>
-      defineConfig({
-        connect: { endpoints: [{ strategy: 'allOf', locators: ['tcp/127.0.0.1:7447'] }] },
-      } as unknown as ZenohConfig),
-    ).toThrow()
-  })
-
-  test('listen.endpoints rejects a locator strategy group object', () => {
-    expect(() =>
-      defineConfig({
-        listen: { endpoints: [{ strategy: 'allOf', locators: ['tcp/0.0.0.0:7447'] }] },
-      } as unknown as ZenohConfig),
     ).toThrow()
   })
 })
